@@ -1,0 +1,19 @@
+name: ItemRarity
+version: 1.0
+main: cl.nightcore.itemrarity.ItemRarity
+api-version: 1.20
+softdepend: [AuraSkills,NBTAPI]
+
+commands:
+  getscroll:
+    description: Obtienes un pergamino de identificación.
+    usage: /getscroll <cantidad>
+  getmagic:
+    description: Obtienes un objeto mágico.
+    usage: /getmagic <cantidad>
+  getblessing:
+    description: Obtienes un objeto bendición.
+    usage: /getblessing <cantidad>
+  getredemption:
+    description: Obtienes un objeto redención.
+    usage: /getredemption <cantidad>

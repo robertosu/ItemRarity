@@ -1,0 +1,79 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
+group = 'cl.nightcore'
+version = '0.1'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
+    }
+    maven {
+        url 'https://oss.sonatype.org/content/groups/public/'
+    }
+    maven {
+        url 'https://repo.oraxen.com/releases'
+    }
+    maven {
+        url 'https://repo.codemc.org/repository/maven-public/'
+    }
+    maven {
+        url 'https://repo.papermc.io/repository/maven-public/'
+    }
+    maven {
+        url 'https://repo.jeff-media.com/public/'
+    }
+}
+
+configurations {
+    provided
+}
+
+dependencies {
+    implementation 'org.apache.commons:commons-math3:3.6.1'
+    implementation 'org.jetbrains:annotations:22.0.0'
+
+    provided 'io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT'
+    provided 'de.tr7zw:item-nbt-api-plugin:2.12.4'
+    provided 'dev.aurelium:auraskills-api-bukkit:2.1.1'
+    provided 'org.spigotmc:spigot-api:1.20.4-R0.1-SNAPSHOT'
+    provided('io.th0rgal:oraxen:1.175.0') {
+        exclude group: 'me.gabytm.util', module: 'actions-spigot'
+        exclude group: 'org.jetbrains', module: 'annotations'
+        exclude group: 'com.ticxo', module: 'PlayerAnimator'
+        exclude group: 'com.github.stefvanschie.inventoryframework', module: 'IF'
+        exclude group: 'io.th0rgal', module: 'protectionlib'
+        exclude group: 'dev.triumphteam', module: 'triumph-gui'
+        exclude group: 'org.bstats', module: 'bstats-bukkit'
+        exclude group: 'com.jeff-media', module: 'custom-block-data'
+        exclude group: 'com.jeff-media', module: 'persistent-data-serializer'
+        exclude group: 'com.jeff-media', module: 'MorePersistentDataTypes'
+        exclude group: 'gs.mclo', module: 'java'
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    classpath += configurations.provided
+}
+
+jar {
+    manifest {
+        attributes(
+                'Implementation-Title': 'ItemRarity2',
+                'Implementation-Version': version
+        )
+    }
+}
+
+shadowJar {
+    archiveClassifier.set('')
+    mergeServiceFiles()
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF'
+}
