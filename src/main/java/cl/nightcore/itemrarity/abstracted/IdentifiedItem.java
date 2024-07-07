@@ -2,7 +2,6 @@ package cl.nightcore.itemrarity.abstracted;
 
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.classes.*;
-import de.tr7zw.nbtapi.NBTItem;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.AuraSkillsBukkit;
 import dev.aurelium.auraskills.api.item.ModifierType;
@@ -20,6 +19,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.enchantments.Enchantment;
@@ -27,6 +27,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -314,14 +316,17 @@ public abstract class IdentifiedItem extends ItemStack {
             return COMMON_COLOR;
         }
     }
-    public int getLevel(){
-        NBTItem nbtItem = new NBTItem(this);
-        return nbtItem.getInteger(LEVEL_KEY);
+    public int getLevel() {
+        PersistentDataContainer container = this.getItemMeta().getPersistentDataContainer();
+        NamespacedKey key = new NamespacedKey(plugin, LEVEL_KEY);
+        return container.getOrDefault(key, PersistentDataType.INTEGER, 0);
     }
-    void setIdentifiedNBT() {
-        NBTItem nbtItem = new NBTItem(this);
-        nbtItem.setBoolean(IDENTIFIER_KEY, true);
-        nbtItem.mergeNBT(this);
+    public void setIdentifiedNBT() {
+        ItemMeta meta = this.getItemMeta();
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        NamespacedKey key = new NamespacedKey(plugin, IDENTIFIER_KEY);
+        container.set(key, PersistentDataType.BOOLEAN, true);
+        this.setItemMeta(meta);
     }
     private void setLore() {
         int itemlevel = getItemLevel();
@@ -335,15 +340,14 @@ public abstract class IdentifiedItem extends ItemStack {
         lore.add(rarity + ChatColor.DARK_GRAY + " - Nvl " + itemlevel + " -");
         meta.setLore(lore);
 
-        //oraxen item
+        //oraxen weapon
         if (OraxenItems.getIdByItem(this)!=null && ItemRarity.getItemType(this).equals("Weapon")) {
-
-            Component component = LegacyComponentSerializer.legacyAmpersand().deserialize(ChatColor.stripColor(meta.getDisplayName()).toString());
+            Component component = LegacyComponentSerializer.legacyAmpersand().deserialize(ChatColor.stripColor(meta.getItemName()).toString());
             component = component.decoration(TextDecoration.ITALIC,false);
             meta.displayName(component.color(getRarityColor()));
             setItemMeta(meta);
             attributesDisplayInLore(this);
-        //normal identifiable item
+        //oraxen armor
         }else if (OraxenItems.getIdByItem(this)!=null && ItemRarity.getItemType(this).equals("Armor")) {
 
             Component component = LegacyComponentSerializer.legacyAmpersand().deserialize(ChatColor.stripColor(meta.getDisplayName()).toString());
@@ -354,12 +358,20 @@ public abstract class IdentifiedItem extends ItemStack {
         }
         else if (OraxenItems.getIdByItem(this)==null){
             // Obtener la key de traducción
-            String itemTranslationKey = this.getTranslationKey();
-            TranslatableComponent translatedName = Component.translatable(itemTranslationKey).color(getRarityColor());
-            Component newName = reset.append(translatedName);
-            meta.displayName(newName);
-            setItemMeta(meta);
-            attributesDisplayInLore(this);
+            if (!meta.hasDisplayName()) {
+                String itemTranslationKey = this.getTranslationKey();
+                TranslatableComponent translatedName = Component.translatable(itemTranslationKey).color(getRarityColor());
+                Component newName = reset.append(translatedName);
+                meta.displayName(newName);
+                setItemMeta(meta);
+                attributesDisplayInLore(this);
+            }else{
+                Component component = LegacyComponentSerializer.legacyAmpersand().deserialize(ChatColor.stripColor(meta.getDisplayName()).toString());
+                component = component.decoration(TextDecoration.ITALIC,false);
+                meta.displayName(component.color(getRarityColor()));
+                setItemMeta(meta);
+                attributesDisplayInLore(this);
+            }
         }
     }
 
@@ -401,6 +413,7 @@ public abstract class IdentifiedItem extends ItemStack {
         lore.add(ChatColor.BLUE + "Velocidad de ataque: " + "+" + String.format("%.1f", attackSpeed));
 
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        //meta.setHideTooltip(true);
         meta.setLore(lore);
         item.setItemMeta(meta);
     }
@@ -420,7 +433,7 @@ public abstract class IdentifiedItem extends ItemStack {
             baseDamage = getDefaultDamage(item.getType());
         }
 
-        int sharpnessLevel = item.getEnchantmentLevel(Enchantment.DAMAGE_ALL);
+        int sharpnessLevel = item.getEnchantmentLevel(Enchantment.SHARPNESS);
         double sharpnessDamage = sharpnessLevel > 0 ? (0.5 * sharpnessLevel + 0.5) : 0;
 
         return baseDamage + sharpnessDamage;

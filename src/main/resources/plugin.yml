@@ -1,8 +1,8 @@
 name: ItemRarity
 version: 1.0
 main: cl.nightcore.itemrarity.ItemRarity
-api-version: 1.20
-softdepend: [AuraSkills,NBTAPI]
+api-version: 1.21
+softdepend: [AuraSkills]
 
 commands:
   getscroll:

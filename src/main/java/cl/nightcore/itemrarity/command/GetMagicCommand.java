@@ -1,5 +1,6 @@
 package cl.nightcore.itemrarity.command;
 
+import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.item.MagicObject;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -27,7 +28,7 @@ public class GetMagicCommand implements CommandExecutor {
             }
         }
 
-        MagicObject magic = new MagicObject(amount);
+        MagicObject magic = new MagicObject(amount, ItemRarity.getPlugin(ItemRarity.class));
 
         player.getInventory().addItem(magic);
         player.sendMessage("¡Has obtenido " + amount + " objeto(s) mágico(s)!");

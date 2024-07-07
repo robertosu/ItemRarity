@@ -2,12 +2,9 @@ package cl.nightcore.itemrarity.listener;
 
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.abstracted.IdentifiedItem;
-import io.th0rgal.oraxen.api.OraxenItems;
-import io.th0rgal.oraxen.mechanics.provided.misc.custom.listeners.PickupListener;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.*;
 import org.bukkit.inventory.ItemStack;
 
 public class ItemClickListener implements Listener {

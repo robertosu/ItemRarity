@@ -1,5 +1,6 @@
 package cl.nightcore.itemrarity.command;
 
+import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.item.IdentifyScroll;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -28,7 +29,7 @@ public class GetScrollCommand implements CommandExecutor {
             }
         }
 
-        IdentifyScroll scroll = new IdentifyScroll(amount);
+        IdentifyScroll scroll = new IdentifyScroll(amount,ItemRarity.getPlugin(ItemRarity.class));
 
         player.getInventory().addItem(scroll);
         player.sendMessage("¡Has obtenido " + amount + " scroll(s)!");

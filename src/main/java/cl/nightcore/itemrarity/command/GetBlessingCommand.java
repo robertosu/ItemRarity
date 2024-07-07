@@ -1,5 +1,6 @@
 package cl.nightcore.itemrarity.command;
 
+import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.item.BlessingObject;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -27,7 +28,7 @@ public class GetBlessingCommand implements CommandExecutor {
             }
         }
 
-        BlessingObject blessing = new BlessingObject(amount);
+        BlessingObject blessing = new BlessingObject(amount, ItemRarity.getPlugin(ItemRarity.class));
 
         player.getInventory().addItem(blessing);
         player.sendMessage("¡Has obtenido " + amount + " objeto(s) bendición!");

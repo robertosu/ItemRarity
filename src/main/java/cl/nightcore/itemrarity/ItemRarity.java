@@ -1,9 +1,17 @@
 package cl.nightcore.itemrarity;
 
-import cl.nightcore.itemrarity.abstracted.StatProvider;
-import cl.nightcore.itemrarity.command.*;
 import cl.nightcore.itemrarity.abstracted.IdentifiedItem;
+import cl.nightcore.itemrarity.abstracted.StatProvider;
+import cl.nightcore.itemrarity.command.GetBlessingCommand;
+import cl.nightcore.itemrarity.command.GetMagicCommand;
+import cl.nightcore.itemrarity.command.GetRedemptionCommand;
+import cl.nightcore.itemrarity.command.GetScrollCommand;
+import cl.nightcore.itemrarity.item.BlessingObject;
+import cl.nightcore.itemrarity.item.IdentifyScroll;
+import cl.nightcore.itemrarity.item.MagicObject;
 import cl.nightcore.itemrarity.item.RedemptionObject;
+import cl.nightcore.itemrarity.listener.CancelUsageInRecipesListener;
+import cl.nightcore.itemrarity.listener.IdentifyScrollListener;
 import cl.nightcore.itemrarity.listener.ItemClickListener;
 import cl.nightcore.itemrarity.statprovider.ArmorStatProvider;
 import cl.nightcore.itemrarity.statprovider.WeaponStatProvider;
@@ -11,24 +19,22 @@ import cl.nightcore.itemrarity.type.IdentifiedArmor;
 import cl.nightcore.itemrarity.type.IdentifiedWeapon;
 import cl.nightcore.itemrarity.type.RolledArmor;
 import cl.nightcore.itemrarity.type.RolledWeapon;
-import cl.nightcore.itemrarity.item.BlessingObject;
-import cl.nightcore.itemrarity.item.IdentifyScroll;
-import cl.nightcore.itemrarity.item.MagicObject;
-import cl.nightcore.itemrarity.listener.IdentifyScrollListener;
-import cl.nightcore.itemrarity.listener.CancelUsageInRecipesListener;
-import de.tr7zw.nbtapi.NBTItem;
 import dev.aurelium.auraskills.api.item.ModifierType;
+import dev.aurelium.auraskills.api.stat.Stats;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import dev.aurelium.auraskills.api.stat.Stats;
-
-
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 
 public class ItemRarity extends JavaPlugin implements CommandExecutor {
 
@@ -42,8 +48,7 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
     public static final List<Stats> STATS = Collections.unmodifiableList(Arrays.asList(Stats.CRIT_CHANCE, Stats.CRIT_DAMAGE, Stats.HEALTH, Stats.LUCK,
             Stats.REGENERATION, Stats.SPEED, Stats.STRENGTH, Stats.TOUGHNESS,
             Stats.WISDOM));
-
-
+    private static Plugin plugin;
 
     @Override
     public void onEnable() {
@@ -54,6 +59,7 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         getServer().getPluginManager().registerEvents(new ItemClickListener(),this);
         getServer().getPluginManager().registerEvents(new IdentifyScrollListener(), this);
         getServer().getPluginManager().registerEvents(new CancelUsageInRecipesListener(), this);
+        plugin = ItemRarity.getPlugin(ItemRarity.class);
     }
 
     public static IdentifiedItem identifyItem(Player player, ItemStack item) {
@@ -115,19 +121,33 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         return item != null && !item.getType().isAir();
     }
     public static boolean isIdentified(ItemStack item) {
-        return item != null && !item.getType().isAir() && new NBTItem(item).getBoolean(IdentifiedItem.getIdentifierKey());
+        return checkBooleanTag(item, IdentifiedItem.getIdentifierKey());
     }
+
     public static boolean isIdentifyScroll(ItemStack item) {
-        return item != null && !item.getType().isAir() && new NBTItem(item).getBoolean(IdentifyScroll.getIdentifyScrollKey());
+        return checkBooleanTag(item, IdentifyScroll.getIdentifyScrollKey());
     }
+
     public static boolean isRedemptionObject(ItemStack item) {
-        return item != null && !item.getType().isAir() && new NBTItem(item).getBoolean(RedemptionObject.getRedeemObjectKey());
+        return checkBooleanTag(item, RedemptionObject.getRedeemObjectKey());
     }
+
     public static boolean isMagicObject(ItemStack item) {
-        return item != null && !item.getType().isAir() && new NBTItem(item).getBoolean(MagicObject.getMagicObjectKey());
+        return checkBooleanTag(item, MagicObject.getMagicObjectKey());
     }
+
     public static boolean isBlessingObject(ItemStack item) {
-        return item != null && !item.getType().isAir() && new NBTItem(item).getBoolean(BlessingObject.getBlessingObjectKey());
+        return checkBooleanTag(item, BlessingObject.getBlessingObjectKey());
+    }
+
+    private static boolean checkBooleanTag(ItemStack item, String key) {
+        if (item == null || item.getType().isAir() || plugin == null) {
+            return false;
+        }
+        NamespacedKey namespacedKey = new NamespacedKey(plugin, key);
+        return item.getItemMeta() != null &&
+                item.getItemMeta().getPersistentDataContainer().has(namespacedKey, PersistentDataType.BOOLEAN) &&
+                item.getItemMeta().getPersistentDataContainer().get(namespacedKey, PersistentDataType.BOOLEAN) == Boolean.TRUE;
     }
 
     public ModifierType getModifierType(ItemStack item) {

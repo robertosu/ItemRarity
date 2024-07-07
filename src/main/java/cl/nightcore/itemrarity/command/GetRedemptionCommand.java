@@ -1,5 +1,6 @@
 package cl.nightcore.itemrarity.command;
 
+import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.item.RedemptionObject;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -27,7 +28,7 @@ public class GetRedemptionCommand implements CommandExecutor {
             }
         }
 
-        RedemptionObject redemption = new RedemptionObject(amount);
+        RedemptionObject redemption = new RedemptionObject(amount, ItemRarity.getPlugin(ItemRarity.class));
 
         player.getInventory().addItem(redemption);
         player.sendMessage("¡Has obtenido " + amount + " objeto(s) redención!");
