@@ -1,9 +1,12 @@
 package cl.nightcore.itemrarity.abstracted;
 
+import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.Stats;
 
 import java.util.List;
 
 public interface StatProvider {
     List<Stats> getAvailableStats();
+    List<Stats> getGaussStats();
+    boolean isThisStatGauss(Stat stat);
 }

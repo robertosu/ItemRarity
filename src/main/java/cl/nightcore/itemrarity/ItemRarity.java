@@ -1,12 +1,10 @@
 package cl.nightcore.itemrarity;
 
 import cl.nightcore.itemrarity.abstracted.StatProvider;
-import cl.nightcore.itemrarity.command.GetBlessingCommand;
-import cl.nightcore.itemrarity.command.GetMagicCommand;
-import cl.nightcore.itemrarity.command.GetRedemptionCommand;
-import cl.nightcore.itemrarity.command.GetScrollCommand;
+import cl.nightcore.itemrarity.command.*;
 import cl.nightcore.itemrarity.abstracted.IdentifiedItem;
 import cl.nightcore.itemrarity.item.RedemptionObject;
+import cl.nightcore.itemrarity.listener.ItemClickListener;
 import cl.nightcore.itemrarity.statprovider.ArmorStatProvider;
 import cl.nightcore.itemrarity.statprovider.WeaponStatProvider;
 import cl.nightcore.itemrarity.type.IdentifiedArmor;
@@ -53,6 +51,7 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         Objects.requireNonNull(getCommand("getmagic")).setExecutor(new GetMagicCommand());
         Objects.requireNonNull(getCommand("getblessing")).setExecutor(new GetBlessingCommand());
         Objects.requireNonNull(getCommand("getredemption")).setExecutor(new GetRedemptionCommand());
+        getServer().getPluginManager().registerEvents(new ItemClickListener(),this);
         getServer().getPluginManager().registerEvents(new IdentifyScrollListener(), this);
         getServer().getPluginManager().registerEvents(new CancelUsageInRecipesListener(), this);
     }
@@ -112,6 +111,9 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         }
         return null;
     }
+    public static boolean isNotEmpty(ItemStack item) {
+        return item != null && !item.getType().isAir();
+    }
     public static boolean isIdentified(ItemStack item) {
         return item != null && !item.getType().isAir() && new NBTItem(item).getBoolean(IdentifiedItem.getIdentifierKey());
     }
@@ -129,21 +131,18 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
     }
 
     public ModifierType getModifierType(ItemStack item) {
-        switch (getItemType(item)) {
-            case "Weapon":
-                return ModifierType.ITEM;
-            case "Armor":
-                return ModifierType.ARMOR;
-            default:
-                return null;
-        }
+        return switch (getItemType(item)) {
+            case "Weapon" -> ModifierType.ITEM;
+            case "Armor" -> ModifierType.ARMOR;
+            default -> null;
+        };
     }
     public static StatProvider getStatProvider(ItemStack item){
-        switch(getItemType(item)){
-            case "Weapon":return new WeaponStatProvider();
-            case "Armor": return new ArmorStatProvider();
-            default: return null;
-        }
+        return switch (getItemType(item)) {
+            case "Weapon" -> new WeaponStatProvider();
+            case "Armor" -> new ArmorStatProvider();
+            default -> null;
+        };
     }
     public static String getItemType(ItemStack item) {
         Material material = item.getType();

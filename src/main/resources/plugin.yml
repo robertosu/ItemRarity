@@ -17,3 +17,6 @@ commands:
   getredemption:
     description: Obtienes un objeto redención.
     usage: /getredemption <cantidad>
+  getcustomsword:
+    description: Obten la espada.
+    usage: /getredemption

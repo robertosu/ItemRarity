@@ -12,27 +12,28 @@ import dev.aurelium.auraskills.api.stat.Stats;
 import dev.aurelium.auraskills.api.util.AuraSkillsModifier;
 import io.th0rgal.oraxen.api.OraxenItems;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.format.TextFormat;
-import net.kyori.adventure.text.minimessage.tag.ParserDirective;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.kyori.adventure.text.serializer.legacy.Reset;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
 
-import java.util.*;
-
-import static cl.nightcore.itemrarity.ItemRarity.*;
+import static cl.nightcore.itemrarity.ItemRarity.isIdentified;
 
 public abstract class IdentifiedItem extends ItemStack {
 
@@ -47,11 +48,11 @@ public abstract class IdentifiedItem extends ItemStack {
     private static final TextColor RARE_COLOR = NamedTextColor.LIGHT_PURPLE;
     private static final TextColor MYTHIC_COLOR = NamedTextColor.DARK_PURPLE;
     private static final TextColor LEGENDARY_COLOR = NamedTextColor.GOLD;
-    protected static List<Stat> GaussStats;
     private final List<Stat> addedStats;
     private final List<Integer> statValues;
     protected ModifierType MODIFIER_TYPE;
     private String rarity;
+    protected StatProvider statProvider;
     protected RollQuality rollQuality;
     Component reset = Component.text()
             .content("")
@@ -61,11 +62,6 @@ public abstract class IdentifiedItem extends ItemStack {
 
     public IdentifiedItem(ItemStack item) {
         super(item);
-        if (getItemType(item).equals("Weapon")){
-            GaussStats =  Arrays.asList(Stats.STRENGTH,Stats.CRIT_CHANCE);
-        } else if (getItemType(item).equals("Armor")) {
-            GaussStats = Arrays.asList(Stats.HEALTH,Stats.TOUGHNESS);
-        }
         rollQuality = getRollQuality();
         this.addedStats = new ArrayList<>();
         this.statValues = new ArrayList<>();
@@ -98,9 +94,6 @@ public abstract class IdentifiedItem extends ItemStack {
         applyStatsToItem();
         setRarity();
         setLore();
-    }
-    public static boolean isThisStatGauss(Stat stat){
-        return GaussStats.contains(stat);
     }
     private void removeSpecificModifier(Stat stat) {
         this.setItemMeta (AuraSkillsBukkit.get().getItemManager().removeModifier(this, MODIFIER_TYPE, stat).getItemMeta());
@@ -172,10 +165,10 @@ public abstract class IdentifiedItem extends ItemStack {
         List<Stats> availableStats = statProvider.getAvailableStats();
         addedStats.clear();
         statValues.clear();
-        for (Stat stat : GaussStats) {
+        for (Stat stat : statProvider.getGaussStats()) {
             if (stat != excludedStat) {
                 getAddedStats().add(stat);
-                int value = StatValueGenerator.generateValueForStat(getRollQuality(), isThisStatGauss(stat));
+                int value = StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(stat));
                 getStatValues().add(value);
             }
         }
@@ -186,7 +179,7 @@ public abstract class IdentifiedItem extends ItemStack {
                 stat = availableStats.get(random.nextInt(availableStats.size()));
             } while (getAddedStats().contains(stat) || stat == excludedStat);
             getAddedStats().add(stat);
-            int value = StatValueGenerator.generateValueForStat(getRollQuality(), isThisStatGauss(stat));
+            int value = StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(stat));
             getStatValues().add(value);
         }
     }
@@ -201,7 +194,7 @@ public abstract class IdentifiedItem extends ItemStack {
         Stat lowestModifier = getLowestModifier();
         removeSpecificStatLoreLine(lowestModifier);
         removeSpecificModifier(lowestModifier);
-        int newValue = StatValueGenerator.generateValueForStat(getRollQuality(), isThisStatGauss(lowestModifier));
+        int newValue = StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(lowestModifier));
         addModifier(lowestModifier,newValue);
         updateRarityLore();
         player.sendMessage(ItemRarity.getBlessingPrefix()+"Se cambió la stat " + lowestModifier.getColoredName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()));
@@ -257,55 +250,58 @@ public abstract class IdentifiedItem extends ItemStack {
     }
     private void setRarity() {
         if (!getStatModifiers().isEmpty()) {
-            double average = getStatModifiers().stream()
-                    .mapToDouble(AuraSkillsModifier::value)
-                    .average()
-                    .orElse(0.0);  // Devuelve 0.0 si la lista está vacía
-            int level = getLevel();
+            double average = getStatModifiers().stream().mapToDouble(AuraSkillsModifier::value).average().orElse(0.0);  // Devuelve 0.0 si la lista está vacía
+            switch (rollQuality.getClass().getSimpleName()) {
+                case "GodRollQuality":
+                    if (average >= 22.5) {
+                        rarity = ChatColor.GOLD + "" + ChatColor.ITALIC + " [Legendario]";
+                    } else if (average >= 18.75) {
+                        rarity = ChatColor.DARK_PURPLE + "" + ChatColor.ITALIC + " [Mítico]";
+                    } else if (average >= 16.75) {
+                        rarity = ChatColor.LIGHT_PURPLE + "" + ChatColor.ITALIC + " [Raro]";
+                    } else {
+                        rarity = ChatColor.DARK_AQUA + "" + ChatColor.ITALIC + " [Común]";
+                    }
+                    break;
 
-            if (rollQuality instanceof GodRollQuality) {
-                if (average >= 26) {
-                    rarity = ChatColor.GOLD + "" + ChatColor.ITALIC + " [Legendario]";
-                } else if (average >= 24) {
-                    rarity = ChatColor.DARK_PURPLE + "" + ChatColor.ITALIC + " [Mítico]";
-                } else if (average >= 18) {
-                    rarity = ChatColor.LIGHT_PURPLE + "" + ChatColor.ITALIC + " [Raro]";
-                } else {
-                    rarity = ChatColor.DARK_AQUA + "" + ChatColor.ITALIC + " [Común]";
-                }
-            } else if (rollQuality instanceof  HighRollQuality) {
-                if (average >= 22) {
-                    rarity = ChatColor.GOLD + "" + ChatColor.ITALIC + " [Legendario]";
-                } else if (average >= 18) {
-                    rarity = ChatColor.DARK_PURPLE + "" + ChatColor.ITALIC + " [Mítico]";
-                } else if (average >= 16) {
-                    rarity = ChatColor.LIGHT_PURPLE + "" + ChatColor.ITALIC + " [Raro]";
-                } else {
-                    rarity = ChatColor.DARK_AQUA + "" + ChatColor.ITALIC + " [Común]";
-                }
-            } else if (rollQuality instanceof MediumRollQuality) {
-                if (average >= 20) {
-                    rarity = ChatColor.GOLD + "" + ChatColor.ITALIC + " [Legendario]";
-                } else if (average >= 16) {
-                    rarity = ChatColor.DARK_PURPLE + "" + ChatColor.ITALIC + " [Mítico]";
-                } else if (average >= 14) {
-                    rarity = ChatColor.LIGHT_PURPLE + "" + ChatColor.ITALIC + " [Raro]";
-                } else {
-                    rarity = ChatColor.DARK_AQUA + "" + ChatColor.ITALIC + " [Común]";
-                }
-            } else {
-                if (average >= 16) {
-                    rarity = ChatColor.GOLD + "" + ChatColor.ITALIC + " [Legendario]";
-                } else if (average >= 14) {
-                    rarity = ChatColor.DARK_PURPLE + "" + ChatColor.ITALIC + " [Mítico]";
-                } else if (average >= 12) {
-                    rarity = ChatColor.LIGHT_PURPLE + "" + ChatColor.ITALIC + " [Raro]";
-                } else {
-                    rarity = ChatColor.DARK_AQUA + "" + ChatColor.ITALIC + " [Común]";
-                }
+                case "HighRollQuality":
+                    if (average >= 19.5) {
+                        rarity = ChatColor.GOLD + "" + ChatColor.ITALIC + " [Legendario]";
+                    } else if (average >= 17) {
+                        rarity = ChatColor.DARK_PURPLE + "" + ChatColor.ITALIC + " [Mítico]";
+                    } else if (average >= 14.75) {
+                        rarity = ChatColor.LIGHT_PURPLE + "" + ChatColor.ITALIC + " [Raro]";
+                    } else {
+                        rarity = ChatColor.DARK_AQUA + "" + ChatColor.ITALIC + " [Común]";
+                    }
+                    break;
+
+                case "MediumRollQuality":
+                    if (average >= 17) {
+                        rarity = ChatColor.GOLD + "" + ChatColor.ITALIC + " [Legendario]";
+                    } else if (average >= 15.75) {
+                        rarity = ChatColor.DARK_PURPLE + "" + ChatColor.ITALIC + " [Mítico]";
+                    } else if (average >= 12.75) {
+                        rarity = ChatColor.LIGHT_PURPLE + "" + ChatColor.ITALIC + " [Raro]";
+                    } else {
+                        rarity = ChatColor.DARK_AQUA + "" + ChatColor.ITALIC + " [Común]";
+                    }
+                    break;
+
+                default: // LowRollQuality
+                    if (average >= 16) {
+                        rarity = ChatColor.GOLD + "" + ChatColor.ITALIC + " [Legendario]";
+                    } else if (average >= 14.75) {
+                        rarity = ChatColor.DARK_PURPLE + "" + ChatColor.ITALIC + " [Mítico]";
+                    } else if (average >= 11.75) {
+                        rarity = ChatColor.LIGHT_PURPLE + "" + ChatColor.ITALIC + " [Raro]";
+                    } else {
+                        rarity = ChatColor.DARK_AQUA + "" + ChatColor.ITALIC + " [Común]";
+                    }
+                    break;
             }
-
         }
+
     }
     private TextColor getRarityColor() {
         if (rarity.contains("Legendario")) {
@@ -339,19 +335,32 @@ public abstract class IdentifiedItem extends ItemStack {
         lore.add(rarity + ChatColor.DARK_GRAY + " - Nvl " + itemlevel + " -");
         meta.setLore(lore);
 
+        //oraxen item
+        if (OraxenItems.getIdByItem(this)!=null && ItemRarity.getItemType(this).equals("Weapon")) {
 
-        if (OraxenItems.getIdByItem(this)!=null) {
-            Component plainName = Component.text(ChatColor.stripColor(meta.getDisplayName()));
-            Component newName = reset.append(plainName);
-            meta.displayName(newName.color(getRarityColor()));
-        }else{
+            Component component = LegacyComponentSerializer.legacyAmpersand().deserialize(ChatColor.stripColor(meta.getDisplayName()).toString());
+            component = component.decoration(TextDecoration.ITALIC,false);
+            meta.displayName(component.color(getRarityColor()));
+            setItemMeta(meta);
+            attributesDisplayInLore(this);
+        //normal identifiable item
+        }else if (OraxenItems.getIdByItem(this)!=null && ItemRarity.getItemType(this).equals("Armor")) {
+
+            Component component = LegacyComponentSerializer.legacyAmpersand().deserialize(ChatColor.stripColor(meta.getDisplayName()).toString());
+            component = component.decoration(TextDecoration.ITALIC,false);
+            meta.displayName(component.color(getRarityColor()));
+            setItemMeta(meta);
+            //normal identifiable item
+        }
+        else if (OraxenItems.getIdByItem(this)==null){
             // Obtener la key de traducción
-            String itemTypeKey = this.getTranslationKey();
-            TranslatableComponent translatedName = Component.translatable(itemTypeKey).color(getRarityColor());
+            String itemTranslationKey = this.getTranslationKey();
+            TranslatableComponent translatedName = Component.translatable(itemTranslationKey).color(getRarityColor());
             Component newName = reset.append(translatedName);
             meta.displayName(newName);
+            setItemMeta(meta);
+            attributesDisplayInLore(this);
         }
-        setItemMeta(meta);
     }
 
     private List<StatModifier> getStatModifiers() {
@@ -368,6 +377,87 @@ public abstract class IdentifiedItem extends ItemStack {
     }
     public static String getIdentifierKey(){
         return IDENTIFIER_KEY;
+    }
+    public static void attributesDisplayInLore(ItemStack item) {
+        ItemMeta meta = item.getItemMeta();
+
+        double totalDamage = calculateTotalDamage(item);
+        double attackSpeed = calculateAttackSpeed(item);
+
+        List<String> lore = meta.getLore();
+        if(lore==null){
+            lore = new ArrayList<>();
+        }
+        List<String> aEliminar = new ArrayList<>();
+        for (String linea : lore) {
+            if (linea.contains("Daño de ataque")||linea.contains("Velocidad de ataque")||linea.contains("En la mano")||linea.contains("          ")) {
+                aEliminar.add(linea);
+            }
+        }
+        lore.removeAll(aEliminar);
+        lore.add("          ");
+        lore.add(ChatColor.GRAY + "En la mano principal:");
+        lore.add(ChatColor.BLUE + "Daño de ataque: " + "+" + String.format("%.1f", Math.round(totalDamage * 10.0) / 10.0));
+        lore.add(ChatColor.BLUE + "Velocidad de ataque: " + "+" + String.format("%.1f", attackSpeed));
+
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        meta.setLore(lore);
+        item.setItemMeta(meta);
+    }
+
+    private static double calculateTotalDamage(ItemStack item) {
+        double baseDamage = 0;
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null && meta.hasAttributeModifiers()) {
+            for (AttributeModifier modifier : meta.getAttributeModifiers(Attribute.GENERIC_ATTACK_DAMAGE)) {
+                if (modifier.getOperation() == AttributeModifier.Operation.ADD_NUMBER) {
+                    baseDamage += modifier.getAmount();
+                }
+            }
+        }
+
+        if (baseDamage == 0) {
+            baseDamage = getDefaultDamage(item.getType());
+        }
+
+        int sharpnessLevel = item.getEnchantmentLevel(Enchantment.DAMAGE_ALL);
+        double sharpnessDamage = sharpnessLevel > 0 ? (0.5 * sharpnessLevel + 0.5) : 0;
+
+        return baseDamage + sharpnessDamage;
+    }
+
+    private static double calculateAttackSpeed(ItemStack item) {
+        double baseSpeed = getDefaultAttackSpeed(item.getType());
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null && meta.hasAttributeModifiers()) {
+            for (AttributeModifier modifier : meta.getAttributeModifiers(Attribute.GENERIC_ATTACK_SPEED)) {
+                if (modifier.getOperation() == AttributeModifier.Operation.ADD_NUMBER) {
+                    baseSpeed = modifier.getAmount();
+                }
+            }
+        }
+        return baseSpeed;
+    }
+
+    private static double getDefaultDamage(Material material) {
+        return switch (material) {
+            case WOODEN_SWORD, GOLDEN_SWORD -> 4;
+            case STONE_SWORD -> 5;
+            case IRON_SWORD -> 6;
+            case DIAMOND_SWORD, WOODEN_AXE, GOLDEN_AXE -> 7;
+            case NETHERITE_SWORD -> 8;
+            case STONE_AXE, IRON_AXE, DIAMOND_AXE -> 9;
+            case NETHERITE_AXE -> 10;
+            default -> 1;
+        };
+    }
+
+    private static double getDefaultAttackSpeed(Material material) {
+        return switch (material) {
+            case WOODEN_SWORD, STONE_SWORD, IRON_SWORD, DIAMOND_SWORD, NETHERITE_SWORD, GOLDEN_SWORD -> 1.6;
+            case WOODEN_AXE, STONE_AXE, IRON_AXE, DIAMOND_AXE, NETHERITE_AXE, GOLDEN_AXE -> 1.0;
+            default -> 4.0; // Valor por defecto para otros items
+        };
     }
 
 }
