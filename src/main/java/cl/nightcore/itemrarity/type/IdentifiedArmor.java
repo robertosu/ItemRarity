@@ -26,9 +26,9 @@ public class IdentifiedArmor extends IdentifiedItem {
 
         List<Stats> availableStats = statProvider.getAvailableStats();
         //Adds gauss distributed stats to the item
-        for(Stat stat :statProvider.getGaussStats()){
+        for (Stat stat : statProvider.getGaussStats()) {
             getAddedStats().add(stat);
-            int value = StatValueGenerator.generateValueForStat(getRollQuality(),statProvider.isThisStatGauss(stat));
+            int value = StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(stat));
             getStatValues().add(value);
         }
         //Adds normal stats to the item
@@ -38,7 +38,7 @@ public class IdentifiedArmor extends IdentifiedItem {
                 stat = availableStats.get(random.nextInt(availableStats.size()));
             } while (getAddedStats().contains(stat));
             getAddedStats().add(stat);
-            int value = StatValueGenerator.generateValueForStat(getRollQuality(),statProvider.isThisStatGauss(stat));
+            int value = StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(stat));
             getStatValues().add(value);
         }
 

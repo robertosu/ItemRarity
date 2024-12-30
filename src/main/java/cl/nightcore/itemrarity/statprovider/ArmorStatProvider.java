@@ -13,7 +13,7 @@ public class ArmorStatProvider implements StatProvider {
             Stats.REGENERATION, Stats.SPEED, Stats.STRENGTH, Stats.TOUGHNESS,
             Stats.WISDOM
     );
-    private static final List<Stats> GAUSS_ARMOR_STATS = Arrays.asList(Stats.HEALTH,Stats.TOUGHNESS);
+    private static final List<Stats> GAUSS_ARMOR_STATS = Arrays.asList(Stats.HEALTH, Stats.TOUGHNESS);
 
     @Override
     public List<Stats> getAvailableStats() {
@@ -21,9 +21,12 @@ public class ArmorStatProvider implements StatProvider {
     }
 
     @Override
-    public List<Stats> getGaussStats() { return GAUSS_ARMOR_STATS; }
+    public List<Stats> getGaussStats() {
+        return GAUSS_ARMOR_STATS;
+    }
+
     @Override
-    public boolean isThisStatGauss(Stat stat){
+    public boolean isThisStatGauss(Stat stat) {
         return getGaussStats().contains(stat);
     }
 }

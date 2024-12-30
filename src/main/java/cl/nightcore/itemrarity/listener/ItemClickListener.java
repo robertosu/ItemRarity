@@ -2,32 +2,48 @@ package cl.nightcore.itemrarity.listener;
 
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.abstracted.IdentifiedItem;
+import org.bukkit.NamespacedKey;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
 public class ItemClickListener implements Listener {
+
+    private static final NamespacedKey LORE_UPDATED_KEY = new NamespacedKey(ItemRarity.getPlugin(ItemRarity.class), "lore_updated");
+
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        //method: update the fake lore of the items we are interested in and make sure they have hide_attributes flag
         ItemStack clickedItem = event.getCurrentItem();
-       // removido del if de abajo OraxenItems.getIdByItem(clickedItem)!=null&&
+
         if (ItemRarity.isNotEmpty(clickedItem)) {
+            //System.out.println(clickedItem.getItemMeta().toString());
             if (ItemRarity.isIdentifiable(clickedItem) && !ItemRarity.getItemType(clickedItem).equals("Armor")) {
-                IdentifiedItem.attributesDisplayInLore(clickedItem);
-                // No es necesario actualizar el ítem en el inventario, ya que se modifica directamente
+                if (!isLoreUpdated(clickedItem) || clickedItem.containsEnchantment(Enchantment.SHARPNESS)) {
+                    IdentifiedItem.attributesDisplayInLore(clickedItem);
+                    setLoreUpdated(clickedItem);
+                }
             }
         }
     }
-    //Comentado por que era una solucion a medias para oraxen sobreescribiendo flag Hide.Attributes del item;
-    /*@EventHandler
-    public void onItemPickup(InventoryPickupItemEvent event) {
-        //method: update the fake lore of the items we are interested in and make sure they have hide_attributes flag
-        ItemStack pickedItem = event.getItem().getItemStack();
-        if (OraxenItems.getIdByItem(pickedItem)!=null&& ItemRarity.isIdentifiable(pickedItem) && !ItemRarity.getItemType(pickedItem).equals("Armor")) {
-            IdentifiedItem.attributesDisplayInLore(pickedItem);
-            // No es necesario actualizar el ítem en el inventario, ya que se modifica directamente
+
+    private boolean isLoreUpdated(ItemStack item) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return false;
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        return container.getOrDefault(LORE_UPDATED_KEY, PersistentDataType.BOOLEAN, false);
+    }
+
+    private void setLoreUpdated(ItemStack item) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            PersistentDataContainer container = meta.getPersistentDataContainer();
+            container.set(LORE_UPDATED_KEY, PersistentDataType.BOOLEAN, true);
+            item.setItemMeta(meta);
         }
-    }*/
+    }
 }

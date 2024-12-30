@@ -29,7 +29,7 @@ public class GetScrollCommand implements CommandExecutor {
             }
         }
 
-        IdentifyScroll scroll = new IdentifyScroll(amount,ItemRarity.getPlugin(ItemRarity.class));
+        IdentifyScroll scroll = new IdentifyScroll(amount, ItemRarity.getPlugin(ItemRarity.class));
 
         player.getInventory().addItem(scroll);
         player.sendMessage("¡Has obtenido " + amount + " scroll(s)!");

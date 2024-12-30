@@ -7,6 +7,8 @@ import java.util.List;
 
 public interface StatProvider {
     List<Stats> getAvailableStats();
+
     List<Stats> getGaussStats();
+
     boolean isThisStatGauss(Stat stat);
 }

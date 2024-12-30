@@ -1,10 +1,11 @@
 package cl.nightcore.itemrarity.item;
 
-import org.bukkit.ChatColor;
+import io.th0rgal.oraxen.OraxenPlugin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -16,48 +17,53 @@ import java.util.Objects;
 
 public class RedemptionObject extends ItemStack {
     private static final String REDEEM_OBJECT_KEY = "RedemptionObject";
-    private static  final String COLOR = "#FD645B";
-    private static final String LORECOLOR = "#F28E89";
-    private static final String REDEEM_OBJECT_DISPLAY_NAME = net.md_5.bungee.api.ChatColor.of(COLOR) + "Redención";
+    private static final TextColor PRIMARY_COLOR = TextColor.fromHexString("#FD645B");
+    private static final TextColor LORE_COLOR = TextColor.fromHexString("#F28E89");
+    private static final Component DISPLAY_NAME = Component.text("Redención")
+            .color(PRIMARY_COLOR)
+            .decoration(TextDecoration.ITALIC, false);
 
     public RedemptionObject(int amount, Plugin plugin) {
         super(Material.PAPER, amount);
         ItemMeta meta = this.getItemMeta();
         Objects.requireNonNull(meta);
 
-        // Paso 1: Establecer el dato persistente
+        // Set persistent data
         NamespacedKey key = new NamespacedKey(plugin, REDEEM_OBJECT_KEY);
         meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
 
-        // Paso 2: Configurar el nombre de visualización
-        meta.setDisplayName(REDEEM_OBJECT_DISPLAY_NAME);
+        // Set display name using Adventure API
+        meta.displayName(DISPLAY_NAME);
 
-        // Paso 3: Establecer el CustomModelData
-        meta.setCustomModelData(6003);
+        // Set Oraxen model
+        NamespacedKey itemModel = new NamespacedKey(OraxenPlugin.get(), "redemption_object");
+        meta.setItemModel(itemModel);
 
-        // Paso 4: Configurar el lore
-        List<String> lore = meta.getLore();
-        if (lore == null) {
-            lore = new ArrayList<>();
-        }
-        lore.add(net.md_5.bungee.api.ChatColor.of(LORECOLOR) + "" + ChatColor.ITALIC + "Arrastralo a un objeto para cambiar las ");
-        lore.add(net.md_5.bungee.api.ChatColor.of(LORECOLOR) + "" + ChatColor.ITALIC + "estadísticas sin alterar las mas alta.");
-        meta.setLore(lore);
+        // Set lore using Adventure API
+        List<Component> lore = new ArrayList<>();
+        lore.add(Component.text("Arrastralo a un objeto para cambiar las")
+                .color(LORE_COLOR)
+                .decoration(TextDecoration.ITALIC, true));
+        lore.add(Component.text("estadísticas sin alterar las mas alta.")
+                .color(LORE_COLOR)
+                .decoration(TextDecoration.ITALIC, true));
+        meta.lore(lore);
 
-        // Paso 5: Añadir ItemFlags
-        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        // Set glint effect
+        meta.setEnchantmentGlintOverride(true);
 
-        // Paso 6: Aplicar el ItemMeta al ItemStack
         this.setItemMeta(meta);
-
-        // Paso 7: Añadir encantamiento
-        this.addUnsafeEnchantment(Enchantment.FORTUNE, 1);
     }
 
-    public static  String getColor(){return COLOR;}
-    public static String getLorecolor(){return  LORECOLOR;}
+    public static TextColor getPrimaryColor() {
+        return PRIMARY_COLOR;
+    }
+
+    public static TextColor getLoreColor() {
+        return LORE_COLOR;
+    }
+
     public static String getRedeemObjectKey() {
         return REDEEM_OBJECT_KEY;
     }
-
 }

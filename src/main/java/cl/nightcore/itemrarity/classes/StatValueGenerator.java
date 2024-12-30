@@ -13,6 +13,7 @@ public class StatValueGenerator {
             return generateValueUsingRandomDistribution(rollQuality);
         }
     }
+
     private static int generateValueUsingNormalDistribution(RollQuality rollQuality) {
         NormalDistribution distribution = new NormalDistribution(rollQuality.getMean(), rollQuality.getSd());
         int value = (int) Math.round(distribution.sample());
@@ -20,6 +21,7 @@ public class StatValueGenerator {
         value = Math.min(value, 50); // Asegurar que el valor no exceda 50
         return value;
     }
+
     private static int generateValueUsingRandomDistribution(RollQuality rollQuality) {
         int minValue = rollQuality.getMinStatValue();
         int bound = rollQuality.getBound();

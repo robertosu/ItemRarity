@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 
 public class GetBlessingCommand implements CommandExecutor {
     @Override
-    public boolean onCommand(CommandSender sender,Command command,String label, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
             sender.sendMessage("Este comando solo puede ser ejecutado por jugadores.");
             return true;

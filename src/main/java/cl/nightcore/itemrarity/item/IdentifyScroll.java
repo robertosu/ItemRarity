@@ -1,10 +1,11 @@
 package cl.nightcore.itemrarity.item;
 
-import net.md_5.bungee.api.ChatColor;
+import io.th0rgal.oraxen.OraxenPlugin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -15,33 +16,41 @@ import java.util.List;
 
 public class IdentifyScroll extends ItemStack {
     private static final String IDENTIFY_SCROLL_KEY = "IdentifyScroll";
-    private static final String IDENTIFY_SCROLL_DISPLAYNAME = ChatColor.GOLD + "Pergamino de identificación";
+    private static final Component DISPLAY_NAME = Component.text("Pergamino de identificación").color(NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false);
+    private static final NamedTextColor LORE_COLOR = NamedTextColor.GRAY;
 
     public IdentifyScroll(int amount, Plugin plugin) {
         super(Material.PAPER, amount);
         ItemMeta meta = this.getItemMeta();
 
+        // Set persistent data
         NamespacedKey key = new NamespacedKey(plugin, IDENTIFY_SCROLL_KEY);
         meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
 
-        meta.setDisplayName(IDENTIFY_SCROLL_DISPLAYNAME);
-        meta.setCustomModelData(6000);
+        // Set display name using Adventure API
+        meta.displayName(DISPLAY_NAME);
 
-        List<String> lore = meta.getLore();
-        if (lore == null) {
-            lore = new ArrayList<>();
-        }
-        lore.add(ChatColor.GRAY + "" + ChatColor.ITALIC + "Arrastra este item a tu equipamiento para");
-        lore.add(ChatColor.GRAY + "" + ChatColor.ITALIC + "desbloquear sus estadísticas adicionales.");
-        meta.setLore(lore);
+        // Set Oraxen model
+        NamespacedKey itemModel = new NamespacedKey(OraxenPlugin.get(), "identify_scroll");
+        meta.setItemModel(itemModel);
 
-        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-        this.addUnsafeEnchantment(Enchantment.FORTUNE, 1);
+        // Set lore using Adventure API
+        List<Component> lore = new ArrayList<>();
+        lore.add(Component.text("Arrastra este item a tu equipamiento para").color(LORE_COLOR).decoration(TextDecoration.ITALIC, true));
+        lore.add(Component.text("desbloquear sus estadísticas adicionales.").color(LORE_COLOR).decoration(TextDecoration.ITALIC, true));
+        meta.lore(lore);
+
+        // Set glint effect
+        meta.setEnchantmentGlintOverride(true);
 
         this.setItemMeta(meta);
     }
 
     public static String getIdentifyScrollKey() {
         return IDENTIFY_SCROLL_KEY;
+    }
+
+    public static NamedTextColor getLoreColor() {
+        return LORE_COLOR;
     }
 }

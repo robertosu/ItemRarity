@@ -1,7 +1,9 @@
 package cl.nightcore.itemrarity.type;
 
 import cl.nightcore.itemrarity.ItemRarity;
-import org.bukkit.ChatColor;
+import cl.nightcore.itemrarity.item.MagicObject;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -32,14 +34,22 @@ public class RolledWeapon extends IdentifiedWeapon{
 
         if (lvl < MAX_LEVEL) {
             lvl += 1;
-            player.sendMessage(ItemRarity.getRerollPrefix() + "El item subió su nivel de magia " + ChatColor.BLUE + lvl + ChatColor.AQUA + " / " + ChatColor.BLUE + MAX_LEVEL);
+            Component message = Component.text()
+                    .append(Component.text("El item subió su nivel de magia ", MagicObject.getLoreColor()))
+                    .append(Component.text(lvl, NamedTextColor.BLUE))
+                    .append(Component.text(" / ", NamedTextColor.DARK_AQUA))
+                    .append(Component.text(MAX_LEVEL,NamedTextColor.BLUE))
+                    .build();
+
+            //player.sendMessage(ItemRarity.getRerollPrefix() + "El item subió su nivel de magia " + ChatColor.BLUE + lvl + ChatColor.AQUA + " / " + ChatColor.BLUE + MAX_LEVEL);
+            player.sendMessage(ItemRarity.getRerollPrefix().append(message));
 
             if (lvl == 10) {
-                player.sendMessage(ItemRarity.getRerollPrefix() + "Tu objeto subió a " + ChatColor.BLUE + "Nivel 2");
+                player.sendMessage(ItemRarity.getRerollPrefix().append(Component.text("Tu objeto subió a ",MagicObject.getLoreColor()).append(Component.text("Nivel 2",NamedTextColor.BLUE))));
             } else if (lvl == 20) {
-                player.sendMessage(ItemRarity.getRerollPrefix() + "Tu objeto subió a " + ChatColor.BLUE + "Nivel 3");
+                player.sendMessage(ItemRarity.getRerollPrefix().append(Component.text("Tu objeto subió a ",MagicObject.getLoreColor()).append(Component.text("Nivel 3",NamedTextColor.BLUE))));
             } else if (lvl == 30) {
-                player.sendMessage(ItemRarity.getRerollPrefix() + "Tu objeto subió a " + ChatColor.BLUE + "Nivel 4");
+                player.sendMessage(ItemRarity.getRerollPrefix().append(Component.text("Tu objeto subió a ",MagicObject.getLoreColor()).append(Component.text("Nivel 4",NamedTextColor.BLUE))));
             }
 
             container.set(key, PersistentDataType.INTEGER, lvl);

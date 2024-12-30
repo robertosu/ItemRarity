@@ -1,7 +1,7 @@
 name: ItemRarity
-version: 1.0
+version: 0.2.1
 main: cl.nightcore.itemrarity.ItemRarity
-api-version: 1.21
+api-version: 1.20
 softdepend: [AuraSkills]
 
 commands:
@@ -17,6 +17,3 @@ commands:
   getredemption:
     description: Obtienes un objeto redención.
     usage: /getredemption <cantidad>
-  getcustomsword:
-    description: Obten la espada.
-    usage: /getredemption
