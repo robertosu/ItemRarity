@@ -1,6 +1,6 @@
 package cl.nightcore.itemrarity.item;
 
-import io.th0rgal.oraxen.OraxenPlugin;
+import com.nexomc.nexo.NexoPlugin;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -34,17 +34,16 @@ public class MagicObject extends ItemStack {
         meta.displayName(DISPLAY_NAME);
 
         // Set Oraxen model
-        NamespacedKey itemModel = new NamespacedKey(OraxenPlugin.get(), "enchanted_object");
-        meta.setItemModel(itemModel);
+        /*NamespacedKey itemModel = new NamespacedKey(NexoPlugin.instance(), "enchanted_object");
+        meta.setItemModel(itemModel);*/
 
+        meta.setCustomModelData(6001);
         // Set lore using Adventure API
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Elimina los bonos de uno de tus objetos")
-                .color(LORE_COLOR)
-                .decoration(TextDecoration.ITALIC, true));
+                .color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
         lore.add(Component.text("y añade nuevos. Aumenta la magia de tu objeto")
-                .color(LORE_COLOR)
-                .decoration(TextDecoration.ITALIC, true));
+                .color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
         meta.lore(lore);
 
         // Set glint effect

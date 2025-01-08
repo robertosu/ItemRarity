@@ -11,7 +11,7 @@ import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.StatModifier;
 import dev.aurelium.auraskills.api.stat.Stats;
 import dev.aurelium.auraskills.api.util.AuraSkillsModifier;
-import io.th0rgal.oraxen.api.OraxenItems;
+import com.nexomc.nexo.api.NexoItems;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -95,7 +95,7 @@ public abstract class IdentifiedItem extends ItemStack {
         if (meta == null) return;
 
         // Restablecer modificadores de atributo si el ítem no es personalizado
-        if (OraxenItems.getIdByItem(item) == null) {
+        if (NexoItems.idFromItem(item) == null) {
             var defaultModifiers = item.getType().getDefaultAttributeModifiers();
             meta.setAttributeModifiers(defaultModifiers);
             item.setItemMeta(meta);
@@ -131,7 +131,7 @@ public abstract class IdentifiedItem extends ItemStack {
         ItemMeta meta = item.getItemMeta();
 
         // Manejo de ítems vanilla
-        if (OraxenItems.getIdByItem(item) == null) {
+        if (NexoItems.idFromItem(item) == null) {
             baseDamage = getDefaultDamage(item.getType());
             Collection<AttributeModifier> baseModifiers = item.getItemMeta().getAttributeModifiers(Attribute.ATTACK_DAMAGE);
             if (baseModifiers != null) {
@@ -170,7 +170,7 @@ public abstract class IdentifiedItem extends ItemStack {
 
         Collection<AttributeModifier> baseModifiers = item.getType().getDefaultAttributeModifiers().get(Attribute.ATTACK_SPEED);
 
-        if (OraxenItems.getIdByItem(item) == null) {
+        if (NexoItems.idFromItem(item) == null) {
             for (AttributeModifier modifier : baseModifiers) {
                 baseSpeed = modifier.getAmount();
             }
@@ -178,7 +178,7 @@ public abstract class IdentifiedItem extends ItemStack {
         }
 
         ItemMeta meta = item.getItemMeta();
-        if (OraxenItems.getIdByItem(item) != null) {
+        if (NexoItems.idFromItem(item) != null) {
             if (meta.getAttributeModifiers(Attribute.ATTACK_SPEED) != null) {
                 for (AttributeModifier modifier : meta.getAttributeModifiers(Attribute.ATTACK_SPEED)) {
                     // DEBUG ATTACK SPEED System.out.println(modifier.getAmount());
@@ -522,7 +522,7 @@ public abstract class IdentifiedItem extends ItemStack {
         meta.lore(lore);
 
         //oraxen weapon
-        if (OraxenItems.getIdByItem(this) != null && ItemRarity.getItemType(this).equals("Weapon")) {
+        if (NexoItems.idFromItem(this) != null && ItemRarity.getItemType(this).equals("Weapon")) {
             String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
             //System.out.println(plainText.toString());
             Component component = Component.text(plainText, getRarityColor()).decoration(TextDecoration.ITALIC, false);
@@ -533,7 +533,7 @@ public abstract class IdentifiedItem extends ItemStack {
             attributesDisplayInLore(this);
 
             //oraxen armor
-        } else if (OraxenItems.getIdByItem(this) != null && ItemRarity.getItemType(this).equals("Armor")) {
+        } else if (NexoItems.idFromItem(this) != null && ItemRarity.getItemType(this).equals("Armor")) {
             String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
             // System.out.println(plainText);
             Component component = Component.text(plainText, getRarityColor()).decoration(TextDecoration.ITALIC, false);
@@ -543,7 +543,7 @@ public abstract class IdentifiedItem extends ItemStack {
             setItemMeta(meta);
         }
         //caso arma / herramienta vanilla
-        else if (OraxenItems.getIdByItem(this) == null && !ItemRarity.getItemType(this).equals("Armor")) {
+        else if (NexoItems.idFromItem(this) == null && !ItemRarity.getItemType(this).equals("Armor")) {
             // Obtener la key de traducción
             if (!meta.hasCustomName()) {
                 // caso nombre vanilla; Obtener la key de traducción y colorear
@@ -561,7 +561,7 @@ public abstract class IdentifiedItem extends ItemStack {
             attributesDisplayInLore(this);
         }
         //caso armadura vanilla
-        else if (OraxenItems.getIdByItem(this) == null && ItemRarity.getItemType(this).equals("Armor")) {
+        else if (NexoItems.idFromItem(this) == null && ItemRarity.getItemType(this).equals("Armor")) {
 
             if (!meta.hasCustomName()) {
                 // caso nombre vanilla; Obtener la key de traducción y colorear

@@ -4,7 +4,7 @@ import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.item.BlessingObject;
 import cl.nightcore.itemrarity.item.IdentifyScroll;
 import cl.nightcore.itemrarity.item.MagicObject;
-
+import cl.nightcore.itemrarity.item.RedemptionObject;
 import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -15,7 +15,9 @@ import org.bukkit.event.world.LootGenerateEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.LootTable;
 
+import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CustomDropsManager implements Listener {
 
@@ -25,6 +27,7 @@ public class CustomDropsManager implements Listener {
     private final BlessingObject blessingObject = new BlessingObject(1, ItemRarity.plugin);
     private final IdentifyScroll identifyScroll = new IdentifyScroll(1, ItemRarity.plugin);
     private final MagicObject magicObject = new MagicObject(1, ItemRarity.plugin);
+    private final RedemptionObject redemptionObject = new RedemptionObject(1, ItemRarity.plugin);
 
     private record DropConfig(ItemStack item, double chance, int minAmount, int maxAmount) {
     }
@@ -37,19 +40,40 @@ public class CustomDropsManager implements Listener {
     }
 
     private void loadDropConfigurations() {
-        // Configuración de drops de mobs
-        addMobDrop(EntityType.ZOMBIE, blessingObject, 0.50, 1, 3);
-        addMobDrop(EntityType.ZOMBIE, identifyScroll, 0.30, 1, 2);
-        addMobDrop(EntityType.ZOMBIE, magicObject, 0.30, 1, 2);
+        // Obtener la lista de mobs hostiles
+        List<EntityType> hostileMobs = enumToEntityTypes(HostileMob.class);
 
-        // Configuración de drops globales para todos los cofres
+        // Configurar drops para todos los mobs hostiles
+        addDropToEntities(hostileMobs, blessingObject, 0.01, 1, 3);
+        addDropToEntities(hostileMobs, identifyScroll, 0.10, 1, 2);
+        addDropToEntities(hostileMobs, magicObject, 0.05, 1, 2);
+        addDropToEntities(hostileMobs, redemptionObject, 0.30, 1, 2);
+
+        // Mantener la configuración de drops de cofres
         addGlobalChestDrop(blessingObject, 0.30, 1, 4);
         addGlobalChestDrop(identifyScroll, 0.30, 1, 2);
         addGlobalChestDrop(magicObject, 0.30, 1, 2);
-
-        // Drops específicos adicionales para ciertos cofres
-        addChestDrop("minecraft:chests/simple_dungeon", blessingObject, 0.50, 1, 4);
     }
+    public void addDropToEntities(List<EntityType> entities, ItemStack item, double chance, int minAmount, int maxAmount) {
+        for (EntityType entityType : entities) {
+            addMobDrop(entityType, item, chance, minAmount, maxAmount);
+        }
+    }
+
+    private List<EntityType> enumToEntityTypes(Class<? extends Enum<?>> enumClass) {
+        return Arrays.stream(enumClass.getEnumConstants())
+                .map(enumValue -> {
+                    try {
+                        Method getEntityType = enumValue.getClass().getMethod("getEntityType");
+                        return (EntityType) getEntityType.invoke(enumValue);
+                    } catch (Exception e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
 
     public void addGlobalChestDrop(ItemStack item, double chance, int minAmount, int maxAmount) {
         globalDrops.add(new DropConfig(item, chance, minAmount, maxAmount));

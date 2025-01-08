@@ -1,6 +1,6 @@
 package cl.nightcore.itemrarity.item;
 
-import io.th0rgal.oraxen.OraxenPlugin;
+import com.nexomc.nexo.NexoPlugin;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -35,18 +35,17 @@ public class RedemptionObject extends ItemStack {
         // Set display name using Adventure API
         meta.displayName(DISPLAY_NAME);
 
-        // Set Oraxen model
-        NamespacedKey itemModel = new NamespacedKey(OraxenPlugin.get(), "redemption_object");
-        meta.setItemModel(itemModel);
+        // Set Nexo model
+        //NamespacedKey itemModel = new NamespacedKey(NexoPlugin.instance(), "redemption_object");
+        meta.setCustomModelData(6003);
+        //meta.setItemModel(itemModel);
 
         // Set lore using Adventure API
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Arrastralo a un objeto para cambiar las")
-                .color(LORE_COLOR)
-                .decoration(TextDecoration.ITALIC, true));
+                .color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
         lore.add(Component.text("estadísticas sin alterar las mas alta.")
-                .color(LORE_COLOR)
-                .decoration(TextDecoration.ITALIC, true));
+                .color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
         meta.lore(lore);
 
         // Set glint effect

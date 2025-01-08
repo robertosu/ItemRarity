@@ -1,6 +1,8 @@
 package cl.nightcore.itemrarity.item;
 
-import io.th0rgal.oraxen.OraxenPlugin;
+
+import com.nexomc.nexo.NexoPlugin;
+import com.nexomc.nexo.api.NexoItems;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -31,13 +33,13 @@ public class IdentifyScroll extends ItemStack {
         meta.displayName(DISPLAY_NAME);
 
         // Set Oraxen model
-        NamespacedKey itemModel = new NamespacedKey(OraxenPlugin.get(), "identify_scroll");
-        meta.setItemModel(itemModel);
-
+        /*NamespacedKey itemModel = new NamespacedKey(NexoPlugin.instance(), "identify_scroll");
+        meta.setItemModel(itemModel);*/
+        meta.setCustomModelData(6000);
         // Set lore using Adventure API
         List<Component> lore = new ArrayList<>();
-        lore.add(Component.text("Arrastra este item a tu equipamiento para").color(LORE_COLOR).decoration(TextDecoration.ITALIC, true));
-        lore.add(Component.text("desbloquear sus estadísticas adicionales.").color(LORE_COLOR).decoration(TextDecoration.ITALIC, true));
+        lore.add(Component.text("Arrastra este item a tu equipamiento para").color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
+        lore.add(Component.text("desbloquear sus estadísticas adicionales.").color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
         meta.lore(lore);
 
         // Set glint effect
