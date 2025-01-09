@@ -1,6 +1,7 @@
 package cl.nightcore.itemrarity.type;
 
 import cl.nightcore.itemrarity.abstracted.IdentifiedItem;
+import cl.nightcore.itemrarity.abstracted.SocketableItem;
 import cl.nightcore.itemrarity.abstracted.StatProvider;
 import cl.nightcore.itemrarity.classes.StatValueGenerator;
 import cl.nightcore.itemrarity.statprovider.ArmorStatProvider;
@@ -11,7 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.List;
 import java.util.Random;
 
-public class IdentifiedArmor extends IdentifiedItem {
+public class IdentifiedArmor extends SocketableItem {
     public IdentifiedArmor(ItemStack item) {
         super(item);
         statProvider = new ArmorStatProvider();

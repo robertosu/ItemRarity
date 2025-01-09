@@ -1,6 +1,7 @@
 package cl.nightcore.itemrarity.listener;
 
 import cl.nightcore.itemrarity.ItemRarity;
+import cl.nightcore.itemrarity.util.ItemUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
@@ -12,7 +13,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.function.BiFunction;
 
-import static cl.nightcore.itemrarity.ItemRarity.isIdentified;
+import static cl.nightcore.itemrarity.util.ItemUtil.isIdentified;
 
 public class IdentifyScrollListener implements Listener {
 
@@ -21,6 +22,7 @@ public class IdentifyScrollListener implements Listener {
         MAGIC_OBJECT,
         BLESSING_OBJECT,
         REDEMPTION_OBJECT,
+        GEM,
         NONE
     }
 
@@ -37,7 +39,7 @@ public class IdentifyScrollListener implements Listener {
             return;
         }
 
-        if (!ItemRarity.isIdentifiable(targetItem)) {
+        if (!ItemUtil.isIdentifiable(targetItem)) {
             return;
         }
 
@@ -56,10 +58,10 @@ public class IdentifyScrollListener implements Listener {
     }
 
     private ObjectType getObjectType(ItemStack item) {
-        if (ItemRarity.isIdentifyScroll(item)) return ObjectType.IDENTIFY_SCROLL;
-        if (ItemRarity.isMagicObject(item)) return ObjectType.MAGIC_OBJECT;
-        if (ItemRarity.isBlessingObject(item)) return ObjectType.BLESSING_OBJECT;
-        if (ItemRarity.isRedemptionObject(item)) return ObjectType.REDEMPTION_OBJECT;
+        if (ItemUtil.isIdentifyScroll(item)) return ObjectType.IDENTIFY_SCROLL;
+        if (ItemUtil.isMagicObject(item)) return ObjectType.MAGIC_OBJECT;
+        if (ItemUtil.isBlessingObject(item)) return ObjectType.BLESSING_OBJECT;
+        if (ItemUtil.isRedemptionObject(item)) return ObjectType.REDEMPTION_OBJECT;
         return ObjectType.NONE;
     }
 

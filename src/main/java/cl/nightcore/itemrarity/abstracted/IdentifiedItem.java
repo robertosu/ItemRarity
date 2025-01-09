@@ -4,6 +4,7 @@ import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.classes.*;
 import cl.nightcore.itemrarity.item.BlessingObject;
 import cl.nightcore.itemrarity.item.RedemptionObject;
+import cl.nightcore.itemrarity.util.ItemUtil;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.AuraSkillsBukkit;
 import dev.aurelium.auraskills.api.item.ModifierType;
@@ -35,7 +36,7 @@ import org.jetbrains.annotations.Nullable;
 import java.text.DecimalFormat;
 import java.util.*;
 
-import static cl.nightcore.itemrarity.ItemRarity.isIdentified;
+import static cl.nightcore.itemrarity.util.ItemUtil.isIdentified;
 
 public abstract class IdentifiedItem extends ItemStack {
 
@@ -75,7 +76,7 @@ public abstract class IdentifiedItem extends ItemStack {
         rollQuality = getRollQuality();
         this.addedStats = new ArrayList<>();
         this.statValues = new ArrayList<>();
-        this.MODIFIER_TYPE = plugin.getModifierType(item);
+        this.MODIFIER_TYPE = ItemUtil.getModifierType(item);
         if (!isIdentified(item)) {
             generateStats();
             applyStatsToItem();
@@ -232,11 +233,11 @@ public abstract class IdentifiedItem extends ItemStack {
         setLore();
     }
 
-    private void removeSpecificModifier(Stat stat) {
+    void removeSpecificModifier(Stat stat) {
         this.setItemMeta(AuraSkillsBukkit.get().getItemManager().removeStatModifier(this, MODIFIER_TYPE, stat).getItemMeta());
     }
 
-    private void addModifier(Stat stat, int value) {
+    void addModifier(Stat stat, int value) {
         this.setItemMeta(AuraSkillsBukkit.get().getItemManager().addStatModifier(this, MODIFIER_TYPE, stat, value, true).getItemMeta());
     }
 
@@ -305,7 +306,7 @@ public abstract class IdentifiedItem extends ItemStack {
     protected void generateStatsExceptHighestStat(Stat excludedStat) {
         Random random = new Random();
         int statsCount = random.nextInt(2) + 4; // 4 o 5 estadísticas
-        StatProvider statProvider = ItemRarity.getStatProvider(this);
+        StatProvider statProvider = ItemUtil.getStatProvider(this);
         List<Stats> availableStats = statProvider.getAvailableStats();
         addedStats.clear();
         statValues.clear();
@@ -522,7 +523,7 @@ public abstract class IdentifiedItem extends ItemStack {
         meta.lore(lore);
 
         //oraxen weapon
-        if (NexoItems.idFromItem(this) != null && ItemRarity.getItemType(this).equals("Weapon")) {
+        if (NexoItems.idFromItem(this) != null && ItemUtil.getItemType(this).equals("Weapon")) {
             String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
             //System.out.println(plainText.toString());
             Component component = Component.text(plainText, getRarityColor()).decoration(TextDecoration.ITALIC, false);
@@ -533,7 +534,7 @@ public abstract class IdentifiedItem extends ItemStack {
             attributesDisplayInLore(this);
 
             //oraxen armor
-        } else if (NexoItems.idFromItem(this) != null && ItemRarity.getItemType(this).equals("Armor")) {
+        } else if (NexoItems.idFromItem(this) != null && ItemUtil.getItemType(this).equals("Armor")) {
             String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
             // System.out.println(plainText);
             Component component = Component.text(plainText, getRarityColor()).decoration(TextDecoration.ITALIC, false);
@@ -543,7 +544,7 @@ public abstract class IdentifiedItem extends ItemStack {
             setItemMeta(meta);
         }
         //caso arma / herramienta vanilla
-        else if (NexoItems.idFromItem(this) == null && !ItemRarity.getItemType(this).equals("Armor")) {
+        else if (NexoItems.idFromItem(this) == null && !ItemUtil.getItemType(this).equals("Armor")) {
             // Obtener la key de traducción
             if (!meta.hasCustomName()) {
                 // caso nombre vanilla; Obtener la key de traducción y colorear
@@ -561,7 +562,7 @@ public abstract class IdentifiedItem extends ItemStack {
             attributesDisplayInLore(this);
         }
         //caso armadura vanilla
-        else if (NexoItems.idFromItem(this) == null && ItemRarity.getItemType(this).equals("Armor")) {
+        else if (NexoItems.idFromItem(this) == null && ItemUtil.getItemType(this).equals("Armor")) {
 
             if (!meta.hasCustomName()) {
                 // caso nombre vanilla; Obtener la key de traducción y colorear
