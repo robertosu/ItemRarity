@@ -2,10 +2,7 @@ package cl.nightcore.itemrarity;
 
 import cl.nightcore.itemrarity.abstracted.IdentifiedItem;
 import cl.nightcore.itemrarity.abstracted.SocketableItem;
-import cl.nightcore.itemrarity.command.GetBlessingCommand;
-import cl.nightcore.itemrarity.command.GetMagicCommand;
-import cl.nightcore.itemrarity.command.GetRedemptionCommand;
-import cl.nightcore.itemrarity.command.GetScrollCommand;
+import cl.nightcore.itemrarity.command.*;
 import cl.nightcore.itemrarity.item.BlessingObject;
 import cl.nightcore.itemrarity.item.IdentifyScroll;
 import cl.nightcore.itemrarity.item.MagicObject;
@@ -14,6 +11,7 @@ import cl.nightcore.itemrarity.listener.CancelUsageInRecipesListener;
 import cl.nightcore.itemrarity.listener.IdentifyScrollListener;
 import cl.nightcore.itemrarity.listener.ItemClickListener;
 import cl.nightcore.itemrarity.loot.CustomDropsManager;
+import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.type.IdentifiedArmor;
 import cl.nightcore.itemrarity.type.IdentifiedWeapon;
 import cl.nightcore.itemrarity.type.RolledArmor;
@@ -40,33 +38,33 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
     private static final Component BLESSING_PREFIX = Component.text("[Bendición]: ").color(BlessingObject.getPrimaryColor());
     public static Plugin plugin;
 
-    @Override
-    public void onEnable() {
-        plugin = this;
-        Objects.requireNonNull(getCommand("getscroll")).setExecutor(new GetScrollCommand());
-        Objects.requireNonNull(getCommand("getmagic")).setExecutor(new GetMagicCommand());
-        Objects.requireNonNull(getCommand("getblessing")).setExecutor(new GetBlessingCommand());
-        Objects.requireNonNull(getCommand("getredemption")).setExecutor(new GetRedemptionCommand());
-
-        getServer().getPluginManager().registerEvents(new ItemClickListener(), this);
-        getServer().getPluginManager().registerEvents(new IdentifyScrollListener(), this);
-        getServer().getPluginManager().registerEvents(new CancelUsageInRecipesListener(), this);
-        getServer().getPluginManager().registerEvents(new CustomDropsManager(), this);
-    }
-
     public static SocketableItem identifyItem(Player player, ItemStack item) {
         if (ItemUtil.getItemType(item).equals("Weapon")) {
             IdentifiedWeapon weapon = new IdentifiedWeapon(item);
-            Component message = Component.text("¡Identificaste el arma! Calidad: ", IdentifyScroll.getLoreColor()).append(weapon.getItemRarity());
+            Component message = Component.text("¡Identificaste el arma! Calidad: ", IdentifyScroll.getLoreColor()).append(weapon.getRarityKeyword().color(weapon.getRarityColor()));
             player.sendMessage(PLUGIN_PREFIX.append(message));
             return weapon;
         } else if (ItemUtil.getItemType(item).equals("Armor")) {
             IdentifiedArmor armor = new IdentifiedArmor(item);
-            Component message = Component.text("¡Identificaste la armadura! Calidad: ", IdentifyScroll.getLoreColor()).append(armor.getItemRarity());
+            Component message = Component.text("¡Identificaste la armadura! Calidad: ", IdentifyScroll.getLoreColor()).append(armor.getRarityKeyword().color(armor.getRarityColor()));
             player.sendMessage(PLUGIN_PREFIX.append(message));
             return armor;
         }
         return null;
+    }
+
+    public static SocketableItem insertStone(ItemStack item, GemModel gem) {
+        if (ItemUtil.getItemType(item).equals("Weapon")) {
+            IdentifiedWeapon weapon = new IdentifiedWeapon(item);
+            weapon.installGem(gem);
+            return weapon;
+        }
+        else if (ItemUtil.getItemType(item).equals("Armor")){
+            IdentifiedArmor armor = new IdentifiedArmor(item);
+            armor.installGem(gem);
+            return armor;
+        } throw new IllegalArgumentException();
+
     }
 
     public static SocketableItem rollStats(Player player, ItemStack item) {
@@ -75,17 +73,16 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         if (ItemUtil.getItemType(item).equals("Weapon")) {
             rolledWeapon = new RolledWeapon(item);
             rolledWeapon.rerollStats();
-            rolledWeapon.updateSocketDisplay();
             rolledWeapon.incrementLevel(player);
             Component message = Component.text("¡El objeto cambió! Rareza: ", MagicObject.getLoreColor());
-            player.sendMessage(REROLL_PREFIX.append(message).append(rolledWeapon.getItemRarity()));
+            player.sendMessage(REROLL_PREFIX.append(message).append(rolledWeapon.getRarityKeyword().color(rolledWeapon.getRarityColor())));
             return rolledWeapon;
         } else if (ItemUtil.getItemType(item).equals("Armor")) {
             rolledArmor = new RolledArmor(item);
             rolledArmor.rerollStats();
             rolledArmor.incrementLevel(player);
             Component message = Component.text("¡El objeto cambió! Rareza: ", MagicObject.getLoreColor());
-            player.sendMessage(REROLL_PREFIX.append(message).append(rolledArmor.getItemRarity()));
+            player.sendMessage(REROLL_PREFIX.append(message).append(rolledArmor.getRarityKeyword().color(rolledArmor.getRarityColor())));
             return rolledArmor;
         }
         return null;
@@ -131,6 +128,21 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
 
     public static Component getRedemptionPrefix() {
         return REDEMPTION_PREFIX;
+    }
+
+    @Override
+    public void onEnable() {
+        plugin = this;
+        Objects.requireNonNull(getCommand("getscroll")).setExecutor(new GetScrollCommand());
+        Objects.requireNonNull(getCommand("getmagic")).setExecutor(new GetMagicCommand());
+        Objects.requireNonNull(getCommand("getblessing")).setExecutor(new GetBlessingCommand());
+        Objects.requireNonNull(getCommand("getredemption")).setExecutor(new GetRedemptionCommand());
+        Objects.requireNonNull(getCommand("getgem")).setExecutor(new GetGemCommand());
+
+        getServer().getPluginManager().registerEvents(new ItemClickListener(), this);
+        getServer().getPluginManager().registerEvents(new IdentifyScrollListener(), this);
+        getServer().getPluginManager().registerEvents(new CancelUsageInRecipesListener(), this);
+        getServer().getPluginManager().registerEvents(new CustomDropsManager(), this);
     }
 
 }

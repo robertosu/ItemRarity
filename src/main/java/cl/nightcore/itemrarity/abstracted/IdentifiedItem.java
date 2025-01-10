@@ -5,6 +5,7 @@ import cl.nightcore.itemrarity.classes.*;
 import cl.nightcore.itemrarity.item.BlessingObject;
 import cl.nightcore.itemrarity.item.RedemptionObject;
 import cl.nightcore.itemrarity.util.ItemUtil;
+import com.nexomc.nexo.api.NexoItems;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.AuraSkillsBukkit;
 import dev.aurelium.auraskills.api.item.ModifierType;
@@ -12,7 +13,6 @@ import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.StatModifier;
 import dev.aurelium.auraskills.api.stat.Stats;
 import dev.aurelium.auraskills.api.util.AuraSkillsModifier;
-import com.nexomc.nexo.api.NexoItems;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -40,22 +40,19 @@ import static cl.nightcore.itemrarity.util.ItemUtil.isIdentified;
 
 public abstract class IdentifiedItem extends ItemStack {
 
+    public static final String COMMON_RARITY_KEYWORD = "Basura";
+    public static final String UNCOMMON_RARITY_KEYWORD = "Común";
+    public static final String RARE_RARITY_KEYWORD = "Raro";
+    public static final String EPIC_RARITY_KEYWORD = "Épico";
+    public static final String LEGENDARY_RARITY_KEYWORD = "Legendario";
+    public static final String GODLIKE_RARITY_KEYWORD = "Divino";
     protected static final String ROLL_IDENTIFIER_KEY = "roll_count";
     protected static final String LEVEL_KEY = "magicobject_roll_lvl";
     private static final String IDENTIFIER_KEY = "is_identify_scrolled";
-
-    private static final String COMMON_RARITY_KEYWORD = "Basura";
-    private static final String UNCOMMON_RARITY_KEYWORD = "Común";
-    private static final String RARE_RARITY_KEYWORD = "Raro";
-    private static final String EPIC_RARITY_KEYWORD = "Épico";
-    private static final String LEGENDARY_RARITY_KEYWORD = "Legendario";
-    private static final String GODLIKE_RARITY_KEYWORD = "Divino";
-
-
-    private static final TextColor COMMON_COLOR = TextColor.color(0x979797);
-    private static final TextColor UNCOMMON_COLOR = TextColor.color(0x2DD52C);
-    private static final TextColor RARE_COLOR = TextColor.color(0x004DFF);
-    private static final TextColor EPIC_COLOR = TextColor.color(0x9726DD);
+    private static final TextColor COMMON_COLOR = TextColor.color(0xC5C5C5);
+    private static final TextColor UNCOMMON_COLOR = TextColor.color(0x31BD2C);
+    private static final TextColor RARE_COLOR = TextColor.color(0x1147FF);
+    private static final TextColor EPIC_COLOR = TextColor.color(0x922ADD);
     private static final TextColor LEGENDARY_COLOR =TextColor.color(0xFFDB00);
     private static final TextColor GODLIKE_COLOR = TextColor.color(0xFF181B);
 
@@ -70,7 +67,6 @@ public abstract class IdentifiedItem extends ItemStack {
     Component reset = Component.text().content("").color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false).build();
     private Component rarity;
 
-
     public IdentifiedItem(ItemStack item) {
         super(item);
         rollQuality = getRollQuality();
@@ -80,10 +76,9 @@ public abstract class IdentifiedItem extends ItemStack {
         if (!isIdentified(item)) {
             generateStats();
             applyStatsToItem();
-            setRarity();
+            obtainRarity();
             setIdentifiedNBT();
             setLore();
-
         }
     }
 
@@ -181,7 +176,7 @@ public abstract class IdentifiedItem extends ItemStack {
         ItemMeta meta = item.getItemMeta();
         if (NexoItems.idFromItem(item) != null) {
             if (meta.getAttributeModifiers(Attribute.ATTACK_SPEED) != null) {
-                for (AttributeModifier modifier : meta.getAttributeModifiers(Attribute.ATTACK_SPEED)) {
+                for (AttributeModifier modifier : Objects.requireNonNull(meta.getAttributeModifiers(Attribute.ATTACK_SPEED))) {
                     // DEBUG ATTACK SPEED System.out.println(modifier.getAmount());
                     baseSpeed = modifier.getAmount() + 4;
                     return baseSpeed;
@@ -209,6 +204,8 @@ public abstract class IdentifiedItem extends ItemStack {
         };
     }
 
+
+
     private int getItemLevel() {
         if (getRollQuality() instanceof LowRollQuality) {
             return 1;
@@ -229,7 +226,7 @@ public abstract class IdentifiedItem extends ItemStack {
         removeModifiers();
         generateStats();
         applyStatsToItem();
-        setRarity();
+        obtainRarity();
         setLore();
     }
 
@@ -251,6 +248,7 @@ public abstract class IdentifiedItem extends ItemStack {
                 lowestModifier = modifier;
             }
         }
+        assert lowestModifier != null;
         return lowestModifier.type();
     }
 
@@ -265,6 +263,7 @@ public abstract class IdentifiedItem extends ItemStack {
         }
     }
 
+
     private Stat getHighestStat() {
         StatModifier highestModifier = null;
         double highestValue = 0;
@@ -275,6 +274,7 @@ public abstract class IdentifiedItem extends ItemStack {
                 highestModifier = modifier;
             }
         }
+        assert highestModifier != null;
         return highestModifier.type();
     }
 
@@ -288,6 +288,7 @@ public abstract class IdentifiedItem extends ItemStack {
                 highestModifier = modifier;
             }
         }
+        assert highestModifier != null;
         return highestModifier.value();
     }
 
@@ -298,8 +299,10 @@ public abstract class IdentifiedItem extends ItemStack {
         generateStatsExceptHighestStat(highestStat);
         applyStatsToItem();
         addModifier(highestStat, highestValue);
-        updateRarityLore();
-        Component message = Component.text("¡Cambiaron las estadísticas! Se mantuvo: ").color(RedemptionObject.getLoreColor()).append(Component.text(highestStat.getColoredName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage())));
+        updateRarity();
+        Component message = Component.text("El objeto cambió, se conservó: ")
+                .color(RedemptionObject.getLoreColor()).append(Component.text(highestStat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
+                .color(TextColor.fromHexString(highestStat.getColor(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()).replaceAll("[<>]", ""))));
         player.sendMessage(ItemRarity.getRedemptionPrefix().append(message));
     }
 
@@ -307,6 +310,7 @@ public abstract class IdentifiedItem extends ItemStack {
         Random random = new Random();
         int statsCount = random.nextInt(2) + 4; // 4 o 5 estadísticas
         StatProvider statProvider = ItemUtil.getStatProvider(this);
+        assert statProvider != null;
         List<Stats> availableStats = statProvider.getAvailableStats();
         addedStats.clear();
         statValues.clear();
@@ -343,8 +347,10 @@ public abstract class IdentifiedItem extends ItemStack {
         removeSpecificModifier(lowestModifier);
         int newValue = StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(lowestModifier));
         addModifier(lowestModifier, newValue);
-        updateRarityLore();
-        Component message = Component.text("Se cambió la stat ", BlessingObject.getLoreColor()).append(Component.text(lowestModifier.getColoredName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage())));
+        updateRarity();
+        Component message = Component.text("Cambió la estadística: ", BlessingObject.getLoreColor())
+                .append(Component.text(lowestModifier.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
+                        .color(TextColor.fromHexString(lowestModifier.getColor(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()).replaceAll("[<>]", ""))));
         player.sendMessage(ItemRarity.getBlessingPrefix().append(message));
     }
 
@@ -383,25 +389,25 @@ public abstract class IdentifiedItem extends ItemStack {
         }
     }
 
-    private void updateRarityLore() {
+    private void updateRarity() {
         ItemMeta meta = getItemMeta();
         //List<String> lore = meta.getLore();
         @Nullable List<Component> lore = meta.lore();
         if (lore != null) {
             lore.removeIf(line -> line.toString().contains(COMMON_RARITY_KEYWORD)
                     || line.toString().contains(UNCOMMON_RARITY_KEYWORD)
-                    || line.toString().contains(RARE_RARITY_KEYWORD) 
-                    || line.toString().contains(EPIC_RARITY_KEYWORD) 
+                    || line.toString().contains(RARE_RARITY_KEYWORD)
+                    || line.toString().contains(EPIC_RARITY_KEYWORD)
                     || line.toString().contains(LEGENDARY_RARITY_KEYWORD)
                     || line.toString().contains(GODLIKE_RARITY_KEYWORD));
             meta.lore(lore);
             setItemMeta(meta);
         }
-        setRarity();
+        obtainRarity();
         setLore();
     }
 
-    private void setRarity() {
+    private void obtainRarity() {
         if (!getStatModifiers().isEmpty()) {
             double average = getStatModifiers().stream()
                     .mapToDouble(AuraSkillsModifier::value)
@@ -411,72 +417,72 @@ public abstract class IdentifiedItem extends ItemStack {
             switch (rollQuality.getClass().getSimpleName()) {
                 case "GodRollQuality":
                     if (average >= 25.0) {
-                        rarity = Component.text("  [Divino]").color(GODLIKE_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Divino]").color(GODLIKE_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 23.0) {
-                        rarity = Component.text("  [Legendario]").color(LEGENDARY_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Legendario]").color(LEGENDARY_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 20.5) {
-                        rarity = Component.text("  [Épico]").color(EPIC_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Épico]").color(EPIC_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 17.5) {
-                        rarity = Component.text("  [Raro]").color(RARE_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Raro]").color(RARE_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 14.0) {
-                        rarity = Component.text("  [Común]").color(UNCOMMON_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Común]").color(UNCOMMON_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else {
-                        rarity = Component.text("  [Basura]").color(COMMON_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Basura]").color(COMMON_COLOR).decoration(TextDecoration.ITALIC, false);
                     }
                     break;
 
                 case "HighRollQuality":
                     if (average >= 23.5) {
-                        rarity = Component.text("  [Divino]").color(GODLIKE_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Divino]").color(GODLIKE_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 21.5) {
-                        rarity = Component.text("  [Legendario]").color(LEGENDARY_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Legendario]").color(LEGENDARY_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 19) {
-                        rarity = Component.text("  [Épico]").color(EPIC_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Épico]").color(EPIC_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 16) {
-                        rarity = Component.text("  [Raro]").color(RARE_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Raro]").color(RARE_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 12.5) {
-                        rarity = Component.text("  [Común]").color(UNCOMMON_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Común]").color(UNCOMMON_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else {
-                        rarity = Component.text("  [Basura]").color(COMMON_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Basura]").color(COMMON_COLOR).decoration(TextDecoration.ITALIC, false);
                     }
                     break;
 
                 case "MediumRollQuality":
                     if (average >= 22.0) {
-                        rarity = Component.text("  [Divino]").color(GODLIKE_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Divino]").color(GODLIKE_COLOR).decoration(TextDecoration.ITALIC, false);
                     }else if (average >= 20.0) {
-                        rarity = Component.text("  [Legendario]").color(LEGENDARY_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Legendario]").color(LEGENDARY_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 17.5) {
-                        rarity = Component.text("  [Épico]").color(EPIC_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Épico]").color(EPIC_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 14.5) {
-                        rarity = Component.text("  [Raro]").color(RARE_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Raro]").color(RARE_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 11.0) {
-                        rarity = Component.text("  [Común]").color(UNCOMMON_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Común]").color(UNCOMMON_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else {
-                        rarity = Component.text("  [Basura]").color(COMMON_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Basura]").color(COMMON_COLOR).decoration(TextDecoration.ITALIC, false);
                     }
                     break;
 
                 default: // LowRollQuality
                     if (average >= 19.0) {
-                        rarity = Component.text("  [Divino]").color(GODLIKE_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Divino]").color(GODLIKE_COLOR).decoration(TextDecoration.ITALIC, false);
                     }else if (average >= 17.0) {
-                        rarity = Component.text("  [Legendario]").color(LEGENDARY_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Legendario]").color(LEGENDARY_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 14.5) {
-                        rarity = Component.text("  [Épico]").color(EPIC_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Épico]").color(EPIC_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 11.5) {
-                        rarity = Component.text("  [Raro]").color(RARE_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Raro]").color(RARE_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else if (average >= 8.0) {
-                        rarity = Component.text("  [Común]").color(UNCOMMON_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Común]").color(UNCOMMON_COLOR).decoration(TextDecoration.ITALIC, false);
                     } else {
-                        rarity = Component.text("  [Basura]").color(COMMON_COLOR).decoration(TextDecoration.ITALIC, false);
+                        rarity = Component.text("[Basura]").color(COMMON_COLOR).decoration(TextDecoration.ITALIC, false);
                     }
                     break;
             }
         }
     }
 
-    private TextColor getRarityColor() {
+    public TextColor getRarityColor() {
         if (rarity.toString().contains(GODLIKE_RARITY_KEYWORD)) {
             return GODLIKE_COLOR;
         } else if (rarity.toString().contains(LEGENDARY_RARITY_KEYWORD)) {
@@ -489,6 +495,21 @@ public abstract class IdentifiedItem extends ItemStack {
             return UNCOMMON_COLOR;
         } else {
             return COMMON_COLOR;
+        }
+    }
+    public Component getRarityKeyword() {
+        if (rarity.toString().contains(GODLIKE_RARITY_KEYWORD)) {
+            return Component.text(GODLIKE_RARITY_KEYWORD);
+        } else if (rarity.toString().contains(LEGENDARY_RARITY_KEYWORD)) {
+            return Component.text(LEGENDARY_RARITY_KEYWORD);
+        } else if (rarity.toString().contains(EPIC_RARITY_KEYWORD)) {
+            return Component.text(EPIC_RARITY_KEYWORD);
+        } else if (rarity.toString().contains(RARE_RARITY_KEYWORD)) {
+            return Component.text(RARE_RARITY_KEYWORD);
+        } else if (rarity.toString().contains(UNCOMMON_RARITY_KEYWORD)) {
+            return Component.text(UNCOMMON_RARITY_KEYWORD);
+        } else {
+            return Component.text(COMMON_RARITY_KEYWORD);
         }
     }
 
@@ -507,7 +528,6 @@ public abstract class IdentifiedItem extends ItemStack {
     }
 
     private void setLore() {
-        int itemlevel = getItemLevel();
         ItemMeta meta = getItemMeta();
         @Nullable List<Component> lore;
         if (meta.lore() != null) {
@@ -515,71 +535,74 @@ public abstract class IdentifiedItem extends ItemStack {
         } else {
             lore = new ArrayList<>();
         }
-        Component ilvl = Component.text(" ● Nvl " + itemlevel + " ●").color(NamedTextColor.DARK_GRAY).decorate(TextDecoration.ITALIC);
-        Component rareza = rarity.append(ilvl);
-        //lore.add(rarity + ChatColor.DARK_GRAY + ChatColor.ITALIC + " ● Nvl " + itemlevel + " ●");
-        lore.add(rareza);
-        //meta.setLore(lore);
+
+        // Encontrar el índice después de la última línea que comienza con "+"
+        int lastStatIndex = -1;
+        if (lore != null) {
+            for (int i = 0; i < lore.size(); i++) {
+                String line = PlainTextComponentSerializer.plainText().serialize(lore.get(i));
+                if (line.trim().startsWith("+")) {
+                    lastStatIndex = i;
+                }
+            }
+        }
+
+        Component ilvl = Component.text(" ● Nvl " + getItemLevel() + " ●")
+                .color(NamedTextColor.DARK_GRAY)
+                .decorate(TextDecoration.ITALIC);
+        Component rarityLine = rarity.append(ilvl);
+
+        // Insertar en la posición correcta
+        int insertIndex = lastStatIndex != -1 ? lastStatIndex + 1 : 0;
+        assert lore != null;
+        if (insertIndex < lore.size()) {
+            lore.add(insertIndex, rarityLine);
+        } else {
+            lore.add(rarityLine);
+        }
         meta.lore(lore);
 
-        //oraxen weapon
+        // Resto del código para manejar nombres y atributos
         if (NexoItems.idFromItem(this) != null && ItemUtil.getItemType(this).equals("Weapon")) {
             String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
-            //System.out.println(plainText.toString());
             Component component = Component.text(plainText, getRarityColor()).decoration(TextDecoration.ITALIC, false);
-
-            //component = component.decoration(TextDecoration.ITALIC,false);
             meta.customName(component);
             setItemMeta(meta);
             attributesDisplayInLore(this);
-
-            //oraxen armor
         } else if (NexoItems.idFromItem(this) != null && ItemUtil.getItemType(this).equals("Armor")) {
             String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
-            // System.out.println(plainText);
             Component component = Component.text(plainText, getRarityColor()).decoration(TextDecoration.ITALIC, false);
-
-            //component = component.decoration(TextDecoration.ITALIC,false);
             meta.customName(component);
             setItemMeta(meta);
-        }
-        //caso arma / herramienta vanilla
-        else if (NexoItems.idFromItem(this) == null && !ItemUtil.getItemType(this).equals("Armor")) {
-            // Obtener la key de traducción
+        } else if (NexoItems.idFromItem(this) == null && !ItemUtil.getItemType(this).equals("Armor")) {
             if (!meta.hasCustomName()) {
-                // caso nombre vanilla; Obtener la key de traducción y colorear
                 String itemTranslationKey = this.translationKey();
                 TranslatableComponent translatedName = Component.translatable(itemTranslationKey).color(getRarityColor());
                 Component newName = reset.append(translatedName);
                 meta.itemName(newName);
             } else {
-                //caso nombre cambiado en yunque; colorear y quitar estilo italic
                 Component component = meta.customName();
+                assert component != null;
                 component = component.color(getRarityColor()).decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE);
                 meta.displayName(component);
             }
             setItemMeta(meta);
             attributesDisplayInLore(this);
-        }
-        //caso armadura vanilla
-        else if (NexoItems.idFromItem(this) == null && ItemUtil.getItemType(this).equals("Armor")) {
-
+        } else if (NexoItems.idFromItem(this) == null && ItemUtil.getItemType(this).equals("Armor")) {
             if (!meta.hasCustomName()) {
-                // caso nombre vanilla; Obtener la key de traducción y colorear
                 String itemTranslationKey = this.translationKey();
                 TranslatableComponent translatedName = Component.translatable(itemTranslationKey).color(getRarityColor());
                 Component newName = reset.append(translatedName);
                 meta.itemName(newName);
-
             } else {
-                //caso nombre cambiado en yunque; colorear y quitar estilo italic
                 Component component = meta.customName();
+                assert component != null;
                 component = component.color(getRarityColor()).decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE);
                 meta.displayName(component);
-
             }
             setItemMeta(meta);
         }
+        updateLoreWithSockets();
     }
 
     private List<StatModifier> getStatModifiers() {
@@ -593,8 +616,6 @@ public abstract class IdentifiedItem extends ItemStack {
     public List<Stat> getAddedStats() {
         return addedStats;
     }
+    public abstract void updateLoreWithSockets();
 
-    public Component getItemRarity() {
-        return rarity;
-    }
 }

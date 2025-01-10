@@ -1,9 +1,14 @@
 package cl.nightcore.itemrarity.abstracted;
 
 import cl.nightcore.itemrarity.ItemRarity;
-import cl.nightcore.itemrarity.abstracted.IdentifiedItem;
-import cl.nightcore.itemrarity.item.Gem;
+import cl.nightcore.itemrarity.model.GemModel;
+import cl.nightcore.itemrarity.util.ItemUtil;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
+import dev.aurelium.auraskills.api.AuraSkillsBukkit;
+import dev.aurelium.auraskills.api.stat.Stats;
+import dev.aurelium.auraskills.api.trait.Trait;
+import dev.aurelium.auraskills.api.trait.Traits;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -14,20 +19,17 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
-public abstract class SocketableItem extends IdentifiedItem implements Socketable {
-    private static final String SOCKETS_KEY = "itemrarity_socket_count";
-    private static final String GEMS_KEY = "itemrarity_installed_gems";
-    protected static final int MAX_SOCKETS = 3;
+public abstract class SocketableItem extends IdentifiedItem {
+    private static final String MAX_SOCKETS_KEY = "item_max_sockets";
+    private static final String AVAILABLE_SOCKETS_KEY = "item_available_sockets";
+    private static final String GEM_KEY_PREFIX = "gem_";
 
-    private final List<Gem> installedGems;
+    protected static final int MAX_POSSIBLE_SOCKETS = 3;
 
     public SocketableItem(ItemStack item) {
         super(item);
-        this.installedGems = loadInstalledGems();
         if (!hasSocketData()) {
             initializeSocketData();
         }
@@ -35,142 +37,157 @@ public abstract class SocketableItem extends IdentifiedItem implements Socketabl
 
     private boolean hasSocketData() {
         PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(ItemRarity.plugin, SOCKETS_KEY);
-        return container.has(key, PersistentDataType.INTEGER);
+        return container.has(new NamespacedKey(ItemRarity.plugin, MAX_SOCKETS_KEY), PersistentDataType.INTEGER) &&
+                container.has(new NamespacedKey(ItemRarity.plugin, AVAILABLE_SOCKETS_KEY), PersistentDataType.INTEGER);
     }
 
     private void initializeSocketData() {
         ItemMeta meta = getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(ItemRarity.plugin, SOCKETS_KEY);
-        container.set(key, PersistentDataType.INTEGER, 1); // Start with 1 socket
+        int sockets = new Random().nextInt(MAX_POSSIBLE_SOCKETS) + 1;
+
+        container.set(new NamespacedKey(ItemRarity.plugin, MAX_SOCKETS_KEY),
+                PersistentDataType.INTEGER, sockets);
+        container.set(new NamespacedKey(ItemRarity.plugin, AVAILABLE_SOCKETS_KEY),
+                PersistentDataType.INTEGER, sockets);
+
         setItemMeta(meta);
-        updateSocketDisplay();
+        updateLoreWithSockets();
     }
 
-    @Override
+    public boolean installGem(GemModel gem) {
+        if (gem == null || !gem.isValid() || !hasAvailableSockets()) {
+            return false;
+        }
+
+        Trait stat = gem.getStat();
+        if (stat == null || hasGemWithStat(stat)) {
+            return false;
+        }
+
+        ItemMeta meta = getItemMeta();
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+
+        // Store gem data
+        String gemKey = GEM_KEY_PREFIX + stat.name();
+        String gemValue = String.format("%d", gem.getLevel());
+        container.set(new NamespacedKey(ItemRarity.plugin, gemKey),
+                PersistentDataType.STRING, gemValue);
+
+        // Update available sockets
+        int availableSockets = getAvailableSockets();
+        container.set(new NamespacedKey(ItemRarity.plugin, AVAILABLE_SOCKETS_KEY),
+                PersistentDataType.INTEGER, availableSockets - 1);
+
+        setItemMeta(meta);
+        addTrait(stat,gem.getValue());
+        updateLoreWithSockets();
+        return true;
+    }
+    void addTrait(Trait trait, int value) {
+        this.setItemMeta(AuraSkillsBukkit.get().getItemManager().addTraitModifier(this, MODIFIER_TYPE, trait, value, true).getItemMeta());
+    }
+
+
+    private boolean hasGemWithStat(Trait stat) {
+        return getItemMeta().getPersistentDataContainer()
+                .has(new NamespacedKey(ItemRarity.plugin, GEM_KEY_PREFIX + stat.name()),
+                        PersistentDataType.STRING);
+    }
+
     public int getMaxSockets() {
-        return MAX_SOCKETS;
+        return getItemMeta().getPersistentDataContainer()
+                .getOrDefault(new NamespacedKey(ItemRarity.plugin, MAX_SOCKETS_KEY),
+                        PersistentDataType.INTEGER, 0);
     }
 
-    @Override
-    public int getCurrentSockets() {
+    public int getAvailableSockets() {
+        return getItemMeta().getPersistentDataContainer()
+                .getOrDefault(new NamespacedKey(ItemRarity.plugin, AVAILABLE_SOCKETS_KEY),
+                        PersistentDataType.INTEGER, 0);
+    }
+
+    public boolean hasAvailableSockets() {
+        return getAvailableSockets() > 0;
+    }
+
+    public Map<Traits, Integer> getInstalledGems() {
+        Map<Traits, Integer> gems = new HashMap<>();
         PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(ItemRarity.plugin, SOCKETS_KEY);
-        return container.getOrDefault(key, PersistentDataType.INTEGER, 0);
+
+        for (Traits trait : Traits.values()) {
+            String key = GEM_KEY_PREFIX + trait.name();
+            String value = container.get(new NamespacedKey(ItemRarity.plugin, key),
+                    PersistentDataType.STRING);
+            if (value != null) {
+                gems.put(trait, Integer.parseInt(value));
+            }
+        }
+
+        return gems;
     }
 
-    @Override
-    public List<Gem> getInstalledGems() {
-        return new ArrayList<>(installedGems);
-    }
 
-    @Override
-    public boolean addSocket() {
-        int current = getCurrentSockets();
-        if (current >= MAX_SOCKETS) return false;
-
+    public void updateLoreWithSockets() {
         ItemMeta meta = getItemMeta();
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(ItemRarity.plugin, SOCKETS_KEY);
-        container.set(key, PersistentDataType.INTEGER, current + 1);
-        setItemMeta(meta);
-        updateSocketDisplay();
-        return true;
-    }
-    public void generateSockets(){
-        ItemMeta meta = getItemMeta();
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(ItemRarity.plugin, SOCKETS_KEY);
-        Random random = new Random();
-        container.set(key, PersistentDataType.INTEGER,random.nextInt(3) + 1);
-        setItemMeta(meta);
-        updateSocketDisplay();
-
-    }
-
-    @Override
-    public boolean hasEmptySockets() {
-        return installedGems.size() < getCurrentSockets();
-    }
-
-    @Override
-    public boolean installGem(Gem gem) {
-        if (!hasEmptySockets() || gem == null) return false;
-
-        installedGems.add(gem);
-        addModifier(gem.getStat(), gem.getValue());
-        updateSocketDisplay();
-        return true;
-    }
-
-
-
-    @Override
-    public Gem removeGem(int socketIndex) {
-        if (socketIndex < 0 || socketIndex >= installedGems.size()) return null;
-
-        Gem removed = installedGems.remove(socketIndex);
-        removeSpecificModifier(removed.getStat());
-        updateSocketDisplay();
-        return removed;
-    }
-
-    @Override
-    public void updateSocketDisplay() {
-        ItemMeta meta = getItemMeta();
-        List<Component> lore = meta.lore();
+        List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
         if (lore == null) lore = new ArrayList<>();
 
-        // Remover información existente de sockets
-        lore.removeIf(line ->
-                line.toString().contains("◇") ||
-                        line.toString().contains("◈") ||
-                        line.toString().contains("Engarzados:"));
+        // Remove existing socket information
+        lore.removeIf(line -> line.toString().contains("◇") ||
+                line.toString().contains("◈") ||
+                line.toString().contains("Engarzados:"));
 
-        // Crear nueva información de sockets
+        // Add socket header
         List<Component> socketInfo = new ArrayList<>();
-        socketInfo.add(Component.text("Engarzados:").color(NamedTextColor.GRAY)
+        socketInfo.add(Component.text("Engarzados:")
+                .color(NamedTextColor.GRAY)
                 .decoration(TextDecoration.ITALIC, false));
 
-        for (int i = 0; i < getCurrentSockets(); i++) {
-            if (i < installedGems.size()) {
-                Gem gem = installedGems.get(i);
-                socketInfo.add(Component.text(" ◈ ").color(NamedTextColor.GREEN)
-                        .append(gem.getGemName())
-                        .append(Component.text(String.format(" (+%d %s)",
-                                gem.getValue(),
-                                gem.getStat().getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))))
-                        .decoration(TextDecoration.ITALIC, false));
-            } else {
-                socketInfo.add(Component.text(" ◇ Vacío").color(NamedTextColor.GRAY)
-                        .decoration(TextDecoration.ITALIC, false));
-            }
+        // Add installed gems
+        Map<Traits, Integer> installedGems = getInstalledGems();
+        for (Map.Entry<Traits, Integer> entry : installedGems.entrySet()) {
+            Traits trait = entry.getKey();
+            int level = entry.getValue();
+            //int value = calculateGemValue(level);
+
+            socketInfo.add(Component.text(" \uD83D\uDC8E ")
+                    .color(TextColor.fromHexString(ItemUtil.getColorOfTrait(trait)))
+                    .append(Component.text(trait.getDisplayName(
+                            AuraSkillsApi.get().getMessageManager().getDefaultLanguage())))
+                    .append(Component.text(String.format(" (+%d)", level)))
+                    .decoration(TextDecoration.ITALIC, false));
         }
 
-        // Encontrar la posición donde insertar los sockets
-        int insertIndex = 1; // Después de la línea de rareza
-        for (int i = 0; i < lore.size(); i++) {
-            String line = PlainTextComponentSerializer.plainText().serialize(lore.get(i));
-            if (line.contains("En la mano principal:") || line.contains("          ")) {
-                insertIndex = i;
-                break;
-            }
+        // Add empty sockets
+        for (int i = 0; i < getAvailableSockets(); i++) {
+            socketInfo.add(Component.text(" ✧ Vacío")
+                    .color(NamedTextColor.GRAY)
+                    .decoration(TextDecoration.ITALIC, false));
         }
 
-        // Insertar la información de sockets en la posición correcta
+        // Insert socket information at appropriate position
+        int insertIndex = findSocketInfoInsertIndex(lore);
         lore.addAll(insertIndex, socketInfo);
 
         meta.lore(lore);
         setItemMeta(meta);
     }
 
-    private void saveInstalledGems() {
-        // Implementation for saving gems to NBT
+    private int calculateGemValue(int level) {
+        return 4 + (level - 1) * level / 2;
     }
 
-    private List<Gem> loadInstalledGems() {
-        // Implementation for loading gems from NBT
-        return new ArrayList<>();
+    private int findSocketInfoInsertIndex(List<Component> lore) {
+        // Buscar la línea que comienza con '[' (rareza)
+        for (int i = 0; i < lore.size(); i++) {
+            String line = PlainTextComponentSerializer.plainText().serialize(lore.get(i));
+            if (line.startsWith("[")) {
+                // Retornar la posición siguiente a la línea de rareza
+                return i + 1;
+            }
+        }
+        // Si no se encuentra la línea de rareza, insertar al inicio
+        return lore.size();
     }
 }

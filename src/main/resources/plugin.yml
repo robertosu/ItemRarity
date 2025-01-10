@@ -17,3 +17,5 @@ commands:
   getredemption:
     description: Obtienes un objeto redención.
     usage: /getredemption <cantidad>
+  getgem:
+    description: Obtienes una gema.

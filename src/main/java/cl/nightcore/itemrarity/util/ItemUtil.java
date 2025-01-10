@@ -3,16 +3,19 @@ package cl.nightcore.itemrarity.util;
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.abstracted.IdentifiedItem;
 import cl.nightcore.itemrarity.abstracted.StatProvider;
-import cl.nightcore.itemrarity.item.BlessingObject;
-import cl.nightcore.itemrarity.item.IdentifyScroll;
-import cl.nightcore.itemrarity.item.MagicObject;
-import cl.nightcore.itemrarity.item.RedemptionObject;
+import cl.nightcore.itemrarity.item.*;
+import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.statprovider.ArmorStatProvider;
 import cl.nightcore.itemrarity.statprovider.WeaponStatProvider;
+import dev.aurelium.auraskills.api.AuraSkillsApi;
+import dev.aurelium.auraskills.api.AuraSkillsBukkitProvider;
 import dev.aurelium.auraskills.api.item.ModifierType;
+import dev.aurelium.auraskills.api.stat.Stat;
+import dev.aurelium.auraskills.api.trait.Trait;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 public class ItemUtil {
@@ -80,5 +83,22 @@ public class ItemUtil {
             case "Armor" -> ModifierType.ARMOR;
             default -> null;
         };
+    }
+
+    public static boolean isGem(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return false;
+        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
+        NamespacedKey key = new NamespacedKey(ItemRarity.plugin, GemModel.getGemStatKey());
+        return container.has(key, PersistentDataType.STRING);
+    }
+
+    public static String getColorOfTrait(Trait trait) {
+        return statLinkedToTrait(trait)
+                .getColor(AuraSkillsApi.get().getMessageManager().getDefaultLanguage())
+                .replaceAll("[<>]", "");
+    }
+
+    public static Stat statLinkedToTrait(Trait trait){
+        return AuraSkillsBukkitProvider.getInstance().getItemManager().getLinkedStats(trait).stream().findFirst().orElse(null);
     }
 }

@@ -4,6 +4,7 @@ import cl.nightcore.itemrarity.abstracted.IdentifiedItem;
 import cl.nightcore.itemrarity.abstracted.SocketableItem;
 import cl.nightcore.itemrarity.abstracted.StatProvider;
 import cl.nightcore.itemrarity.classes.StatValueGenerator;
+import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.statprovider.WeaponStatProvider;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.Stats;
@@ -41,4 +42,5 @@ public class IdentifiedWeapon extends SocketableItem {
         }
 
     }
+
 }

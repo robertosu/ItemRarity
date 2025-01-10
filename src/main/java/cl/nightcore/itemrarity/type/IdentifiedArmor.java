@@ -4,6 +4,7 @@ import cl.nightcore.itemrarity.abstracted.IdentifiedItem;
 import cl.nightcore.itemrarity.abstracted.SocketableItem;
 import cl.nightcore.itemrarity.abstracted.StatProvider;
 import cl.nightcore.itemrarity.classes.StatValueGenerator;
+import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.statprovider.ArmorStatProvider;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.Stats;
@@ -18,6 +19,7 @@ public class IdentifiedArmor extends SocketableItem {
         statProvider = new ArmorStatProvider();
         rollQuality = getRollQuality();
     }
+
 
     @Override
     protected void generateStats() {
@@ -44,4 +46,5 @@ public class IdentifiedArmor extends SocketableItem {
         }
 
     }
+
 }
