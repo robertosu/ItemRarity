@@ -12,6 +12,7 @@ import dev.aurelium.auraskills.api.AuraSkillsBukkitProvider;
 import dev.aurelium.auraskills.api.item.ModifierType;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.trait.Trait;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -96,6 +97,11 @@ public class ItemUtil {
         return statLinkedToTrait(trait)
                 .getColor(AuraSkillsApi.get().getMessageManager().getDefaultLanguage())
                 .replaceAll("[<>]", "");
+    }
+    public static TextColor getColorOfStat(Stat stat){
+        return TextColor.fromHexString(stat.getColor(AuraSkillsApi.get().getMessageManager().getDefaultLanguage())
+                .replaceAll("[<>]", ""));
+
     }
 
     public static Stat statLinkedToTrait(Trait trait){
