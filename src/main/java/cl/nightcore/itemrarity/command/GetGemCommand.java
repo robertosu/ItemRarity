@@ -2,18 +2,12 @@ package cl.nightcore.itemrarity.command;
 
 import cl.nightcore.itemrarity.GemManager;
 import cl.nightcore.itemrarity.item.GemObject;
-import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.Stats;
-import dev.aurelium.auraskills.api.trait.Trait;
-import dev.aurelium.auraskills.api.trait.Traits;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 public class GetGemCommand implements CommandExecutor {
  @Override
@@ -30,12 +24,12 @@ public class GetGemCommand implements CommandExecutor {
         }
 
         // Obtener el Stat a partir del argumento
-        Trait trait;
+        Stat stat;
         try {
-            trait = Traits.valueOf(args[0].toUpperCase()); // Convertir a mayúsculas para coincidir con el enum
+            stat = Stats.valueOf(args[0].toUpperCase()); // Convertir a mayúsculas para coincidir con el enum
         } catch (IllegalArgumentException e) {
             player.sendMessage("El Stat proporcionado no es válido. Los disponibles son:");
-            for (Trait availableStat : Traits.values()) {
+            for (Stats availableStat : Stats.values()) {
                 player.sendMessage("- " + availableStat.name());
             }
             return true;
@@ -71,7 +65,7 @@ public class GetGemCommand implements CommandExecutor {
 
 
 
-        player.sendMessage("¡Has recibido " + amount + " gema(s) de " + trait.name() + " de nivel " + level + "!");
+        player.sendMessage("¡Has recibido " + amount + " gema(s) de " + stat.name() + " de nivel " + level + "!");
         return true;
     }
 

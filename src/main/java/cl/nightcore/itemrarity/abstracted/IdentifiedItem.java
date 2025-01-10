@@ -230,7 +230,7 @@ public abstract class IdentifiedItem extends ItemStack {
         setLore();
     }
 
-    void removeSpecificModifier(Stat stat) {
+    protected void removeSpecificModifier(Stat stat) {
         this.setItemMeta(AuraSkillsBukkit.get().getItemManager().removeStatModifier(this, MODIFIER_TYPE, stat).getItemMeta());
     }
 

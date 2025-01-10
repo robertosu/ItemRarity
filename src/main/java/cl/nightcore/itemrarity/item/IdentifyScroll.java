@@ -1,8 +1,6 @@
 package cl.nightcore.itemrarity.item;
 
 
-import com.nexomc.nexo.NexoPlugin;
-import com.nexomc.nexo.api.NexoItems;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;

@@ -5,10 +5,8 @@ import cl.nightcore.itemrarity.util.ItemUtil;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.Stats;
-import dev.aurelium.auraskills.api.trait.Trait;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -16,18 +14,17 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class GemObject extends ItemStack {
     private static final String GEM_STAT_KEY = "gem_stat";
     private static final String GEM_LEVEL_KEY = "gem_level";
-    private final Trait trait;
+    private final Stat stat;
     private final int value;
     private final int level;
     private final Component gemName;
-    private final int customModelData;
+    private  int customModelData;
 
     public static String getGemStatKey(){
         return GEM_STAT_KEY;
@@ -36,20 +33,58 @@ public class GemObject extends ItemStack {
         return GEM_LEVEL_KEY;
     }
 
-    public GemObject(ItemStack item, Trait trait, Component gemName, int level, int customModelData, int amount) {
+    public GemObject(ItemStack item, Stat stat, Component gemName, int level, int amount) {
         super(item);
-        this.trait = trait;
+        this.stat = stat;
         this.value = 4 + (level - 1) * level / 2;
         this.gemName = gemName;
         this.level = level;
-        setGemNBT();
         setupGemLore();
-        this.customModelData = customModelData;
+        setCustomModelData(stat);
+        setGemNBT();
+
     }
 
     public int getLevel() {
         return level;
     }
+
+    public void setCustomModelData(Stat stat){
+        int value;
+        switch (stat.name()) {
+            case "STRENGTH":
+                this.customModelData = 3250;
+                break;
+            case "HEALTH":
+                this.customModelData = 3251;
+                break;
+            case "REGENERATION":
+                this.customModelData = 3252;
+                break;
+            case "LUCK":
+                this.customModelData = 3253;
+                break;
+            case "WISEDOM":
+                this.customModelData = 3254;
+                break;
+            case "TOUGHNESS":
+                this.customModelData = 3255;
+                break;
+            case "CRIT_CHANCE":
+                this.customModelData = 3256;
+                break;
+            case "CRIT_DAMAGE":
+                this.customModelData = 3257;
+                break;
+            case "SPEED":
+                this.customModelData = 3258;
+                break;
+            default:
+                this.customModelData = -1; // En caso de que el nombre no coincida con ninguna stat
+                break;
+        }
+    }
+
 
     public Component getGemName() {
         return gemName;
@@ -59,7 +94,7 @@ public class GemObject extends ItemStack {
         ItemMeta meta = getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
         NamespacedKey key = new NamespacedKey(ItemRarity.plugin, GEM_STAT_KEY);
-        container.set(key, PersistentDataType.STRING, trait.name());
+        container.set(key, PersistentDataType.STRING, stat.name());
         NamespacedKey lvlkey = new NamespacedKey(ItemRarity.plugin, GEM_LEVEL_KEY);
         container.set(lvlkey, PersistentDataType.INTEGER, level);
         meta.setCustomModelData(customModelData);
@@ -91,16 +126,16 @@ public class GemObject extends ItemStack {
                 .decoration(TextDecoration.ITALIC, false));
 
         lore.add(Component.text(String.format("+%d %s", value,
-                        trait.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage())))
-                .color(TextColor.fromHexString(ItemUtil.getColorOfTrait(trait)))
+                        stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage())))
+                .color(ItemUtil.getColorOfStat(stat))
                 .decoration(TextDecoration.ITALIC, false));
 
         meta.lore(lore);
         setItemMeta(meta);
     }
 
-    public Trait getTrait() {
-        return trait;
+    public Stat getStat() {
+        return stat;
     }
 
     public int getValue() {

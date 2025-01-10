@@ -57,10 +57,7 @@ dependencies {
     compileOnly 'org.jetbrains:annotations:22.0.0'
     compileOnly 'com.nexomc:nexo:0.7.0'
     compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
-    //compileOnly 'dev.aurelium:auraskills-api-bukkit:2.2.4'
-    //compileOnly 'dev.aurelium:auraskills-api-bukkit:2.2.7'
-    compileOnly 'dev.aurelium:auraskills-api:2.2.7'
-    compileOnly 'dev.aurelium:auraskills-api-bukkit:2.2.7'
+    compileOnly 'dev.aurelium:auraskills-api-bukkit:2.2.4'
 
 }
 

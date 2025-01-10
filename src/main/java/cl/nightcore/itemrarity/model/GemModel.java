@@ -2,8 +2,6 @@ package cl.nightcore.itemrarity.model;
 
 import cl.nightcore.itemrarity.ItemRarity;
 import dev.aurelium.auraskills.api.stat.Stats;
-import dev.aurelium.auraskills.api.trait.Trait;
-import dev.aurelium.auraskills.api.trait.Traits;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -31,14 +29,14 @@ public class GemModel {
                 container.has(new NamespacedKey(ItemRarity.plugin, GEM_LEVEL_KEY), PersistentDataType.INTEGER);
     }
 
-    public Trait getStat() {
+    public Stats getStat() {
         if (!isValid()) return null;
 
         String statName = item.getItemMeta().getPersistentDataContainer()
                 .get(new NamespacedKey(ItemRarity.plugin, GEM_STAT_KEY), PersistentDataType.STRING);
 
         try {
-            return Traits.valueOf(statName);
+            return Stats.valueOf(statName);
         } catch (IllegalArgumentException e) {
             return null;
         }

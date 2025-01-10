@@ -5,28 +5,25 @@ import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.AuraSkillsBukkit;
+import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.Stats;
-import dev.aurelium.auraskills.api.trait.Trait;
-import dev.aurelium.auraskills.api.trait.Traits;
-import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 
 import java.util.*;
 
 public abstract class SocketableItem extends IdentifiedItem {
+    protected static final int MAX_POSSIBLE_SOCKETS = 3;
     private static final String MAX_SOCKETS_KEY = "item_max_sockets";
     private static final String AVAILABLE_SOCKETS_KEY = "item_available_sockets";
     private static final String GEM_KEY_PREFIX = "gem_";
-
-    protected static final int MAX_POSSIBLE_SOCKETS = 3;
 
     public SocketableItem(ItemStack item) {
         super(item);
@@ -60,7 +57,7 @@ public abstract class SocketableItem extends IdentifiedItem {
             return false;
         }
 
-        Trait stat = gem.getStat();
+        Stat stat = gem.getStat();
         if (stat == null || hasGemWithStat(stat)) {
             return false;
         }
@@ -80,16 +77,16 @@ public abstract class SocketableItem extends IdentifiedItem {
                 PersistentDataType.INTEGER, availableSockets - 1);
 
         setItemMeta(meta);
-        addTrait(stat,gem.getValue());
+        addStat(stat,gem.getValue());
         updateLoreWithSockets();
         return true;
     }
-    void addTrait(Trait trait, int value) {
-        this.setItemMeta(AuraSkillsBukkit.get().getItemManager().addTraitModifier(this, MODIFIER_TYPE, trait, value, true).getItemMeta());
+    void addStat(Stat stat, int value) {
+        this.setItemMeta(AuraSkillsBukkit.get().getItemManager().addStatModifier(this, MODIFIER_TYPE, stat, value, true).getItemMeta());
     }
 
 
-    private boolean hasGemWithStat(Trait stat) {
+    private boolean hasGemWithStat(Stat stat) {
         return getItemMeta().getPersistentDataContainer()
                 .has(new NamespacedKey(ItemRarity.plugin, GEM_KEY_PREFIX + stat.name()),
                         PersistentDataType.STRING);
@@ -111,16 +108,16 @@ public abstract class SocketableItem extends IdentifiedItem {
         return getAvailableSockets() > 0;
     }
 
-    public Map<Traits, Integer> getInstalledGems() {
-        Map<Traits, Integer> gems = new HashMap<>();
+    public Map<Stats, Integer> getInstalledGems() {
+        Map<Stats, Integer> gems = new HashMap<>();
         PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
 
-        for (Traits trait : Traits.values()) {
-            String key = GEM_KEY_PREFIX + trait.name();
+        for (Stats stat : Stats.values()) {
+            String key = GEM_KEY_PREFIX + stat.name();
             String value = container.get(new NamespacedKey(ItemRarity.plugin, key),
                     PersistentDataType.STRING);
             if (value != null) {
-                gems.put(trait, Integer.parseInt(value));
+                gems.put(stat, Integer.parseInt(value));
             }
         }
 
@@ -134,9 +131,9 @@ public abstract class SocketableItem extends IdentifiedItem {
         if (lore == null) lore = new ArrayList<>();
 
         // Remove existing socket information
-        lore.removeIf(line -> line.toString().contains("◇") ||
-                line.toString().contains("◈") ||
-                line.toString().contains("Engarzados:"));
+        lore.removeIf(line -> line.toString().contains("✧")
+                || line.toString().contains("\uD83D\uDC8E")
+                || line.toString().contains("Engarzados:"));
 
         // Add socket header
         List<Component> socketInfo = new ArrayList<>();
@@ -145,17 +142,17 @@ public abstract class SocketableItem extends IdentifiedItem {
                 .decoration(TextDecoration.ITALIC, false));
 
         // Add installed gems
-        Map<Traits, Integer> installedGems = getInstalledGems();
-        for (Map.Entry<Traits, Integer> entry : installedGems.entrySet()) {
-            Traits trait = entry.getKey();
+        Map<Stats, Integer> installedGems = getInstalledGems();
+        for (Map.Entry<Stats, Integer> entry : installedGems.entrySet()) {
+            Stats stat = entry.getKey();
             int level = entry.getValue();
-            //int value = calculateGemValue(level);
+            int value = calculateGemValue(level);
 
             socketInfo.add(Component.text(" \uD83D\uDC8E ")
-                    .color(TextColor.fromHexString(ItemUtil.getColorOfTrait(trait)))
-                    .append(Component.text(trait.getDisplayName(
+                    .color(ItemUtil.getColorOfStat(stat))
+                    .append(Component.text(stat.getDisplayName(
                             AuraSkillsApi.get().getMessageManager().getDefaultLanguage())))
-                    .append(Component.text(String.format(" (+%d)", level)))
+                    .append(Component.text(String.format(" (+%d)", value)))
                     .decoration(TextDecoration.ITALIC, false));
         }
 
