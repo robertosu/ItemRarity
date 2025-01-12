@@ -18,38 +18,34 @@ public class RedemptionObject extends ItemStack {
     private static final String REDEEM_OBJECT_KEY = "RedemptionObject";
     private static final TextColor PRIMARY_COLOR = TextColor.fromHexString("#FD645B");
     private static final TextColor LORE_COLOR = TextColor.fromHexString("#F28E89");
-    private static final Component DISPLAY_NAME = Component.text("Redención")
-            .color(PRIMARY_COLOR)
-            .decoration(TextDecoration.ITALIC, false);
+    private static final Component DISPLAY_NAME =
+            Component.text("Redención").color(PRIMARY_COLOR).decoration(TextDecoration.ITALIC, false);
 
     public RedemptionObject(int amount, Plugin plugin) {
         super(Material.PAPER, amount);
         ItemMeta meta = this.getItemMeta();
         Objects.requireNonNull(meta);
-
         // Set persistent data
         NamespacedKey key = new NamespacedKey(plugin, REDEEM_OBJECT_KEY);
         meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
-
         // Set display name using Adventure API
         meta.displayName(DISPLAY_NAME);
-
         // Set Nexo model
-        //NamespacedKey itemModel = new NamespacedKey(NexoPlugin.instance(), "redemption_object");
+        // NamespacedKey itemModel = new NamespacedKey(NexoPlugin.instance(), "redemption_object");
         meta.setCustomModelData(6003);
-        //meta.setItemModel(itemModel);
-
+        // meta.setItemModel(itemModel);
         // Set lore using Adventure API
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Arrastralo a un objeto para cambiar las")
-                .color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
-        lore.add(Component.text("estadísticas sin alterar las mas alta.")
-                .color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
+                .color(LORE_COLOR)
+                .decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text("estadísticas, pero conservando la mas alta.")
+                .color(LORE_COLOR)
+                .decoration(TextDecoration.ITALIC, false));
         meta.lore(lore);
 
         // Set glint effect
         meta.setEnchantmentGlintOverride(true);
-
         this.setItemMeta(meta);
     }
 

@@ -4,7 +4,6 @@ import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
-import dev.aurelium.auraskills.api.AuraSkillsBukkit;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.Stats;
 import net.kyori.adventure.text.Component;
@@ -19,7 +18,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 
-public abstract class SocketableItem extends IdentifiedItem {
+public abstract class SocketableItem extends EnhancedSocketableItem {
     protected static final int MAX_POSSIBLE_SOCKETS = 3;
     private static final String MAX_SOCKETS_KEY = "item_max_sockets";
     private static final String AVAILABLE_SOCKETS_KEY = "item_available_sockets";
@@ -53,15 +52,15 @@ public abstract class SocketableItem extends IdentifiedItem {
     }
 
     public boolean installGem(GemModel gem) {
-        if (gem == null || !gem.isValid() || !hasAvailableSockets()) {
-            return false;
-        }
+
 
         Stat stat = gem.getStat();
-        if (stat == null || hasGemWithStat(stat)) {
-            return false;
-        }
 
+
+        // Aplicar la gema primero
+        addGemStat(stat, gem.getValue());
+
+        // Luego actualizar los datos del socket con el ItemMeta más reciente
         ItemMeta meta = getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
 
@@ -77,16 +76,13 @@ public abstract class SocketableItem extends IdentifiedItem {
                 PersistentDataType.INTEGER, availableSockets - 1);
 
         setItemMeta(meta);
-        addStat(stat,gem.getValue());
         updateLoreWithSockets();
         return true;
     }
-    void addStat(Stat stat, int value) {
-        this.setItemMeta(AuraSkillsBukkit.get().getItemManager().addStatModifier(this, MODIFIER_TYPE, stat, value, true).getItemMeta());
-    }
 
 
-    private boolean hasGemWithStat(Stat stat) {
+
+    public boolean hasGemWithStat(Stat stat) {
         return getItemMeta().getPersistentDataContainer()
                 .has(new NamespacedKey(ItemRarity.plugin, GEM_KEY_PREFIX + stat.name()),
                         PersistentDataType.STRING);
@@ -133,11 +129,11 @@ public abstract class SocketableItem extends IdentifiedItem {
         // Remove existing socket information
         lore.removeIf(line -> line.toString().contains("✧")
                 || line.toString().contains("\uD83D\uDC8E")
-                || line.toString().contains("Engarzados:"));
+                || line.toString().contains("Gemas:"));
 
         // Add socket header
         List<Component> socketInfo = new ArrayList<>();
-        socketInfo.add(Component.text("Engarzados:")
+        socketInfo.add(Component.text("Gemas:")
                 .color(NamedTextColor.GRAY)
                 .decoration(TextDecoration.ITALIC, false));
 
@@ -152,7 +148,7 @@ public abstract class SocketableItem extends IdentifiedItem {
                     .color(ItemUtil.getColorOfStat(stat))
                     .append(Component.text(stat.getDisplayName(
                             AuraSkillsApi.get().getMessageManager().getDefaultLanguage())))
-                    .append(Component.text(String.format(" (+%d)", value)))
+                    .append(Component.text(String.format(" +%d", value)))
                     .decoration(TextDecoration.ITALIC, false));
         }
 
@@ -176,7 +172,7 @@ public abstract class SocketableItem extends IdentifiedItem {
     }
 
     private int findSocketInfoInsertIndex(List<Component> lore) {
-        // Buscar la línea que comienza con '[' (rareza)
+        // Buscar la línea que comienza con (rareza)
         for (int i = 0; i < lore.size(); i++) {
             String line = PlainTextComponentSerializer.plainText().serialize(lore.get(i));
             if (line.startsWith("[")) {

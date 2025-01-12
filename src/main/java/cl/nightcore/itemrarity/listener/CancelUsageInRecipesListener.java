@@ -11,7 +11,11 @@ public class CancelUsageInRecipesListener implements Listener {
     public void onItemCraft(PrepareItemCraftEvent event) {
         ItemStack[] matrix = event.getInventory().getMatrix();
         for (ItemStack item : matrix) {
-            if (ItemUtil.isMagicObject(item) || ItemUtil.isIdentifyScroll(item)) {
+            if (ItemUtil.isMagicObject(item)
+                    || ItemUtil.isIdentifyScroll(item)
+                    || ItemUtil.isBlessingObject(item)
+                    || ItemUtil.isRedemptionObject(item)
+                    || ItemUtil.isGem(item)) {
                 event.getInventory().setResult(null);
                 return;
             }

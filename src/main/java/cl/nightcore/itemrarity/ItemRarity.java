@@ -1,6 +1,5 @@
 package cl.nightcore.itemrarity;
 
-import cl.nightcore.itemrarity.abstracted.IdentifiedItem;
 import cl.nightcore.itemrarity.abstracted.SocketableItem;
 import cl.nightcore.itemrarity.command.*;
 import cl.nightcore.itemrarity.item.BlessingObject;
@@ -11,7 +10,6 @@ import cl.nightcore.itemrarity.listener.CancelUsageInRecipesListener;
 import cl.nightcore.itemrarity.listener.IdentifyScrollListener;
 import cl.nightcore.itemrarity.listener.ItemClickListener;
 import cl.nightcore.itemrarity.loot.CustomDropsManager;
-import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.type.IdentifiedArmor;
 import cl.nightcore.itemrarity.type.IdentifiedWeapon;
 import cl.nightcore.itemrarity.type.RolledArmor;
@@ -53,33 +51,20 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         return null;
     }
 
-    public static SocketableItem insertStone(ItemStack item, GemModel gem) {
-        if (ItemUtil.getItemType(item).equals("Weapon")) {
-            IdentifiedWeapon weapon = new IdentifiedWeapon(item);
-            weapon.installGem(gem);
-            return weapon;
-        }
-        else if (ItemUtil.getItemType(item).equals("Armor")){
-            IdentifiedArmor armor = new IdentifiedArmor(item);
-            armor.installGem(gem);
-            return armor;
-        } throw new IllegalArgumentException();
-
-    }
 
     public static SocketableItem rollStats(Player player, ItemStack item) {
         RolledWeapon rolledWeapon;
         RolledArmor rolledArmor;
         if (ItemUtil.getItemType(item).equals("Weapon")) {
             rolledWeapon = new RolledWeapon(item);
-            rolledWeapon.rerollStats();
+            rolledWeapon.rerollStatsEnhanced();
             rolledWeapon.incrementLevel(player);
             Component message = Component.text("¡El objeto cambió! Rareza: ", MagicObject.getLoreColor());
             player.sendMessage(REROLL_PREFIX.append(message).append(rolledWeapon.getRarityKeyword().color(rolledWeapon.getRarityColor())));
             return rolledWeapon;
         } else if (ItemUtil.getItemType(item).equals("Armor")) {
             rolledArmor = new RolledArmor(item);
-            rolledArmor.rerollStats();
+            rolledArmor.rerollStatsEnhanced();
             rolledArmor.incrementLevel(player);
             Component message = Component.text("¡El objeto cambió! Rareza: ", MagicObject.getLoreColor());
             player.sendMessage(REROLL_PREFIX.append(message).append(rolledArmor.getRarityKeyword().color(rolledArmor.getRarityColor())));
@@ -88,7 +73,7 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         return null;
     }
 
-    public static IdentifiedItem rerollLowestStat(Player player, ItemStack item) {
+    public static SocketableItem rerollLowestStat(Player player, ItemStack item) {
         if (ItemUtil.getItemType(item).equals("Weapon")) {
             IdentifiedWeapon moddedweapon = new IdentifiedWeapon(item);
             moddedweapon.rerollLowestStat(player);
@@ -101,7 +86,7 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         return null;
     }
 
-    public static IdentifiedItem rerollAllStatsExceptHighest(Player player, ItemStack item) {
+    public static SocketableItem rerollAllStatsExceptHighest(Player player, ItemStack item) {
         if (ItemUtil.getItemType(item).equals("Weapon")) {
             IdentifiedWeapon moddedweapon = new IdentifiedWeapon(item);
             moddedweapon.rerollExceptHighestStat(player);

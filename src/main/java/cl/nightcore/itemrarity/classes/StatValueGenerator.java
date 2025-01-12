@@ -3,7 +3,7 @@ package cl.nightcore.itemrarity.classes;
 import cl.nightcore.itemrarity.abstracted.RollQuality;
 import org.apache.commons.math3.distribution.NormalDistribution;
 
-import java.util.Random;
+import static cl.nightcore.itemrarity.util.ItemUtil.random;
 
 public class StatValueGenerator {
     public static int generateValueForStat(RollQuality rollQuality, boolean useNormalDistribution) {
@@ -25,7 +25,6 @@ public class StatValueGenerator {
     private static int generateValueUsingRandomDistribution(RollQuality rollQuality) {
         int minValue = rollQuality.getMinStatValue();
         int bound = rollQuality.getBound();
-        Random random = new Random();
         return minValue + random.nextInt(bound);
     }
 }

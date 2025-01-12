@@ -17,17 +17,10 @@ public class RolledArmor extends IdentifiedArmor {
 
     public RolledArmor(ItemStack item) {
         super(item);
-        setNBTTag();
         rollQuality = getRollQuality();
     }
 
-    private void setNBTTag() {
-        ItemMeta meta = this.getItemMeta();
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(plugin, ROLL_IDENTIFIER_KEY);
-        container.set(key, PersistentDataType.INTEGER, 1);
-        this.setItemMeta(meta);
-    }
+
 
     public void incrementLevel(Player player) {
         ItemMeta meta = this.getItemMeta();
@@ -44,20 +37,23 @@ public class RolledArmor extends IdentifiedArmor {
                     .append(Component.text(MAX_LEVEL, NamedTextColor.BLUE))
                     .build();
 
-            //player.sendMessage(ItemRarity.getRerollPrefix() + "El item subió su nivel de magia " + ChatColor.BLUE + lvl + ChatColor.AQUA + " / " + ChatColor.BLUE + MAX_LEVEL);
             player.sendMessage(ItemRarity.getRerollPrefix().append(message));
 
             if (lvl == 10) {
-                player.sendMessage(ItemRarity.getRerollPrefix().append(Component.text("Tu objeto subió a ", MagicObject.getLoreColor()).append(Component.text("Nivel 2", NamedTextColor.BLUE))));
+                player.sendMessage(ItemRarity.getRerollPrefix()
+                        .append(Component.text("Tu objeto subió a ", MagicObject.getLoreColor())
+                                .append(Component.text("Nivel 2", NamedTextColor.BLUE))));
             } else if (lvl == 20) {
-                player.sendMessage(ItemRarity.getRerollPrefix().append(Component.text("Tu objeto subió a ", MagicObject.getLoreColor()).append(Component.text("Nivel 3", NamedTextColor.BLUE))));
+                player.sendMessage(ItemRarity.getRerollPrefix()
+                        .append(Component.text("Tu objeto subió a ", MagicObject.getLoreColor())
+                                .append(Component.text("Nivel 3", NamedTextColor.BLUE))));
             } else if (lvl == 30) {
-                player.sendMessage(ItemRarity.getRerollPrefix().append(Component.text("Tu objeto subió a ", MagicObject.getLoreColor()).append(Component.text("Nivel 4", NamedTextColor.BLUE))));
+                player.sendMessage(ItemRarity.getRerollPrefix()
+                        .append(Component.text("Tu objeto subió a ", MagicObject.getLoreColor())
+                                .append(Component.text("Nivel 4", NamedTextColor.BLUE))));
             }
             container.set(key, PersistentDataType.INTEGER, lvl);
             this.setItemMeta(meta);
         }
     }
 }
-
-

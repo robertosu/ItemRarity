@@ -35,6 +35,8 @@ public class BlessingObject extends ItemStack {
         // Set Oraxen model
         //NamespacedKey itemModel = new NamespacedKey(NexoPlugin.instance(), "blessing_object");
         //meta.setItemModel(itemModel);
+
+
         meta.setCustomModelData(6002);
 
         // Set lore using Adventure API

@@ -37,7 +37,7 @@ public class IdentifyScroll extends ItemStack {
         // Set lore using Adventure API
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Arrastra este item a tu equipamiento para").color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
-        lore.add(Component.text("desbloquear sus estadísticas adicionales.").color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
+        lore.add(Component.text("desbloquear sus estadísticas ocultas.").color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
         meta.lore(lore);
 
         // Set glint effect

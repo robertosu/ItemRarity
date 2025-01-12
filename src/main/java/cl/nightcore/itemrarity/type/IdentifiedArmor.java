@@ -1,15 +1,14 @@
 package cl.nightcore.itemrarity.type;
 
 import cl.nightcore.itemrarity.abstracted.SocketableItem;
-import cl.nightcore.itemrarity.abstracted.StatProvider;
 import cl.nightcore.itemrarity.classes.StatValueGenerator;
 import cl.nightcore.itemrarity.statprovider.ArmorStatProvider;
+import cl.nightcore.itemrarity.statprovider.StatProvider;
+import cl.nightcore.itemrarity.util.ItemUtil;
 import dev.aurelium.auraskills.api.stat.Stat;
-import dev.aurelium.auraskills.api.stat.Stats;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
-import java.util.Random;
 
 public class IdentifiedArmor extends SocketableItem {
     public IdentifiedArmor(ItemStack item) {
@@ -21,11 +20,10 @@ public class IdentifiedArmor extends SocketableItem {
 
     @Override
     protected void generateStats() {
-        Random random = new Random();
-        int statsCount = random.nextInt(2) + 4; // 4 o 5 estadísticas
+        int statsCount = ItemUtil.random.nextInt(2) + 4; // 4 o 5 estadísticas
         StatProvider statProvider = new ArmorStatProvider();
 
-        List<Stats> availableStats = statProvider.getAvailableStats();
+        List<Stat> availableStats = statProvider.getAvailableStats();
         //Adds gauss distributed stats to the item
         for (Stat stat : statProvider.getGaussStats()) {
             getAddedStats().add(stat);
@@ -34,9 +32,9 @@ public class IdentifiedArmor extends SocketableItem {
         }
         //Adds normal stats to the item
         for (int i = 0; i < statsCount - 1; i++) {
-            Stats stat;
+            Stat stat;
             do {
-                stat = availableStats.get(random.nextInt(availableStats.size()));
+                stat = availableStats.get(ItemUtil.random.nextInt(availableStats.size()));
             } while (getAddedStats().contains(stat));
             getAddedStats().add(stat);
             int value = StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(stat));

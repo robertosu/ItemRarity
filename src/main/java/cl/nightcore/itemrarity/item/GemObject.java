@@ -24,65 +24,32 @@ public class GemObject extends ItemStack {
     private final int value;
     private final int level;
     private final Component gemName;
-    private  int customModelData;
+    private final int customModelData;
+    private final ItemMeta meta = this.getItemMeta();
 
-    public static String getGemStatKey(){
-        return GEM_STAT_KEY;
-    }
-    public static String getGemLevelKey(){
-        return GEM_LEVEL_KEY;
-    }
-
-    public GemObject(ItemStack item, Stat stat, Component gemName, int level, int amount) {
+    public GemObject(ItemStack item, Stat stat, Component gemName, int level, int customModelData) {
         super(item);
         this.stat = stat;
         this.value = 4 + (level - 1) * level / 2;
         this.gemName = gemName;
         this.level = level;
+        this.customModelData = customModelData;
+        setupCustomName();
         setupGemLore();
-        setCustomModelData(stat);
         setGemNBT();
 
     }
 
-    public int getLevel() {
-        return level;
+    public static String getGemStatKey(){
+        return GEM_STAT_KEY;
     }
 
-    public void setCustomModelData(Stat stat){
-        int value;
-        switch (stat.name()) {
-            case "STRENGTH":
-                this.customModelData = 3250;
-                break;
-            case "HEALTH":
-                this.customModelData = 3251;
-                break;
-            case "REGENERATION":
-                this.customModelData = 3252;
-                break;
-            case "LUCK":
-                this.customModelData = 3253;
-                break;
-            case "WISEDOM":
-                this.customModelData = 3254;
-                break;
-            case "TOUGHNESS":
-                this.customModelData = 3255;
-                break;
-            case "CRIT_CHANCE":
-                this.customModelData = 3256;
-                break;
-            case "CRIT_DAMAGE":
-                this.customModelData = 3257;
-                break;
-            case "SPEED":
-                this.customModelData = 3258;
-                break;
-            default:
-                this.customModelData = -1; // En caso de que el nombre no coincida con ninguna stat
-                break;
-        }
+    public static String getGemLevelKey(){
+        return GEM_LEVEL_KEY;
+    }
+
+    public int getLevel() {
+        return level;
     }
 
 
@@ -91,7 +58,6 @@ public class GemObject extends ItemStack {
     }
 
     private void setGemNBT() {
-        ItemMeta meta = getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
         NamespacedKey key = new NamespacedKey(ItemRarity.plugin, GEM_STAT_KEY);
         container.set(key, PersistentDataType.STRING, stat.name());
@@ -102,7 +68,6 @@ public class GemObject extends ItemStack {
 
     }
     public int getValueFromNBT(){
-        ItemMeta meta = getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
         NamespacedKey lvlkey = new NamespacedKey(ItemRarity.plugin, GEM_LEVEL_KEY);
         int levelfromnbt = container.get(lvlkey, PersistentDataType.INTEGER);
@@ -110,7 +75,6 @@ public class GemObject extends ItemStack {
     }
 
     public Stat getStatFromNBT(){
-        ItemMeta meta = getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
         NamespacedKey key = new NamespacedKey(ItemRarity.plugin, GEM_STAT_KEY);
         String statfromnbt = container.get(key, PersistentDataType.STRING);
@@ -118,10 +82,9 @@ public class GemObject extends ItemStack {
     }
 
     private void setupGemLore() {
-        ItemMeta meta = getItemMeta();
         List<Component> lore = new ArrayList<>();
 
-        lore.add(Component.text("Gema de ").color(NamedTextColor.GRAY)
+        lore.add(Component.text("Insertala en tu objeto para agregar ").color(NamedTextColor.GRAY)
                 .append(gemName)
                 .decoration(TextDecoration.ITALIC, false));
 
@@ -131,6 +94,10 @@ public class GemObject extends ItemStack {
                 .decoration(TextDecoration.ITALIC, false));
 
         meta.lore(lore);
+        setItemMeta(meta);
+    }
+    private void setupCustomName(){
+        meta.customName(Component.text("Gema de "+ stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()) + " +" + this.level).color(ItemUtil.getColorOfStat(stat)).decoration(TextDecoration.ITALIC,false));
         setItemMeta(meta);
     }
 

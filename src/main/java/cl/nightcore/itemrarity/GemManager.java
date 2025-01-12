@@ -9,8 +9,9 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 public class GemManager {
-    public GemObject createStrengthGem(int amount, int level, String stat) {
-        ItemStack gemItem = new ItemStack(Material.PAPER);
+    public GemObject createGem(int amount, int level, String stat) {
+
+        ItemStack gemItem = new ItemStack(Material.PAPER, amount);
         return new GemObject(
                 gemItem,
                 Stats.valueOf(stat),
@@ -19,6 +20,21 @@ public class GemManager {
                                         AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
                         .color(ItemUtil.getColorOfStat(Stats.valueOf(stat))),
                 level,
-                amount);
+                getCustomModelData(stat));
+    }
+
+    public int getCustomModelData(String stat) {
+        return switch (stat.toUpperCase()) {
+            case "STRENGTH" -> 3250;
+            case "HEALTH" -> 3251;
+            case "REGENERATION" -> 3252;
+            case "LUCK" -> 3253;
+            case "WISDOM" -> 3254;
+            case "TOUGHNESS" -> 3255;
+            case "CRIT_CHANCE" -> 3256;
+            case "CRIT_DAMAGE" -> 3257;
+            case "SPEED" -> 3258;
+            default -> throw new IllegalStateException(); // En caso de que el nombre no coincida con ninguna stat
+        };
     }
 }

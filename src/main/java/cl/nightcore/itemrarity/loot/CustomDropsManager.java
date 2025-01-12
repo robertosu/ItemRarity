@@ -28,10 +28,6 @@ public class CustomDropsManager implements Listener {
     private final IdentifyScroll identifyScroll = new IdentifyScroll(1, ItemRarity.plugin);
     private final MagicObject magicObject = new MagicObject(1, ItemRarity.plugin);
     private final RedemptionObject redemptionObject = new RedemptionObject(1, ItemRarity.plugin);
-
-    private record DropConfig(ItemStack item, double chance, int minAmount, int maxAmount) {
-    }
-
     private final Map<EntityType, List<DropConfig>> mobDrops = new HashMap<>();
     private final Map<String, List<DropConfig>> chestDrops = new HashMap<>();
 
@@ -41,7 +37,7 @@ public class CustomDropsManager implements Listener {
 
     private void loadDropConfigurations() {
         // Obtener la lista de mobs hostiles
-        List<EntityType> hostileMobs = enumToEntityTypes(HostileMob.class);
+        List<EntityType> hostileMobs = enumToEntityTypes();
 
         // Configurar drops para todos los mobs hostiles
         addDropToEntities(hostileMobs, blessingObject, 0.01, 1, 3);
@@ -54,14 +50,16 @@ public class CustomDropsManager implements Listener {
         addGlobalChestDrop(identifyScroll, 0.30, 1, 2);
         addGlobalChestDrop(magicObject, 0.30, 1, 2);
     }
-    public void addDropToEntities(List<EntityType> entities, ItemStack item, double chance, int minAmount, int maxAmount) {
+
+    public void addDropToEntities(
+            List<EntityType> entities, ItemStack item, double chance, int minAmount, int maxAmount) {
         for (EntityType entityType : entities) {
             addMobDrop(entityType, item, chance, minAmount, maxAmount);
         }
     }
 
-    private List<EntityType> enumToEntityTypes(Class<? extends Enum<?>> enumClass) {
-        return Arrays.stream(enumClass.getEnumConstants())
+    private List<EntityType> enumToEntityTypes() {
+        return Arrays.stream(((Class<? extends Enum<?>>) HostileMob.class).getEnumConstants())
                 .map(enumValue -> {
                     try {
                         Method getEntityType = enumValue.getClass().getMethod("getEntityType");
@@ -73,7 +71,6 @@ public class CustomDropsManager implements Listener {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
-
 
     public void addGlobalChestDrop(ItemStack item, double chance, int minAmount, int maxAmount) {
         globalDrops.add(new DropConfig(item, chance, minAmount, maxAmount));
@@ -140,4 +137,6 @@ public class CustomDropsManager implements Listener {
             }
         }
     }
+
+    private record DropConfig(ItemStack item, double chance, int minAmount, int maxAmount) {}
 }

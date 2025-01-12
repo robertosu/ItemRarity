@@ -2,6 +2,7 @@ package cl.nightcore.itemrarity.loot;
 
 import org.bukkit.entity.EntityType;
 
+@SuppressWarnings("unused")
 public enum HostileMob {
     ZOMBIE(EntityType.ZOMBIE),
     SKELETON(EntityType.SKELETON),
@@ -40,7 +41,8 @@ public enum HostileMob {
     BREEZE(EntityType.BREEZE),
     ZOMBIFIED_PIGLIN(EntityType.ZOMBIFIED_PIGLIN),
     SHULKER(EntityType.SHULKER),
-    GUARDIAN(EntityType.GUARDIAN),;
+    GUARDIAN(EntityType.GUARDIAN),
+    ;
 
     private final EntityType entityType;
 
