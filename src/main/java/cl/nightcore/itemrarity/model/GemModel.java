@@ -19,7 +19,7 @@ public record GemModel(ItemStack item) {
 
         String statName = item.getItemMeta()
                 .getPersistentDataContainer()
-                .get(new NamespacedKey(ItemRarity.plugin, GEM_STAT_KEY), PersistentDataType.STRING);
+                .get(new NamespacedKey(ItemRarity.PLUGIN, GEM_STAT_KEY), PersistentDataType.STRING);
 
         try {
             return Stats.valueOf(statName);
@@ -31,7 +31,7 @@ public record GemModel(ItemStack item) {
     public int getLevel() {
         return item.getItemMeta()
                 .getPersistentDataContainer()
-                .getOrDefault(new NamespacedKey(ItemRarity.plugin, GEM_LEVEL_KEY), PersistentDataType.INTEGER, 0);
+                .getOrDefault(new NamespacedKey(ItemRarity.PLUGIN, GEM_LEVEL_KEY), PersistentDataType.INTEGER, 0);
     }
 
     public int getValue() {

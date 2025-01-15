@@ -24,10 +24,10 @@ public class CustomDropsManager implements Listener {
     private final Random random = new Random();
     private final List<DropConfig> globalDrops = new ArrayList<>();
 
-    private final BlessingObject blessingObject = new BlessingObject(1, ItemRarity.plugin);
-    private final IdentifyScroll identifyScroll = new IdentifyScroll(1, ItemRarity.plugin);
-    private final MagicObject magicObject = new MagicObject(1, ItemRarity.plugin);
-    private final RedemptionObject redemptionObject = new RedemptionObject(1, ItemRarity.plugin);
+    private final BlessingObject blessingObject = new BlessingObject(1, ItemRarity.PLUGIN);
+    private final IdentifyScroll identifyScroll = new IdentifyScroll(1, ItemRarity.PLUGIN);
+    private final MagicObject magicObject = new MagicObject(1, ItemRarity.PLUGIN);
+    private final RedemptionObject redemptionObject = new RedemptionObject(1, ItemRarity.PLUGIN);
     private final Map<EntityType, List<DropConfig>> mobDrops = new HashMap<>();
     private final Map<String, List<DropConfig>> chestDrops = new HashMap<>();
 

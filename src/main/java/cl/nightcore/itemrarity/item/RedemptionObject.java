@@ -1,5 +1,6 @@
 package cl.nightcore.itemrarity.item;
 
+import cl.nightcore.itemrarity.config.ItemConfig;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -15,7 +16,6 @@ import java.util.List;
 import java.util.Objects;
 
 public class RedemptionObject extends ItemStack {
-    private static final String REDEEM_OBJECT_KEY = "RedemptionObject";
     private static final TextColor PRIMARY_COLOR = TextColor.fromHexString("#FD645B");
     private static final TextColor LORE_COLOR = TextColor.fromHexString("#F28E89");
     private static final Component DISPLAY_NAME =
@@ -26,7 +26,7 @@ public class RedemptionObject extends ItemStack {
         ItemMeta meta = this.getItemMeta();
         Objects.requireNonNull(meta);
         // Set persistent data
-        NamespacedKey key = new NamespacedKey(plugin, REDEEM_OBJECT_KEY);
+        NamespacedKey key = new NamespacedKey(plugin, ItemConfig.REDEEM_OBJECT_KEY);
         meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
         // Set display name using Adventure API
         meta.displayName(DISPLAY_NAME);
@@ -58,6 +58,6 @@ public class RedemptionObject extends ItemStack {
     }
 
     public static String getRedeemObjectKey() {
-        return REDEEM_OBJECT_KEY;
+        return ItemConfig.REDEEM_OBJECT_KEY;
     }
 }

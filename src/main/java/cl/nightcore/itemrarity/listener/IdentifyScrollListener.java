@@ -2,9 +2,9 @@ package cl.nightcore.itemrarity.listener;
 
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.abstracted.SocketableItem;
+import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.model.GemModel;
-import cl.nightcore.itemrarity.type.IdentifiedArmor;
-import cl.nightcore.itemrarity.type.IdentifiedWeapon;
+import cl.nightcore.itemrarity.type.IdentifiedAbstract;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import cl.nightcore.itemrarity.util.PerformanceTimer;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
@@ -17,11 +17,11 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCreativeEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
-import static cl.nightcore.itemrarity.util.ItemUtil.getStatProvider;
-import static cl.nightcore.itemrarity.util.ItemUtil.isIdentified;
+import static cl.nightcore.itemrarity.util.ItemUtil.*;
 
 public class IdentifyScrollListener implements Listener {
 
@@ -32,24 +32,19 @@ public class IdentifyScrollListener implements Listener {
         if (event instanceof InventoryCreativeEvent) {
             return;
         }
-
         ItemStack cursor = event.getCursor();
         ItemStack targetItem = event.getCurrentItem();
 
         if (isInvalidInteraction(cursor, targetItem)) {
             return;
         }
-
         ObjectType objectType = getObjectType(cursor);
         if (objectType == ObjectType.NONE) {
             return;
         }
-
-        // Para otros objetos, verificar si es identificable
         else if (!ItemUtil.isIdentifiable(targetItem)) {
             return;
         }
-
         handleInteraction(event, targetItem, cursor, objectType);
     }
 
@@ -66,6 +61,7 @@ public class IdentifyScrollListener implements Listener {
         if (ItemUtil.isBlessingObject(item)) return ObjectType.BLESSING_OBJECT;
         if (ItemUtil.isRedemptionObject(item)) return ObjectType.REDEMPTION_OBJECT;
         if (ItemUtil.isGem(item)) return ObjectType.GEM;
+        if (ItemUtil.isGemRemover(item)) return ObjectType.GEM_REMOVER;
         return ObjectType.NONE;
     }
 
@@ -74,20 +70,18 @@ public class IdentifyScrollListener implements Listener {
 
         // Para objetos que no son gemas, verificar si el item está identificado
         if (type != ObjectType.IDENTIFY_SCROLL && type != ObjectType.GEM && !isIdentified(targetItem)) {
-            sendErrorMessage(player, "Tu objeto debe estar identificado.", ItemRarity.getPluginPrefix());
+            sendErrorMessage(player, "Tu objeto debe estar identificado.", ItemConfig.PLUGIN_PREFIX);
             event.setCancelled(true);
             return;
         }
-
         // Para gemas, verificar si el item está identificado
         if (type == ObjectType.GEM) {
             if (!isIdentified(targetItem)) {
-                sendErrorMessage(player, "Tu objeto debe estar identificado para insertar gemas.", ItemRarity.getPluginPrefix());
+                sendErrorMessage(player, "Tu objeto debe estar identificado para insertar gemas.", ItemConfig.PLUGIN_PREFIX);
                 event.setCancelled(true);
                 return;
             }
         }
-
         switch (type) {
             case IDENTIFY_SCROLL:
                 handleIdentifyScroll(event, targetItem, cursor, player);
@@ -107,52 +101,66 @@ public class IdentifyScrollListener implements Listener {
             case GEM:
                 handleGemInsertion(event, targetItem, cursor, player);
                 break;
+            case GEM_REMOVER:
+                handleGemRemoval(event, targetItem, cursor, player);
+                break;
+
         }
     }
-
+    private void handleGemRemoval(InventoryClickEvent event, ItemStack targetItem,ItemStack cursor, Player player){
+        SocketableItem item = new IdentifiedAbstract(targetItem);
+        item.extractAllGems(player);
+        event.setCurrentItem(item);
+        consumeItem(event, cursor);
+        event.setCancelled(true);
+    }
     private void handleGemInsertion(InventoryClickEvent event, ItemStack targetItem, ItemStack cursor, Player player) {
         GemModel gem = new GemModel(cursor);
-
-        // Verificar si es una gema válida
-
-
-        // Crear instancia de SocketableItem según el tipo
-        SocketableItem socketableItem = ItemUtil.getItemType(targetItem).equals("Weapon") ?
-                new IdentifiedWeapon(targetItem) : new IdentifiedArmor(targetItem);
-
+        SocketableItem item = new IdentifiedAbstract(targetItem);
         // Verificar si hay espacios disponibles
-        if (!socketableItem.hasAvailableSockets()) {
-            sendErrorMessage(player, "Este objeto no tiene espacios disponibles para gemas.", ItemRarity.getPluginPrefix());
+        if (!item.hasAvailableSockets()) {
+            sendErrorMessage(player, "Este objeto no tiene espacios disponibles para gemas.", ItemConfig.GEMSTONE_PREFIX);
             event.setCancelled(true);
             return;
         }
-        if (socketableItem.hasGemWithStat(gem.getStat())) {
-            sendErrorMessage(player, "El objeto ya tiene una gema de este tipo.", ItemRarity.getPluginPrefix());
+        //Verificar que no haya una gema del mismo tipo
+        if (item.hasGemWithStat(gem.getStat())) {
+            sendErrorMessage(player, "El objeto ya tiene una gema de este tipo.", ItemConfig.GEMSTONE_PREFIX);
             event.setCancelled(true);
             return;
         }
         // Verificar si la gema es compatible con las stats posibles para un item
-        if (!gem.isCompatible(getStatProvider(socketableItem))) {
-            String availableStats = getStatProvider(socketableItem)
+        if (!gem.isCompatible(getStatProvider(item))) {
+            List<Component> availableStatsComponents = new ArrayList<>();
+            // Construir la lista de componentes
+            getStatProvider(item)
                     .getAvailableStats()
-                    .stream()
-                    .map(stat -> stat.getColoredName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
-                    .collect(Collectors.joining(", ")); // Une los nombres con comas
-
-            sendErrorMessage(player, "Esta gema no es insertable en este tipo de objeto, intenta con: "
-                    + availableStats, ItemRarity.getPluginPrefix());
+                    .forEach(stat -> availableStatsComponents.add(
+                            Component.text(stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
+                                    .color(getColorOfStat(stat))
+                    ));
+            // Mostrar gemas compatibles
+            Component baseMessage = Component.text("El tipo de objeto no es compatible con la gema, intenta con: ")
+                    .color(NamedTextColor.RED);
+            for (int i = 0; i < availableStatsComponents.size(); i++) {
+                baseMessage = baseMessage.append(availableStatsComponents.get(i));
+                if (i < availableStatsComponents.size() - 1) {
+                    baseMessage = baseMessage.append(Component.text(", ").color(NamedTextColor.GRAY));
+                }
+            }
+            sendErrorMessage(player, baseMessage, ItemConfig.GEMSTONE_PREFIX);
             event.setCancelled(true);
             return;
         }
         // Intentar instalar la gema
-        if (socketableItem.installGem(gem)) {
+        if (item.installGem(gem)) {
             consumeItem(event, cursor);
-            event.setCurrentItem(socketableItem);
-            player.sendMessage(ItemRarity.getPluginPrefix()
+            event.setCurrentItem(item);
+            player.sendMessage(ItemConfig.GEMSTONE_PREFIX
                     .append(Component.text("¡Gema instalada con éxito!")
                             .color(NamedTextColor.GREEN)));
         } else {
-            sendErrorMessage(player, "No se pudo instalar la gema.", ItemRarity.getPluginPrefix());
+            sendErrorMessage(player, "No se pudo instalar la gema.", ItemConfig.GEMSTONE_PREFIX);
         }
 
         event.setCancelled(true);
@@ -161,7 +169,7 @@ public class IdentifyScrollListener implements Listener {
     private void handleIdentifyScroll(InventoryClickEvent event, ItemStack targetItem,
                                       ItemStack cursor, Player player) {
         if (isIdentified(targetItem)) {
-            sendErrorMessage(player, "Este item ya está identificado.", ItemRarity.getPluginPrefix());
+            sendErrorMessage(player, "Este item ya está identificado.", ItemConfig.PLUGIN_PREFIX);
             event.setCancelled(true);
             return;
         }
@@ -194,6 +202,11 @@ public class IdentifyScrollListener implements Listener {
                 Component.text(message).color(NamedTextColor.RED)
         ));
     }
+    private void sendErrorMessage(Player player, Component message, Component prefix) {
+        player.sendMessage(prefix.append(
+                message
+        ));
+    }
 
     private enum ObjectType {
         IDENTIFY_SCROLL,
@@ -201,6 +214,7 @@ public class IdentifyScrollListener implements Listener {
         BLESSING_OBJECT,
         REDEMPTION_OBJECT,
         GEM,
+        GEM_REMOVER,
         NONE
     }
 }

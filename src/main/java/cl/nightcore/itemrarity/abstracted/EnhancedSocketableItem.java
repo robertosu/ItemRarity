@@ -1,7 +1,7 @@
 package cl.nightcore.itemrarity.abstracted;
 
-import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.classes.StatValueGenerator;
+import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.item.BlessingObject;
 import cl.nightcore.itemrarity.item.RedemptionObject;
 import cl.nightcore.itemrarity.util.ItemUtil;
@@ -20,10 +20,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
 
 public class EnhancedSocketableItem extends IdentifiedItem {
     public static final String GEM_BOOST_PREFIX = "gem_boost_";
@@ -32,6 +35,7 @@ public class EnhancedSocketableItem extends IdentifiedItem {
     public EnhancedSocketableItem(ItemStack item) {
         super(item);
     }
+
 
     @Override
     protected void generateStats() {}
@@ -50,14 +54,14 @@ public class EnhancedSocketableItem extends IdentifiedItem {
         // Guardar el valor base del arma si existe y aún no está guardado
         if (existingMod != null
                 && !container.has(
-                        new NamespacedKey(plugin, BASE_STAT_VALUE_PREFIX + stat.name()), PersistentDataType.INTEGER)) {
+                new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + stat.name()), PersistentDataType.INTEGER)) {
             container.set(
-                    new NamespacedKey(plugin, BASE_STAT_VALUE_PREFIX + stat.name()), PersistentDataType.INTEGER, (int)
+                    new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + stat.name()), PersistentDataType.INTEGER, (int)
                             existingMod.value());
         }
 
         // Guardar o actualizar el valor de la gema
-        container.set(new NamespacedKey(plugin, GEM_BOOST_PREFIX + stat.name()), PersistentDataType.INTEGER, gemValue);
+        container.set(new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + stat.name()), PersistentDataType.INTEGER, gemValue);
 
         setItemMeta(meta);
 
@@ -67,7 +71,7 @@ public class EnhancedSocketableItem extends IdentifiedItem {
 
         // Obtener el valor base guardado (si existe)
         int baseValue = container.getOrDefault(
-                new NamespacedKey(plugin, BASE_STAT_VALUE_PREFIX + stat.name()), PersistentDataType.INTEGER, 0);
+                new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + stat.name()), PersistentDataType.INTEGER, 0);
 
         // Aplicar el nuevo valor combinado
         if (baseValue > 0) {
@@ -86,7 +90,7 @@ public class EnhancedSocketableItem extends IdentifiedItem {
     protected void addStatBreakdownToLore(Stat stat, int baseValue, int gemBoost) {
         ItemMeta meta = getItemMeta();
         List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
-
+        int total = baseValue + gemBoost;
         // Crear el componente de desglose
         Component breakdown = Component.text("+" + baseValue + " ")
                 .color(ItemUtil.getColorOfStat(stat))
@@ -94,7 +98,7 @@ public class EnhancedSocketableItem extends IdentifiedItem {
                                 AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
                         .color(NamedTextColor.GRAY))
                 .decoration(TextDecoration.ITALIC, false)
-                .append(Component.text(" (+" + gemBoost + ")")
+                .append(Component.text(" (+" + total + ")")
                         .color(NamedTextColor.DARK_GRAY)
                         .decoration(TextDecoration.ITALIC, false));
 
@@ -117,49 +121,66 @@ public class EnhancedSocketableItem extends IdentifiedItem {
         // Guardar los boosts de gemas antes de reroll
         Map<Stat, Integer> gemBoosts = new HashMap<>();
         PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
+
         // Recolectar todos los boosts de gemas
         for (NamespacedKey key : container.getKeys()) {
             if (key.getKey().startsWith(GEM_BOOST_PREFIX)) {
-                String statName =
-                        key.getKey().substring(GEM_BOOST_PREFIX.length()).toUpperCase();
+                String statName = key.getKey().substring(GEM_BOOST_PREFIX.length()).toUpperCase();
                 Stat stat = Stats.valueOf(statName);
                 int boost = container.getOrDefault(key, PersistentDataType.INTEGER, 0);
                 gemBoosts.put(stat, boost);
             }
         }
 
-        // Realizar el reroll normal
-        super.rerollStats();
+        // Limpiar stats existentes y generar nuevas
+        emptyLore();
+        removeModifiers();
+        generateStats();
 
-        // Reaplicar los boosts de gemas
+        // Aplicar nuevas stats y boosts en una sola pasada
+        for (int i = this.getAddedStats().size() - 1; i >= 0; i--) {
+            Stat stat = this.getAddedStats().get(i);
+            int baseValue = this.getStatValues().get(i);
+            int gemBoost = gemBoosts.getOrDefault(stat, 0);
+
+            if (gemBoost > 0) {
+                // Si hay boost de gema, guardar el valor base y aplicar el total
+                ItemMeta meta = getItemMeta();
+                container = meta.getPersistentDataContainer();
+                container.set(
+                        new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + stat.name()),
+                        PersistentDataType.INTEGER,
+                        baseValue
+                );
+                setItemMeta(meta);
+
+                addModifier(stat, baseValue + gemBoost, false);
+                addStatBreakdownToLore(stat, baseValue, gemBoost);
+            } else {
+                // Si no hay boost, aplicar solo el valor base
+                addModifier(stat, baseValue, true);
+            }
+        }
+
+        // Aplicar gemas que no coinciden con ninguna stat base
         for (Map.Entry<Stat, Integer> entry : gemBoosts.entrySet()) {
             Stat stat = entry.getKey();
             int gemBoost = entry.getValue();
 
-            StatModifier newMod = AuraSkillsBukkit.get().getItemManager().getStatModifiers(this, MODIFIER_TYPE).stream()
-                    .filter(mod -> mod.type().equals(stat))
-                    .findFirst()
-                    .orElse(null);
-
-            if (newMod != null) {
-                // Si la stat existe en el nuevo roll
-                removeSpecificModifier(stat);
-                removeSpecificStatLoreLine(stat);
-                addModifier(stat, (int) newMod.value() + gemBoost, false);
-                addStatBreakdownToLore(stat, (int) newMod.value(), gemBoost);
-            } else {
-                // Si la stat no existe en el nuevo roll, agregar solo el boost de la gema
+            // Solo aplicar si la stat no estaba en las nuevas stats generadas
+            if (!getAddedStats().contains(stat)) {
                 addModifier(stat, gemBoost, false);
             }
         }
         setLore();
+        updateLoreWithSockets();
     }
 
     @Override
     public void updateLoreWithSockets() {}
 
-    // Método helper para agregar modificador con control sobre generación de lore
-    private void addModifier(Stat stat, int value, boolean generateLore) {
+
+    protected void addModifier(Stat stat, int value, boolean generateLore) {
         this.setItemMeta(AuraSkillsBukkit.get()
                 .getItemManager()
                 .addStatModifier(this, MODIFIER_TYPE, stat, value, generateLore)
@@ -169,7 +190,7 @@ public class EnhancedSocketableItem extends IdentifiedItem {
     public void rerollLowestStat(Player player) {
         Stat lowestStat = getLowestModifier();
         if (lowestStat == null) {
-            player.sendMessage(ItemRarity.getBlessingPrefix()
+            player.sendMessage(ItemConfig.BLESSING_PREFIX
                     .append(Component.text("No hay estadísticas válidas para rerollear.")
                             .color(BlessingObject.getLoreColor())));
             return;
@@ -179,7 +200,7 @@ public class EnhancedSocketableItem extends IdentifiedItem {
 
         // Obtener el boost de gema actual si existe
         int gemBoost = container.getOrDefault(
-                new NamespacedKey(plugin, GEM_BOOST_PREFIX + lowestStat.name()), PersistentDataType.INTEGER, 0);
+                new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + lowestStat.name()), PersistentDataType.INTEGER, 0);
 
         // Remover la stat actual
         removeSpecificStatLoreLine(lowestStat);
@@ -196,7 +217,7 @@ public class EnhancedSocketableItem extends IdentifiedItem {
         if (gemBoost > 0) {
             // Guardar el nuevo valor base en NBT
             container.set(
-                    new NamespacedKey(plugin, BASE_STAT_VALUE_PREFIX + lowestStat.name()),
+                    new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + lowestStat.name()),
                     PersistentDataType.INTEGER,
                     newBaseValue);
             setItemMeta(meta);
@@ -209,23 +230,19 @@ public class EnhancedSocketableItem extends IdentifiedItem {
             addModifier(lowestStat, newBaseValue, true);
         }
 
-        updateRarity();
 
-        Component message = Component.text("Cambió la estadística: ", BlessingObject.getLoreColor())
+        Component message = Component.text("Nuevo bonus: ", BlessingObject.getLoreColor())
                 .append(Component.text(lowestStat.getDisplayName(
                                 AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
-                        .color(TextColor.fromHexString(lowestStat
-                                .getColor(
-                                        AuraSkillsApi.get().getMessageManager().getDefaultLanguage())
-                                .replaceAll("[<>]", ""))));
-        player.sendMessage(ItemRarity.getBlessingPrefix().append(message));
+                        .color(ItemUtil.getColorOfStat(lowestStat))).append(Component.text(" +").append(Component.text(newBaseValue)).color(ItemUtil.getColorOfStat(lowestStat)));
+        player.sendMessage(ItemConfig.BLESSING_PREFIX.append(message));
     }
 
     public void rerollExceptHighestStat(Player player) {
         // Obtener la stat más alta válida
         StatModifier highestMod = getHighestStatModifier();
         if (highestMod == null) {
-            player.sendMessage(ItemRarity.getRedemptionPrefix()
+            player.sendMessage(ItemConfig.REDEMPTION_PREFIX
                     .append(Component.text("No hay estadísticas válidas para preservar.")
                             .color(RedemptionObject.getLoreColor())));
             return;
@@ -236,11 +253,11 @@ public class EnhancedSocketableItem extends IdentifiedItem {
 
         // Guardar el boost de gema si existe
         int gemBoost = container.getOrDefault(
-                new NamespacedKey(plugin, GEM_BOOST_PREFIX + highestStat.name()), PersistentDataType.INTEGER, 0);
+                new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + highestStat.name()), PersistentDataType.INTEGER, 0);
 
         // Obtener el valor base guardado (si existe) o calcularlo
         int baseValue = container.getOrDefault(
-                new NamespacedKey(plugin, BASE_STAT_VALUE_PREFIX + highestStat.name()),
+                new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + highestStat.name()),
                 PersistentDataType.INTEGER,
                 gemBoost > 0 ? (int) (highestMod.value() - gemBoost) : (int) highestMod.value());
 
@@ -258,11 +275,9 @@ public class EnhancedSocketableItem extends IdentifiedItem {
 
         // Remover todos los modificadores existentes
         removeAllModifierStats();
-
         // Generar nuevas stats excepto la más alta
         generateStatsExceptHighestStat(highestStat);
         applyStatsToItem();
-
         // Reaplica la stat más alta con su valor base y boost si existe
         removeSpecificModifier(highestStat);
         removeSpecificStatLoreLine(highestStat);
@@ -276,7 +291,7 @@ public class EnhancedSocketableItem extends IdentifiedItem {
             ItemMeta meta = getItemMeta();
             container = meta.getPersistentDataContainer();
             container.set(
-                    new NamespacedKey(plugin, BASE_STAT_VALUE_PREFIX + highestStat.name()),
+                    new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + highestStat.name()),
                     PersistentDataType.INTEGER,
                     baseValue);
             setItemMeta(meta);
@@ -306,7 +321,7 @@ public class EnhancedSocketableItem extends IdentifiedItem {
                     ItemMeta meta = getItemMeta();
                     container = meta.getPersistentDataContainer();
                     container.set(
-                            new NamespacedKey(plugin, BASE_STAT_VALUE_PREFIX + stat.name()),
+                            new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + stat.name()),
                             PersistentDataType.INTEGER,
                             newBaseValue);
                     setItemMeta(meta);
@@ -315,17 +330,17 @@ public class EnhancedSocketableItem extends IdentifiedItem {
                 }
             }
         }
-        updateRarity();
         setLore();
 
-        Component message = Component.text("El objeto cambió, se conservó: ")
+        Component message = Component.text("Se conservó: ")
                 .color(RedemptionObject.getLoreColor())
                 .append(Component.text(highestStat.getDisplayName(
                                 AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
                         .color(TextColor.fromHexString(highestStat
                                 .getColor(
                                         AuraSkillsApi.get().getMessageManager().getDefaultLanguage())
-                                .replaceAll("[<>]", ""))));
-        player.sendMessage(ItemRarity.getRedemptionPrefix().append(message));
+                                .replaceAll("[<>]", "")))).append(Component.text(" Nueva calidad: ").append(rarity));
+        player.sendMessage(ItemConfig.REDEMPTION_PREFIX.append(message));
     }
+
 }

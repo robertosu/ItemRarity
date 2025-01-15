@@ -59,9 +59,9 @@ public class GemObject extends ItemStack {
 
     private void setGemNBT() {
         PersistentDataContainer container = meta.getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(ItemRarity.plugin, GEM_STAT_KEY);
+        NamespacedKey key = new NamespacedKey(ItemRarity.PLUGIN, GEM_STAT_KEY);
         container.set(key, PersistentDataType.STRING, stat.name());
-        NamespacedKey lvlkey = new NamespacedKey(ItemRarity.plugin, GEM_LEVEL_KEY);
+        NamespacedKey lvlkey = new NamespacedKey(ItemRarity.PLUGIN, GEM_LEVEL_KEY);
         container.set(lvlkey, PersistentDataType.INTEGER, level);
         meta.setCustomModelData(customModelData);
         setItemMeta(meta);
@@ -69,14 +69,14 @@ public class GemObject extends ItemStack {
     }
     public int getValueFromNBT(){
         PersistentDataContainer container = meta.getPersistentDataContainer();
-        NamespacedKey lvlkey = new NamespacedKey(ItemRarity.plugin, GEM_LEVEL_KEY);
+        NamespacedKey lvlkey = new NamespacedKey(ItemRarity.PLUGIN, GEM_LEVEL_KEY);
         int levelfromnbt = container.get(lvlkey, PersistentDataType.INTEGER);
         return 4 + (levelfromnbt - 1) * levelfromnbt / 2;
     }
 
     public Stat getStatFromNBT(){
         PersistentDataContainer container = meta.getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(ItemRarity.plugin, GEM_STAT_KEY);
+        NamespacedKey key = new NamespacedKey(ItemRarity.PLUGIN, GEM_STAT_KEY);
         String statfromnbt = container.get(key, PersistentDataType.STRING);
         return Stats.valueOf(statfromnbt);
     }

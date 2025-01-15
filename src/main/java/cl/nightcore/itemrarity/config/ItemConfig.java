@@ -1,18 +1,46 @@
 package cl.nightcore.itemrarity.config;
 
+import cl.nightcore.itemrarity.item.BlessingObject;
+import cl.nightcore.itemrarity.item.MagicObject;
+import cl.nightcore.itemrarity.item.RedemptionObject;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.NamespacedKey;
+
+import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
 
 public class ItemConfig {
-    public static final String COMMON_RARITY_KEYWORD = "Basura";
-    public static final String UNCOMMON_RARITY_KEYWORD = "Común";
-    public static final String RARE_RARITY_KEYWORD = "Raro";
-    public static final String EPIC_RARITY_KEYWORD = "Épico";
-    public static final String LEGENDARY_RARITY_KEYWORD = "Legendario";
-    public static final String GODLIKE_RARITY_KEYWORD = "Divino";
-    public static final TextColor COMMON_COLOR = TextColor.color(0xC5C5C5);
-    public static final TextColor UNCOMMON_COLOR = TextColor.color(0x31BD2C);
-    public static final TextColor RARE_COLOR = TextColor.color(0x1147FF);
-    public static final TextColor EPIC_COLOR = TextColor.color(0x922ADD);
+
+    public static final String ROLLCOUNT_KEY = "magicobject_roll_count";
+    public static final String ITEM_LEVEL_KEY = "item_level";
+    public static final String SCROLLED_IDENTIFIER_KEY = "is_identify_scrolled";
+
+    public static final NamespacedKey LEVEL_KEY_NS;
+    public static final NamespacedKey ROLLCOUNT_KEY_NS;
+
+    public static final TextColor COMMON_COLOR = TextColor.color(0xDEDEDE);
+    public static final TextColor UNCOMMON_COLOR = TextColor.color(0x2CAF34);
+    public static final TextColor RARE_COLOR = TextColor.color(0x0333AF);
+    public static final TextColor EPIC_COLOR = TextColor.color(0x812EDD);
     public static final TextColor LEGENDARY_COLOR =TextColor.color(0xFFDB00);
     public static final TextColor GODLIKE_COLOR = TextColor.color(0xFF181B);
+
+    public static final Component PLUGIN_PREFIX = Component.text("[Pergamino]: ").color(NamedTextColor.GOLD);
+    public static final Component REROLL_PREFIX = Component.text("[Objeto Mágico]: ").color(MagicObject.getPrimaryColor());
+    public static final Component REDEMPTION_PREFIX = Component.text("[Redención]: ").color(RedemptionObject.getPrimaryColor());
+    public static final Component BLESSING_PREFIX = Component.text("[Bendición]: ").color(BlessingObject.getPrimaryColor());
+    public static final Component GEMSTONE_PREFIX = Component.text("[Gemas]: ").color(TextColor.color(0x2DF0FF));
+
+    public static final String BLESSING_OBJECT_KEY = "blessing_object";
+    public static final String GEM_REMOVER_KEY = "gem_remover";
+    public static final String IDENTIFY_SCROLL_KEY = "identify_scroll";
+    public static final String MAGIC_OBJECT_KEY = "magic_object";
+    public static final String REDEEM_OBJECT_KEY = "redemption_object";
+
+    static {
+        LEVEL_KEY_NS = new NamespacedKey(PLUGIN, ITEM_LEVEL_KEY);
+        ROLLCOUNT_KEY_NS = new NamespacedKey(PLUGIN, ROLLCOUNT_KEY);
+        
+    }
 }

@@ -1,20 +1,14 @@
 package cl.nightcore.itemrarity.util;
 
 import cl.nightcore.itemrarity.ItemRarity;
-import cl.nightcore.itemrarity.abstracted.IdentifiedItem;
 import cl.nightcore.itemrarity.abstracted.RollQuality;
-import cl.nightcore.itemrarity.statprovider.StatProvider;
 import cl.nightcore.itemrarity.classes.GodRollQuality;
 import cl.nightcore.itemrarity.classes.HighRollQuality;
 import cl.nightcore.itemrarity.classes.MediumRollQuality;
 import cl.nightcore.itemrarity.config.ItemConfig;
-import cl.nightcore.itemrarity.item.BlessingObject;
-import cl.nightcore.itemrarity.item.IdentifyScroll;
-import cl.nightcore.itemrarity.item.MagicObject;
-import cl.nightcore.itemrarity.item.RedemptionObject;
+import cl.nightcore.itemrarity.item.*;
 import cl.nightcore.itemrarity.model.GemModel;
-import cl.nightcore.itemrarity.statprovider.ArmorStatProvider;
-import cl.nightcore.itemrarity.statprovider.WeaponStatProvider;
+import cl.nightcore.itemrarity.statprovider.*;
 import com.nexomc.nexo.api.NexoItems;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.item.ModifierType;
@@ -38,6 +32,7 @@ import java.text.DecimalFormat;
 import java.util.*;
 
 public class ItemUtil {
+
     public static final Random random = new Random();
     public static final DecimalFormat df = new DecimalFormat("0.#");
 
@@ -46,7 +41,7 @@ public class ItemUtil {
     }
 
     public static boolean isIdentified(ItemStack item) {
-        return checkBooleanTag(item, IdentifiedItem.IDENTIFIER_KEY);
+        return checkBooleanTag(item, ItemConfig.SCROLLED_IDENTIFIER_KEY);
     }
 
     public static boolean isIdentifyScroll(ItemStack item) {
@@ -66,23 +61,43 @@ public class ItemUtil {
     }
 
     private static boolean checkBooleanTag(ItemStack item, String key) {
-        if (item == null || item.getType().isAir() || ItemRarity.plugin == null) {
+        if (item == null || item.getType().isAir() || ItemRarity.PLUGIN == null) {
             return false;
         }
-        NamespacedKey namespacedKey = new NamespacedKey(ItemRarity.plugin, key);
+        NamespacedKey namespacedKey = new NamespacedKey(ItemRarity.PLUGIN, key);
         return item.getItemMeta() != null
                 && item.getItemMeta().getPersistentDataContainer().has(namespacedKey, PersistentDataType.BOOLEAN)
                 && item.getItemMeta().getPersistentDataContainer().get(namespacedKey, PersistentDataType.BOOLEAN)
                         == Boolean.TRUE;
     }
 
-    public static StatProvider getStatProvider(ItemStack item) {
-        return switch (getItemType(item)) {
-            case "Weapon" -> new WeaponStatProvider();
-            case "Armor" -> new ArmorStatProvider();
-            default -> null;
-        };
+    public static StatProvider getStatProvider(ItemStack item){
+        Material material = item.getType();
+        // Verificar si es armadura
+        if (material.name().endsWith("_HELMET")){
+            return new HelmetStatProvider();
+        }
+        else if (material.name().endsWith("_CHESTPLATE")){
+            return new ChestplateStatProvider();
+        }
+        else if (material.name().endsWith("_LEGGINGS")){
+            return new LeggingsStatProvider();
+        }
+        else if (material.name().endsWith("_BOOTS")){
+            return new BootsStatProvider();
+        }
+        else if (material.name().endsWith("_SWORD")
+                || material.name().endsWith("_AXE")
+                || material == Material.TRIDENT
+                || material == Material.BOW
+                || material == Material.CROSSBOW) {
+            return new WeaponStatProvider();
+        } else {
+            // Si no es armadura ni arma, retornar vacío.
+            throw new IllegalArgumentException("Llamada ilegal de metodo");
+        }
     }
+
 
     public static String getItemType(ItemStack item) {
         Material material = item.getType();
@@ -106,7 +121,7 @@ public class ItemUtil {
         }
     }
 
-    public static Boolean isIdentifiable(ItemStack item) {
+    public static boolean isIdentifiable(ItemStack item) {
         return getItemType(item).equals("Weapon") || getItemType(item).equals("Armor");
     }
 
@@ -121,9 +136,17 @@ public class ItemUtil {
     public static boolean isGem(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(ItemRarity.plugin, GemModel.getGemStatKey());
+        NamespacedKey key = new NamespacedKey(ItemRarity.PLUGIN, GemModel.getGemStatKey());
         return container.has(key, PersistentDataType.STRING);
     }
+
+    public static boolean isGemRemover(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return false;
+        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
+        NamespacedKey key = new NamespacedKey(ItemRarity.PLUGIN, GemRemover.getGemRemoverKey());
+        return container.has(key, PersistentDataType.INTEGER);
+    }
+
 
     public static TextColor getColorOfStat(Stat stat) {
         return TextColor.fromHexString(
@@ -221,91 +244,92 @@ public class ItemUtil {
             case GodRollQuality godRollQuality -> {
                 if (average >= 25.0) {
                     color = ItemConfig.GODLIKE_COLOR;
-                    rarityText = "[Divino]";
+                    rarityText = "Divino";
                 } else if (average >= 23.0) {
                     color = ItemConfig.LEGENDARY_COLOR;
-                    rarityText = "[Legendario]";
+                    rarityText = "Legendario";
                 } else if (average >= 20.5) {
                     color = ItemConfig.EPIC_COLOR;
-                    rarityText = "[Épico]";
+                    rarityText = "Épico";
                 } else if (average >= 17.5) {
                     color = ItemConfig.RARE_COLOR;
-                    rarityText = "[Raro]";
+                    rarityText = "Raro";
                 } else if (average >= 14.0) {
                     color = ItemConfig.UNCOMMON_COLOR;
-                    rarityText = "[Común]";
+                    rarityText = "Común";
                 } else {
                     color = ItemConfig.COMMON_COLOR;
-                    rarityText = "[Basura]";
+                    rarityText = "Basura";
                 }
             }
             case HighRollQuality highRollQuality -> {
                 if (average >= 23.5) {
                     color = ItemConfig.GODLIKE_COLOR;
-                    rarityText = "[Divino]";
+                    rarityText = "Divino";
                 } else if (average >= 21.5) {
                     color = ItemConfig.LEGENDARY_COLOR;
-                    rarityText = "[Legendario]";
+                    rarityText = "Legendario";
                 } else if (average >= 19) {
                     color = ItemConfig.EPIC_COLOR;
-                    rarityText = "[Épico]";
+                    rarityText = "Épico";
                 } else if (average >= 16) {
                     color = ItemConfig.RARE_COLOR;
-                    rarityText = "[Raro]";
+                    rarityText = "Raro";
                 } else if (average >= 12.5) {
                     color = ItemConfig.UNCOMMON_COLOR;
-                    rarityText = "[Común]";
+                    rarityText = "Común";
                 } else {
                     color = ItemConfig.COMMON_COLOR;
-                    rarityText = "[Basura]";
+                    rarityText = "Basura";
                 }
             }
             case MediumRollQuality mediumRollQuality -> {
                 if (average >= 22.0) {
                     color = ItemConfig.GODLIKE_COLOR;
-                    rarityText = "[Divino]";
+                    rarityText = "Divino";
                 } else if (average >= 20.0) {
                     color = ItemConfig.LEGENDARY_COLOR;
-                    rarityText = "[Legendario]";
+                    rarityText = "Legendario";
                 } else if (average >= 17.5) {
                     color = ItemConfig.EPIC_COLOR;
-                    rarityText = "[Épico]";
+                    rarityText = "Épico";
                 } else if (average >= 14.5) {
                     color = ItemConfig.RARE_COLOR;
-                    rarityText = "[Raro]";
+                    rarityText = "Raro";
                 } else if (average >= 11.0) {
                     color = ItemConfig.UNCOMMON_COLOR;
-                    rarityText = "[Común]";
+                    rarityText = "Común";
                 } else {
                     color = ItemConfig.COMMON_COLOR;
-                    rarityText = "[Basura]";
+                    rarityText = "Basura";
                 }
             }
             case null, default -> {
                 if (average >= 19.0) {
                     color = ItemConfig.GODLIKE_COLOR;
-                    rarityText = "[Divino]";
+                    rarityText = "Divino";
                 } else if (average >= 17.0) {
                     color = ItemConfig.LEGENDARY_COLOR;
-                    rarityText = "[Legendario]";
+                    rarityText = "Legendario";
                 } else if (average >= 14.5) {
                     color = ItemConfig.EPIC_COLOR;
-                    rarityText = "[Épico]";
+                    rarityText = "Épico";
                 } else if (average >= 11.5) {
                     color = ItemConfig.RARE_COLOR;
-                    rarityText = "[Raro]";
+                    rarityText = "Raro";
                 } else if (average >= 8.0) {
                     color = ItemConfig.UNCOMMON_COLOR;
-                    rarityText = "[Común]";
+                    rarityText = "Común";
                 } else {
                     color = ItemConfig.COMMON_COLOR;
-                    rarityText = "[Basura]";
+                    rarityText = "Basura";
                 }
             }
         }
 
         return Component.text(rarityText).color(color).decoration(TextDecoration.ITALIC, false);
     }
+
 
     public static void attributesDisplayInLore(ItemStack item) {
         ItemMeta meta = item.getItemMeta();

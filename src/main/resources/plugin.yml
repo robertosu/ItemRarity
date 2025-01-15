@@ -19,3 +19,5 @@ commands:
     usage: /getredemption <cantidad>
   getgem:
     description: Obtienes una gema.
+  getremover:
+    description: Obtienes un removedor de gemas.

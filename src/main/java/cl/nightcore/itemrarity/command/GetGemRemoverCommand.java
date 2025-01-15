@@ -1,14 +1,14 @@
 package cl.nightcore.itemrarity.command;
 
 import cl.nightcore.itemrarity.ItemRarity;
-import cl.nightcore.itemrarity.item.MagicObject;
+import cl.nightcore.itemrarity.item.GemRemover;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-public class GetMagicCommand implements CommandExecutor {
+public class GetGemRemoverCommand implements CommandExecutor {
     @Override
     public boolean onCommand(
             @NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String @NotNull [] args) {
@@ -24,15 +24,15 @@ public class GetMagicCommand implements CommandExecutor {
             try {
                 amount = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
-                player.sendMessage("Uso: /getmagic [cantidad]");
+                player.sendMessage("Uso: /getremover [cantidad]");
                 return true;
             }
         }
 
-        MagicObject magic = new MagicObject(amount, ItemRarity.getPlugin(ItemRarity.class));
+        GemRemover gemRemover = new GemRemover(amount, ItemRarity.PLUGIN);
 
-        player.getInventory().addItem(magic);
-        player.sendMessage("¡Has obtenido " + amount + " objeto(s) mágico(s)!");
+        player.getInventory().addItem(gemRemover);
+        player.sendMessage("¡Has obtenido " + amount + " removedor(es) de gema!");
 
         return true;
     }
