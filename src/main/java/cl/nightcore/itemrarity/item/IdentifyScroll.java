@@ -1,8 +1,7 @@
 package cl.nightcore.itemrarity.item;
 
 
-import com.nexomc.nexo.NexoPlugin;
-import com.nexomc.nexo.api.NexoItems;
+import cl.nightcore.itemrarity.config.ItemConfig;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -17,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class IdentifyScroll extends ItemStack {
-    private static final String IDENTIFY_SCROLL_KEY = "IdentifyScroll";
     private static final Component DISPLAY_NAME = Component.text("Pergamino de identificación").color(NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false);
     private static final NamedTextColor LORE_COLOR = NamedTextColor.GRAY;
 
@@ -26,20 +24,18 @@ public class IdentifyScroll extends ItemStack {
         ItemMeta meta = this.getItemMeta();
 
         // Set persistent data
-        NamespacedKey key = new NamespacedKey(plugin, IDENTIFY_SCROLL_KEY);
+        NamespacedKey key = new NamespacedKey(plugin, ItemConfig.IDENTIFY_SCROLL_KEY);
         meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
 
         // Set display name using Adventure API
         meta.displayName(DISPLAY_NAME);
 
         // Set Oraxen model
-        /*NamespacedKey itemModel = new NamespacedKey(NexoPlugin.instance(), "identify_scroll");
-        meta.setItemModel(itemModel);*/
         meta.setCustomModelData(6000);
         // Set lore using Adventure API
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Arrastra este item a tu equipamiento para").color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
-        lore.add(Component.text("desbloquear sus estadísticas adicionales.").color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
+        lore.add(Component.text("desbloquear sus estadísticas ocultas.").color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
         meta.lore(lore);
 
         // Set glint effect
@@ -49,7 +45,7 @@ public class IdentifyScroll extends ItemStack {
     }
 
     public static String getIdentifyScrollKey() {
-        return IDENTIFY_SCROLL_KEY;
+        return ItemConfig.IDENTIFY_SCROLL_KEY;
     }
 
     public static NamedTextColor getLoreColor() {

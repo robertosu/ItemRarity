@@ -1,7 +1,7 @@
 package cl.nightcore.itemrarity.listener;
 
 import cl.nightcore.itemrarity.ItemRarity;
-import cl.nightcore.itemrarity.abstracted.IdentifiedItem;
+import cl.nightcore.itemrarity.util.ItemUtil;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.event.EventHandler;
@@ -14,17 +14,19 @@ import org.bukkit.persistence.PersistentDataType;
 
 public class ItemClickListener implements Listener {
 
-    private static final NamespacedKey LORE_UPDATED_KEY = new NamespacedKey(ItemRarity.getPlugin(ItemRarity.class), "lore_updated");
+    private static final NamespacedKey LORE_UPDATED_KEY =
+            new NamespacedKey(ItemRarity.getPlugin(ItemRarity.class), "lore_updated");
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         ItemStack clickedItem = event.getCurrentItem();
 
-        if (ItemRarity.isNotEmpty(clickedItem)) {
-            //System.out.println(clickedItem.getItemMeta().toString());
-            if (ItemRarity.isIdentifiable(clickedItem) && !ItemRarity.getItemType(clickedItem).equals("Armor")) {
+        if (ItemUtil.isNotEmpty(clickedItem)) {
+            // System.out.println(clickedItem.getItemMeta().toString());
+            if (ItemUtil.isIdentifiable(clickedItem)
+                    && !ItemUtil.getItemType(clickedItem).equals("Armor")) {
                 if (!isLoreUpdated(clickedItem) || clickedItem.containsEnchantment(Enchantment.SHARPNESS)) {
-                    IdentifiedItem.attributesDisplayInLore(clickedItem);
+                    ItemUtil.attributesDisplayInLore(clickedItem);
                     setLoreUpdated(clickedItem);
                 }
             }

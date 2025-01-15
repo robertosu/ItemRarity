@@ -1,6 +1,6 @@
 package cl.nightcore.itemrarity.item;
 
-import com.nexomc.nexo.NexoPlugin;
+import cl.nightcore.itemrarity.config.ItemConfig;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BlessingObject extends ItemStack {
-    private static final String BLESSING_OBJECT_KEY = "BlessingObject";
     private static final TextColor PRIMARY_COLOR = TextColor.fromHexString("#12B8E6");
     private static final TextColor LORE_COLOR = TextColor.fromHexString("#7FD9B0");
     private static final Component DISPLAY_NAME = Component.text("Bendición")
@@ -27,15 +26,12 @@ public class BlessingObject extends ItemStack {
         ItemMeta meta = this.getItemMeta();
 
         // Set persistent data
-        NamespacedKey key = new NamespacedKey(plugin, BLESSING_OBJECT_KEY);
+        NamespacedKey key = new NamespacedKey(plugin, ItemConfig.BLESSING_OBJECT_KEY);
         meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
 
         // Set display name using Adventure API
         meta.displayName(DISPLAY_NAME);
 
-        // Set Oraxen model
-        //NamespacedKey itemModel = new NamespacedKey(NexoPlugin.instance(), "blessing_object");
-        //meta.setItemModel(itemModel);
         meta.setCustomModelData(6002);
 
         // Set lore using Adventure API
@@ -61,6 +57,6 @@ public class BlessingObject extends ItemStack {
     }
 
     public static String getBlessingObjectKey() {
-        return BLESSING_OBJECT_KEY;
+        return ItemConfig.BLESSING_OBJECT_KEY;
     }
 }

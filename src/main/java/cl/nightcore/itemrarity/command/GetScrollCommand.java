@@ -10,13 +10,13 @@ import org.jetbrains.annotations.NotNull;
 
 public class GetScrollCommand implements CommandExecutor {
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
-        if (!(sender instanceof Player)) {
+    public boolean onCommand(
+            @NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String @NotNull [] args) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage("Este comando solo puede ser ejecutado por jugadores.");
             return true;
         }
 
-        Player player = (Player) sender;
         int amount = 64; // Cantidad predeterminada
 
         // Verificar si se proporcionó un argumento para la cantidad

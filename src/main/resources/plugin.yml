@@ -2,7 +2,7 @@ name: ItemRarity
 version: 0.2.1
 main: cl.nightcore.itemrarity.ItemRarity
 api-version: 1.20
-softdepend: [AuraSkills]
+softdepend: [ AuraSkills ]
 
 commands:
   getscroll:
@@ -17,3 +17,7 @@ commands:
   getredemption:
     description: Obtienes un objeto redención.
     usage: /getredemption <cantidad>
+  getgem:
+    description: Obtienes una gema.
+  getremover:
+    description: Obtienes un removedor de gemas.

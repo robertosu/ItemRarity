@@ -14,34 +14,36 @@ import org.bukkit.plugin.Plugin;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MagicObject extends ItemStack {
-    private static final TextColor PRIMARY_COLOR = TextColor.fromHexString("#6E6FF8");
-    private static final TextColor LORE_COLOR = TextColor.fromHexString("#CA9CDE");
-    private static final Component DISPLAY_NAME = Component.text("Objeto Mágico")
+public class GemRemover extends ItemStack {
+    private static final TextColor PRIMARY_COLOR = TextColor.fromHexString("#12B8E6");
+    private static final TextColor LORE_COLOR = TextColor.fromHexString("#7FD9B0");
+    private static final Component DISPLAY_NAME = Component.text("Removedor de gemas")
             .color(PRIMARY_COLOR)
             .decoration(TextDecoration.ITALIC, false);
 
-    public MagicObject(int amount, Plugin plugin) {
+    public GemRemover(int amount, Plugin plugin) {
         super(Material.PAPER, amount);
         ItemMeta meta = this.getItemMeta();
 
         // Set persistent data
-        NamespacedKey key = new NamespacedKey(plugin, ItemConfig.MAGIC_OBJECT_KEY);
-        meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
+        NamespacedKey key = new NamespacedKey(plugin, ItemConfig.GEM_REMOVER_KEY);
+        meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
 
         // Set display name using Adventure API
         meta.displayName(DISPLAY_NAME);
 
         // Set Oraxen model
-        /*NamespacedKey itemModel = new NamespacedKey(NexoPlugin.instance(), "enchanted_object");
-        meta.setItemModel(itemModel);*/
+        //NamespacedKey itemModel = new NamespacedKey(NexoPlugin.instance(), "blessing_object");
+        //meta.setItemModel(itemModel);
 
-        meta.setCustomModelData(6001);
+
+        meta.setCustomModelData(6005);
+
         // Set lore using Adventure API
         List<Component> lore = new ArrayList<>();
-        lore.add(Component.text("Elimina los bonos de uno de tus objetos")
+        lore.add(Component.text("Arrastralo a un objeto para extraer sus gemas")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
-        lore.add(Component.text("y añade nuevos. Aumenta la magia de tu objeto")
+        lore.add(Component.text("algunas pueden fallar.")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
         meta.lore(lore);
 
@@ -59,7 +61,7 @@ public class MagicObject extends ItemStack {
         return LORE_COLOR;
     }
 
-    public static String getMagicObjectKey() {
-        return ItemConfig.MAGIC_OBJECT_KEY;
+    public static String getGemRemoverKey() {
+        return ItemConfig.GEM_REMOVER_KEY;
     }
 }

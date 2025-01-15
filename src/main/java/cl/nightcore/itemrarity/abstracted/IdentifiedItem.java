@@ -1,312 +1,171 @@
 package cl.nightcore.itemrarity.abstracted;
 
-import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.classes.*;
-import cl.nightcore.itemrarity.item.BlessingObject;
-import cl.nightcore.itemrarity.item.RedemptionObject;
+import cl.nightcore.itemrarity.config.ItemConfig;
+import cl.nightcore.itemrarity.statprovider.StatProvider;
+import cl.nightcore.itemrarity.util.ItemUtil;
+import com.nexomc.nexo.api.NexoItems;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.AuraSkillsBukkit;
 import dev.aurelium.auraskills.api.item.ModifierType;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.StatModifier;
 import dev.aurelium.auraskills.api.stat.Stats;
-import dev.aurelium.auraskills.api.util.AuraSkillsModifier;
-import com.nexomc.nexo.api.NexoItems;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Nullable;
 
-import java.text.DecimalFormat;
 import java.util.*;
 
-import static cl.nightcore.itemrarity.ItemRarity.isIdentified;
+import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
+import static cl.nightcore.itemrarity.abstracted.EnhancedSocketableItem.BASE_STAT_VALUE_PREFIX;
+import static cl.nightcore.itemrarity.abstracted.EnhancedSocketableItem.GEM_BOOST_PREFIX;
+import static cl.nightcore.itemrarity.util.ItemUtil.getStatProvider;
+import static cl.nightcore.itemrarity.util.ItemUtil.isIdentified;
 
 public abstract class IdentifiedItem extends ItemStack {
 
-    protected static final String ROLL_IDENTIFIER_KEY = "roll_count";
-    protected static final String LEVEL_KEY = "magicobject_roll_lvl";
-    private static final String IDENTIFIER_KEY = "is_identify_scrolled";
-
-    private static final String COMMON_RARITY_KEYWORD = "Basura";
-    private static final String UNCOMMON_RARITY_KEYWORD = "Común";
-    private static final String RARE_RARITY_KEYWORD = "Raro";
-    private static final String EPIC_RARITY_KEYWORD = "Épico";
-    private static final String LEGENDARY_RARITY_KEYWORD = "Legendario";
-    private static final String GODLIKE_RARITY_KEYWORD = "Divino";
-
-
-    private static final TextColor COMMON_COLOR = TextColor.color(0x979797);
-    private static final TextColor UNCOMMON_COLOR = TextColor.color(0x2DD52C);
-    private static final TextColor RARE_COLOR = TextColor.color(0x004DFF);
-    private static final TextColor EPIC_COLOR = TextColor.color(0x9726DD);
-    private static final TextColor LEGENDARY_COLOR =TextColor.color(0xFFDB00);
-    private static final TextColor GODLIKE_COLOR = TextColor.color(0xFF181B);
-
-
-    private static final DecimalFormat df = new DecimalFormat("0.#");
+    protected final ModifierType MODIFIER_TYPE;
+    protected final StatProvider statProvider;
     private final List<Stat> addedStats;
     private final List<Integer> statValues;
-    protected ModifierType MODIFIER_TYPE;
-    protected StatProvider statProvider;
     protected RollQuality rollQuality;
-    protected ItemRarity plugin = (ItemRarity) Bukkit.getPluginManager().getPlugin("ItemRarity");
-    Component reset = Component.text().content("").color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false).build();
-    private Component rarity;
+    protected Component rarity;
 
+    Component reset = Component.text().content("").color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false).build();
 
     public IdentifiedItem(ItemStack item) {
         super(item);
         rollQuality = getRollQuality();
+        this.statProvider = getStatProvider(this);
         this.addedStats = new ArrayList<>();
         this.statValues = new ArrayList<>();
-        this.MODIFIER_TYPE = plugin.getModifierType(item);
+        this.MODIFIER_TYPE = ItemUtil.getModifierType(item);
         if (!isIdentified(item)) {
             generateStats();
             applyStatsToItem();
-            setRarity();
             setIdentifiedNBT();
             setLore();
-
         }
     }
 
-    public static String getIdentifierKey() {
-        return IDENTIFIER_KEY;
-    }
-
-    public static void attributesDisplayInLore(ItemStack item) {
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return;
-
-        // Restablecer modificadores de atributo si el ítem no es personalizado
-        if (NexoItems.idFromItem(item) == null) {
-            var defaultModifiers = item.getType().getDefaultAttributeModifiers();
-            meta.setAttributeModifiers(defaultModifiers);
-            item.setItemMeta(meta);
-        }
-
-        double totalDamage = calculateTotalDamage(item);
-        double attackSpeed = calculateAttackSpeed(item);
-        String attackSpeedDisplay = String.format("%.1f", attackSpeed);
-
-        // Recuperar o inicializar la lore como componentes
-        List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
-        if (lore == null) lore = new ArrayList<>();
-
-        // Filtrar líneas existentes que contengan atributos
-        lore.removeIf(line -> line.toString().contains("Daño de ataque") || line.toString().contains("Velocidad de ataque") || line.toString().contains("En la mano") || line.toString().contains("En la mano") || line.toString().contains("          "));
-
-        // Añadir nuevas líneas
-        lore.add(Component.text("          "));
-        lore.add(Component.text("En la mano principal:", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text(" " + df.format(totalDamage) + " ", NamedTextColor.BLUE).append(Component.text("Daño de ataque", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text(" " + attackSpeedDisplay + " ", NamedTextColor.BLUE).append(Component.text("Velocidad de ataque", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));
-
-        // Aplicar la nueva lore
-        meta.lore(lore);
-
-        // Ocultar atributos por defecto
-        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-        item.setItemMeta(meta);
-    }
-
-    private static double calculateTotalDamage(ItemStack item) {
-        double baseDamage;
-        ItemMeta meta = item.getItemMeta();
-
-        // Manejo de ítems vanilla
-        if (NexoItems.idFromItem(item) == null) {
-            baseDamage = getDefaultDamage(item.getType());
-            Collection<AttributeModifier> baseModifiers = item.getItemMeta().getAttributeModifiers(Attribute.ATTACK_DAMAGE);
-            if (baseModifiers != null) {
-                for (AttributeModifier modifier : baseModifiers) {
-                    if (modifier.getOperation() == AttributeModifier.Operation.ADD_NUMBER) {
-                        baseDamage = modifier.getAmount() + 1;
-                    }
-                }
-            }
-        }
-        // Manejo de ítems Oraxen
-        else {
-            baseDamage = getDefaultDamage(item.getType());
-            if (meta.hasAttributeModifiers()) {
-                Collection<AttributeModifier> modifiers = meta.getAttributeModifiers(Attribute.ATTACK_DAMAGE);
-                if (modifiers != null) {
-                    for (AttributeModifier modifier : modifiers) {
-                        if (modifier.getOperation() == AttributeModifier.Operation.ADD_NUMBER) {
-                            baseDamage = modifier.getAmount() + 1; // Reemplaza el valor base para ítems Oraxen
-                            break; // Asumimos que solo hay un modificador relevante
-                        }
-                    }
-                }
-            }
-        }
-
-        // Aplicar encantamiento de Sharpness
-        int sharpnessLevel = item.getEnchantmentLevel(Enchantment.SHARPNESS);
-        double sharpnessDamage = sharpnessLevel > 0 ? (0.5 * sharpnessLevel + 0.5) : 0;
-
-        return baseDamage + sharpnessDamage;
-    }
-
-    private static double calculateAttackSpeed(ItemStack item) {
-        double baseSpeed = 0;
-
-        Collection<AttributeModifier> baseModifiers = item.getType().getDefaultAttributeModifiers().get(Attribute.ATTACK_SPEED);
-
-        if (NexoItems.idFromItem(item) == null) {
-            for (AttributeModifier modifier : baseModifiers) {
-                baseSpeed = modifier.getAmount();
-            }
-            return baseSpeed + 4;
-        }
-
-        ItemMeta meta = item.getItemMeta();
-        if (NexoItems.idFromItem(item) != null) {
-            if (meta.getAttributeModifiers(Attribute.ATTACK_SPEED) != null) {
-                for (AttributeModifier modifier : meta.getAttributeModifiers(Attribute.ATTACK_SPEED)) {
-                    // DEBUG ATTACK SPEED System.out.println(modifier.getAmount());
-                    baseSpeed = modifier.getAmount() + 4;
-                    return baseSpeed;
-                }
-            } else if (meta.getAttributeModifiers(Attribute.ATTACK_SPEED) == null) {
-                for (AttributeModifier modifier : baseModifiers) {
-                    baseSpeed = modifier.getAmount();
-                }
-                return baseSpeed + 4;
-            }
-        }
-        return baseSpeed;
-    }
-
-    private static double getDefaultDamage(Material material) {
-        return switch (material) {
-            case WOODEN_SWORD, GOLDEN_SWORD -> 4;
-            case STONE_SWORD -> 5;
-            case IRON_SWORD -> 6;
-            case DIAMOND_SWORD, WOODEN_AXE, GOLDEN_AXE -> 7;
-            case NETHERITE_SWORD -> 8;
-            case STONE_AXE, IRON_AXE, DIAMOND_AXE -> 9;
-            case NETHERITE_AXE -> 10;
-            default -> 1;
-        };
-    }
-
-    private int getItemLevel() {
-        if (getRollQuality() instanceof LowRollQuality) {
-            return 1;
-        } else if (getRollQuality() instanceof MediumRollQuality) {
-            return 2;
-        } else if (getRollQuality() instanceof HighRollQuality) {
-            return 3;
-        } else if (getRollQuality() instanceof GodRollQuality) {
-            return 4;
-        }
-        return 0;
+    public Component getRarityComponent() {
+        return rarity;
     }
 
     protected abstract void generateStats();
 
-    public void rerollStats() {
-        emptyLore();
-        removeModifiers();
-        generateStats();
-        applyStatsToItem();
-        setRarity();
-        setLore();
-    }
-
-    private void removeSpecificModifier(Stat stat) {
+    protected void removeSpecificModifier(Stat stat) {
         this.setItemMeta(AuraSkillsBukkit.get().getItemManager().removeStatModifier(this, MODIFIER_TYPE, stat).getItemMeta());
     }
 
-    private void addModifier(Stat stat, int value) {
-        this.setItemMeta(AuraSkillsBukkit.get().getItemManager().addStatModifier(this, MODIFIER_TYPE, stat, value, true).getItemMeta());
-    }
 
-    private Stat getLowestModifier() {
-        StatModifier lowestModifier = null;
-        double lowestValue = 100;
+    protected Stat getLowestModifier() {
+        PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
+        StatModifier lowestValidModifier = null;
+        double lowestValue = Double.MAX_VALUE;
+
+        // Obtener todos los modificadores actuales
         for (StatModifier modifier : getStatModifiers()) {
-            double value = modifier.value();
-            if (value < lowestValue) {
-                lowestValue = value;
-                lowestModifier = modifier;
+            Stat currentStat = modifier.type();
+
+            // Obtener el boost de gema si existe
+            int gemBoost = container.getOrDefault(
+                    new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + currentStat.name()),
+                    PersistentDataType.INTEGER,
+                    0
+            );
+
+            // Obtener el valor base (ya sea guardado en NBT o calculado)
+            double baseValue;
+            if (gemBoost > 0) {
+                // Si hay boost de gema, usar el valor base guardado
+                baseValue = container.getOrDefault(
+                        new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + currentStat.name()),
+                        PersistentDataType.INTEGER,
+                        (int)(modifier.value() - gemBoost)
+                );
+            } else {
+                // Si no hay boost de gema, usar el valor actual
+                baseValue = modifier.value();
+            }
+
+            // Comparar usando el valor base
+            if (baseValue < lowestValue) {
+                lowestValue = baseValue;
+                lowestValidModifier = modifier;
             }
         }
-        return lowestModifier.type();
+
+        return lowestValidModifier != null ? lowestValidModifier.type() : null;
     }
 
-    private void removeSpecificStatLoreLine(Stat lowestStat) {
+    protected void removeSpecificStatLoreLine(Stat lowestStat) {
         ItemMeta meta = this.getItemMeta();
-        List<String> lore = Objects.requireNonNull(meta).getLore();
-        if (lore != null) {
+        /*List<String> lore = Objects.requireNonNull(meta).getLore();*/
+        @Nullable List<Component> lore = meta.lore();
+        if (lore != null){
             String statDisplayName = lowestStat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage());
-            lore.removeIf(line -> line.contains(statDisplayName));
-            meta.setLore(lore);
+            lore.removeIf(line-> line.toString().contains(statDisplayName));
+            meta.lore(lore);
             this.setItemMeta(meta);
         }
     }
 
-    private Stat getHighestStat() {
-        StatModifier highestModifier = null;
-        double highestValue = 0;
-        for (StatModifier modifier : getStatModifiers()) {
-            double value = modifier.value();
-            if (value > highestValue) {
-                highestValue = value;
-                highestModifier = modifier;
+    public StatModifier getHighestStatModifier() {
+        PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
+        StatModifier highestValidModifier = null;
+        double highestValue = Double.MIN_VALUE;
+
+        // Recolectar boosts de gemas
+        Map<Stat, Integer> gemBoosts = new HashMap<>();
+        for (NamespacedKey key : container.getKeys()) {
+            if (key.getKey().startsWith(GEM_BOOST_PREFIX)) {
+                String statName = key.getKey().substring(GEM_BOOST_PREFIX.length()).toUpperCase();
+                Stat stat = Stats.valueOf(statName);
+                int boost = container.get(key, PersistentDataType.INTEGER);
+                gemBoosts.put(stat, boost);
             }
         }
-        return highestModifier.type();
-    }
 
-    private double getHighestStatValue() {
-        StatModifier highestModifier = null;
-        double highestValue = 0;
         for (StatModifier modifier : getStatModifiers()) {
-            double value = modifier.value();
-            if (value > highestValue) {
-                highestValue = value;
-                highestModifier = modifier;
+            Stat currentStat = modifier.type();
+            int gemBoost = gemBoosts.getOrDefault(currentStat, 0);
+
+            // Obtener el valor base de la stat (si existe)
+            int baseValue = container.getOrDefault(
+                    new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + currentStat.name()),
+                    PersistentDataType.INTEGER,
+                    0
+            );
+
+            // Solo considerar stats que tienen valor base o no tienen boost de gema
+            if (baseValue > 0 || gemBoost == 0) {
+                double value = gemBoost > 0 ? baseValue : modifier.value();
+                if (value > highestValue) {
+                    highestValue = value;
+                    highestValidModifier = modifier;
+                }
             }
         }
-        return highestModifier.value();
-    }
 
-    public void rerollExceptHighestStat(Player player) {
-        Stat highestStat = getHighestStat();
-        int highestValue = (int) getHighestStatValue();
-        removeAllModifierStats();
-        generateStatsExceptHighestStat(highestStat);
-        applyStatsToItem();
-        addModifier(highestStat, highestValue);
-        updateRarityLore();
-        Component message = Component.text("¡Cambiaron las estadísticas! Se mantuvo: ").color(RedemptionObject.getLoreColor()).append(Component.text(highestStat.getColoredName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage())));
-        player.sendMessage(ItemRarity.getRedemptionPrefix().append(message));
+        return highestValidModifier;
     }
 
     protected void generateStatsExceptHighestStat(Stat excludedStat) {
         Random random = new Random();
         int statsCount = random.nextInt(2) + 4; // 4 o 5 estadísticas
-        StatProvider statProvider = ItemRarity.getStatProvider(this);
-        List<Stats> availableStats = statProvider.getAvailableStats();
+        StatProvider statProvider = ItemUtil.getStatProvider(this);
+        List<Stat> availableStats = statProvider.getAvailableStats();
         addedStats.clear();
         statValues.clear();
         for (Stat stat : statProvider.getGaussStats()) {
@@ -318,7 +177,7 @@ public abstract class IdentifiedItem extends ItemStack {
         }
         int gaussStatsAdded = getAddedStats().size();
         for (int i = 0; i < statsCount - gaussStatsAdded; i++) {
-            Stats stat;
+            Stat stat;
             do {
                 stat = availableStats.get(random.nextInt(availableStats.size()));
             } while (getAddedStats().contains(stat) || stat == excludedStat);
@@ -328,23 +187,12 @@ public abstract class IdentifiedItem extends ItemStack {
         }
     }
 
-    private void removeAllModifierStats() {
+    protected void removeAllModifierStats() {
         for (StatModifier stat : getStatModifiers()) {
             removeSpecificModifier(stat.type());
             removeSpecificStatLoreLine(stat.type());
 
         }
-    }
-
-    public void rerollLowestStat(Player player) {
-        Stat lowestModifier = getLowestModifier();
-        removeSpecificStatLoreLine(lowestModifier);
-        removeSpecificModifier(lowestModifier);
-        int newValue = StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(lowestModifier));
-        addModifier(lowestModifier, newValue);
-        updateRarityLore();
-        Component message = Component.text("Se cambió la stat ", BlessingObject.getLoreColor()).append(Component.text(lowestModifier.getColoredName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage())));
-        player.sendMessage(ItemRarity.getBlessingPrefix().append(message));
     }
 
     protected void applyStatsToItem() {
@@ -356,157 +204,94 @@ public abstract class IdentifiedItem extends ItemStack {
     }
 
     public void removeModifiers() {
-        for (Stats stat : ItemRarity.STATS) {
+        for (Stats stat : Stats.values()) {
             this.setItemMeta(AuraSkillsBukkit.get().getItemManager().removeStatModifier(this, MODIFIER_TYPE, stat).getItemMeta());
         }
     }
 
     protected void emptyLore() {
         ItemMeta meta = getItemMeta();
-        List<String> emptylore = new ArrayList<>();
-        assert meta != null;
-        meta.setLore(emptylore);
+        List<Component> emptylore = new ArrayList<>();
+        meta.lore(emptylore);
         setItemMeta(meta);
     }
 
     public RollQuality getRollQuality() {
         int level = getLevel();
-        if (level >= 30) {
+        if (level == 4) {
             return new GodRollQuality();
-        } else if (level >= 20) {
+        } else if (level == 3) {
             return new HighRollQuality();
-        } else if (level >= 10) {
+        } else if (level == 2) {
             return new MediumRollQuality();
         } else {
             return new LowRollQuality();
         }
     }
 
-    private void updateRarityLore() {
-        ItemMeta meta = getItemMeta();
-        //List<String> lore = meta.getLore();
-        @Nullable List<Component> lore = meta.lore();
-        if (lore != null) {
-            lore.removeIf(line -> line.toString().contains(COMMON_RARITY_KEYWORD)
-                    || line.toString().contains(UNCOMMON_RARITY_KEYWORD)
-                    || line.toString().contains(RARE_RARITY_KEYWORD) 
-                    || line.toString().contains(EPIC_RARITY_KEYWORD) 
-                    || line.toString().contains(LEGENDARY_RARITY_KEYWORD)
-                    || line.toString().contains(GODLIKE_RARITY_KEYWORD));
-            meta.lore(lore);
-            setItemMeta(meta);
-        }
-        setRarity();
-        setLore();
-    }
 
-    private void setRarity() {
+    public void obtainRarity() {
         if (!getStatModifiers().isEmpty()) {
-            double average = getStatModifiers().stream()
-                    .mapToDouble(AuraSkillsModifier::value)
-                    .average()
-                    .orElse(0.0);
+            PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
+            double totalValue = 0;
+            int statCount = 0;
 
-            switch (rollQuality.getClass().getSimpleName()) {
-                case "GodRollQuality":
-                    if (average >= 25.0) {
-                        rarity = Component.text("  [Divino]").color(GODLIKE_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 23.0) {
-                        rarity = Component.text("  [Legendario]").color(LEGENDARY_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 20.5) {
-                        rarity = Component.text("  [Épico]").color(EPIC_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 17.5) {
-                        rarity = Component.text("  [Raro]").color(RARE_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 14.0) {
-                        rarity = Component.text("  [Común]").color(UNCOMMON_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else {
-                        rarity = Component.text("  [Basura]").color(COMMON_COLOR).decoration(TextDecoration.ITALIC, false);
-                    }
-                    break;
+            for (StatModifier modifier : getStatModifiers()) {
+                Stat currentStat = modifier.type();
+                double currentValue = modifier.value();
 
-                case "HighRollQuality":
-                    if (average >= 23.5) {
-                        rarity = Component.text("  [Divino]").color(GODLIKE_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 21.5) {
-                        rarity = Component.text("  [Legendario]").color(LEGENDARY_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 19) {
-                        rarity = Component.text("  [Épico]").color(EPIC_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 16) {
-                        rarity = Component.text("  [Raro]").color(RARE_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 12.5) {
-                        rarity = Component.text("  [Común]").color(UNCOMMON_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else {
-                        rarity = Component.text("  [Basura]").color(COMMON_COLOR).decoration(TextDecoration.ITALIC, false);
-                    }
-                    break;
+                // Obtener el boost de la gema si existe
+                int gemBoost = container.getOrDefault(
+                        new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + currentStat.name()),
+                        PersistentDataType.INTEGER,
+                        0
+                );
 
-                case "MediumRollQuality":
-                    if (average >= 22.0) {
-                        rarity = Component.text("  [Divino]").color(GODLIKE_COLOR).decoration(TextDecoration.ITALIC, false);
-                    }else if (average >= 20.0) {
-                        rarity = Component.text("  [Legendario]").color(LEGENDARY_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 17.5) {
-                        rarity = Component.text("  [Épico]").color(EPIC_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 14.5) {
-                        rarity = Component.text("  [Raro]").color(RARE_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 11.0) {
-                        rarity = Component.text("  [Común]").color(UNCOMMON_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else {
-                        rarity = Component.text("  [Basura]").color(COMMON_COLOR).decoration(TextDecoration.ITALIC, false);
-                    }
-                    break;
+                // Si el valor total del modificador es igual al boost de la gema,
+                // significa que toda la stat proviene de la gema, así que la ignoramos completamente
+                if (currentValue == gemBoost) {
+                    continue; // No contar esta stat ni para el total ni para el contador
+                }
 
-                default: // LowRollQuality
-                    if (average >= 19.0) {
-                        rarity = Component.text("  [Divino]").color(GODLIKE_COLOR).decoration(TextDecoration.ITALIC, false);
-                    }else if (average >= 17.0) {
-                        rarity = Component.text("  [Legendario]").color(LEGENDARY_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 14.5) {
-                        rarity = Component.text("  [Épico]").color(EPIC_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 11.5) {
-                        rarity = Component.text("  [Raro]").color(RARE_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else if (average >= 8.0) {
-                        rarity = Component.text("  [Común]").color(UNCOMMON_COLOR).decoration(TextDecoration.ITALIC, false);
-                    } else {
-                        rarity = Component.text("  [Basura]").color(COMMON_COLOR).decoration(TextDecoration.ITALIC, false);
-                    }
-                    break;
+                // Si hay un boost de gema pero no es el valor total,
+                // restar el boost antes de agregar al total
+                if (gemBoost > 0) {
+                    currentValue -= gemBoost;
+                }
+
+                // Agregar al total y aumentar el contador
+                totalValue += currentValue;
+                statCount++;
             }
+
+            // Calcular el promedio solo si hay stats válidas
+            double average = (statCount > 0) ? totalValue / statCount : 0.0;
+            this.rarity = ItemUtil.calculateRarity(this.rollQuality, average);
         }
     }
 
-    private TextColor getRarityColor() {
-        if (rarity.toString().contains(GODLIKE_RARITY_KEYWORD)) {
-            return GODLIKE_COLOR;
-        } else if (rarity.toString().contains(LEGENDARY_RARITY_KEYWORD)) {
-            return LEGENDARY_COLOR;
-        } else if (rarity.toString().contains(EPIC_RARITY_KEYWORD)) {
-            return EPIC_COLOR;
-        } else if (rarity.toString().contains(RARE_RARITY_KEYWORD)) {
-            return RARE_COLOR;
-        } else if (rarity.toString().contains(UNCOMMON_RARITY_KEYWORD)) {
-            return UNCOMMON_COLOR;
-        } else {
-            return COMMON_COLOR;
-        }
+    public TextColor getRarityColor() {
+        return this.rarity.color();
     }
+
 
     public int getLevel() {
         PersistentDataContainer container = this.getItemMeta().getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(plugin, LEVEL_KEY);
-        return container.getOrDefault(key, PersistentDataType.INTEGER, 0);
+        NamespacedKey key = new NamespacedKey(PLUGIN, ItemConfig.ITEM_LEVEL_KEY);
+        return container.getOrDefault(key, PersistentDataType.INTEGER, 1);
+
     }
 
     public void setIdentifiedNBT() {
         ItemMeta meta = this.getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(plugin, IDENTIFIER_KEY);
+        NamespacedKey key = new NamespacedKey(PLUGIN, ItemConfig.SCROLLED_IDENTIFIER_KEY);
         container.set(key, PersistentDataType.BOOLEAN, true);
         this.setItemMeta(meta);
     }
 
-    private void setLore() {
-        int itemlevel = getItemLevel();
+    void setLore() {
+        obtainRarity();
         ItemMeta meta = getItemMeta();
         @Nullable List<Component> lore;
         if (meta.lore() != null) {
@@ -514,74 +299,68 @@ public abstract class IdentifiedItem extends ItemStack {
         } else {
             lore = new ArrayList<>();
         }
-        Component ilvl = Component.text(" ● Nvl " + itemlevel + " ●").color(NamedTextColor.DARK_GRAY).decorate(TextDecoration.ITALIC);
-        Component rareza = rarity.append(ilvl);
-        //lore.add(rarity + ChatColor.DARK_GRAY + ChatColor.ITALIC + " ● Nvl " + itemlevel + " ●");
-        lore.add(rareza);
-        //meta.setLore(lore);
+        // Eliminar líneas de rareza existentes
+        if (lore != null) {
+            lore.removeIf(line -> line.toString().contains("●"));
+        }
+        // Encontrar el índice después de la última línea que comienza con "+"
+        int lastStatIndex = -1;
+        if (lore != null) {
+            for (int i = 0; i < lore.size(); i++) {
+                String line = PlainTextComponentSerializer.plainText().serialize(lore.get(i));
+                if (line.trim().startsWith("+")) {
+                    lastStatIndex = i;
+                }
+            }
+        }
+        Component ilvl = Component.text("● Nivel " + getLevel() + " ● ")
+                .color(NamedTextColor.DARK_GRAY)
+                .decorate(TextDecoration.ITALIC);
+        Component rarityLine = ilvl.append(Component.text("[").color(rarity.color()).decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE)
+                .append(rarity)
+                .append(Component.text("]").color(rarity.color()).decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE)));
+        // Insertar en la posición correcta
+        int insertIndex = lastStatIndex != -1 ? lastStatIndex + 1 : 0;
+        assert lore != null;
+        if (insertIndex < lore.size()) {
+            lore.add(insertIndex, rarityLine);
+        } else {
+            lore.add(rarityLine);
+        }
         meta.lore(lore);
 
-        //oraxen weapon
-        if (NexoItems.idFromItem(this) != null && ItemRarity.getItemType(this).equals("Weapon")) {
+        // Resto del código para manejar nombres y atributos
+        handleAttributesInLoreAndName(meta, NexoItems.idFromItem(this) != null, ItemUtil.getItemType(this));
+        updateLoreWithSockets();
+    }
+
+    private void handleAttributesInLoreAndName(ItemMeta meta, boolean isNexoItem, String itemType) {
+        if (isNexoItem) {
             String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
-            //System.out.println(plainText.toString());
-            Component component = Component.text(plainText, getRarityColor()).decoration(TextDecoration.ITALIC, false);
-
-            //component = component.decoration(TextDecoration.ITALIC,false);
+            Component component = Component.text(plainText, getRarityColor())
+                    .decoration(TextDecoration.ITALIC, false);
             meta.customName(component);
-            setItemMeta(meta);
-            attributesDisplayInLore(this);
-
-            //oraxen armor
-        } else if (NexoItems.idFromItem(this) != null && ItemRarity.getItemType(this).equals("Armor")) {
-            String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
-            // System.out.println(plainText);
-            Component component = Component.text(plainText, getRarityColor()).decoration(TextDecoration.ITALIC, false);
-
-            //component = component.decoration(TextDecoration.ITALIC,false);
-            meta.customName(component);
-            setItemMeta(meta);
-        }
-        //caso arma / herramienta vanilla
-        else if (NexoItems.idFromItem(this) == null && !ItemRarity.getItemType(this).equals("Armor")) {
-            // Obtener la key de traducción
+        } else {
             if (!meta.hasCustomName()) {
-                // caso nombre vanilla; Obtener la key de traducción y colorear
                 String itemTranslationKey = this.translationKey();
                 TranslatableComponent translatedName = Component.translatable(itemTranslationKey).color(getRarityColor());
                 Component newName = reset.append(translatedName);
                 meta.itemName(newName);
             } else {
-                //caso nombre cambiado en yunque; colorear y quitar estilo italic
                 Component component = meta.customName();
-                component = component.color(getRarityColor()).decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE);
+                assert component != null;
+                component = component.color(getRarityColor())
+                        .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE);
                 meta.displayName(component);
             }
-            setItemMeta(meta);
-            attributesDisplayInLore(this);
         }
-        //caso armadura vanilla
-        else if (NexoItems.idFromItem(this) == null && ItemRarity.getItemType(this).equals("Armor")) {
-
-            if (!meta.hasCustomName()) {
-                // caso nombre vanilla; Obtener la key de traducción y colorear
-                String itemTranslationKey = this.translationKey();
-                TranslatableComponent translatedName = Component.translatable(itemTranslationKey).color(getRarityColor());
-                Component newName = reset.append(translatedName);
-                meta.itemName(newName);
-
-            } else {
-                //caso nombre cambiado en yunque; colorear y quitar estilo italic
-                Component component = meta.customName();
-                component = component.color(getRarityColor()).decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE);
-                meta.displayName(component);
-
-            }
-            setItemMeta(meta);
+        setItemMeta(meta);
+        if (itemType.equals("Weapon")) {
+            ItemUtil.attributesDisplayInLore(this);
         }
     }
 
-    private List<StatModifier> getStatModifiers() {
+    public List<StatModifier> getStatModifiers() {
         return AuraSkillsBukkit.get().getItemManager().getStatModifiers(this, MODIFIER_TYPE);
     }
 
@@ -592,8 +371,6 @@ public abstract class IdentifiedItem extends ItemStack {
     public List<Stat> getAddedStats() {
         return addedStats;
     }
+    public abstract void updateLoreWithSockets();
 
-    public Component getItemRarity() {
-        return rarity;
-    }
 }
