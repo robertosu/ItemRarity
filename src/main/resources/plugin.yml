@@ -1,5 +1,5 @@
 name: ItemRarity
-version: 0.2.1
+version: 0.2.2
 main: cl.nightcore.itemrarity.ItemRarity
 api-version: 1.20
 softdepend: [ AuraSkills ]
@@ -19,5 +19,13 @@ commands:
     usage: /getredemption <cantidad>
   getgem:
     description: Obtienes una gema.
+    usage: /getgem <stat> <cantidad> <nivel>
   getremover:
     description: Obtienes un removedor de gemas.
+    usage: /getremover <cantidad>
+  getblessingball:
+    description: Obtienes una Bola bendición.
+    usage: /getblessingball <cantidad>
+  getitemupgrader:
+    description: Obtienes una Runa activa.
+    usage: /getitemupgrader <cantidad> <nivel>

@@ -1,0 +1,20 @@
+stats:
+  itemrarity/dexterity:
+    enabled: true
+    traits:
+      itemrarity/dodge_chance:
+        modifier: 0.5 # Overrides the value passed in with CustomStatBuilder#trait
+  itemrarity/accuracy:
+    enabled: true
+    traits:
+      itemrarity/hit_chance:
+        modifier: 0.5 # Overrides the value passed in with CustomStatBuilder#trait
+traits:
+  itemrarity/dodge_chance:
+    enabled: true
+    use_percent: true
+    # Add configurable options here accessed using Trait#option... methods
+  itemrarity/hit_chance:
+    enabled: true
+    use_percent: true
+    # Add configurable options here accessed using Trait#option... methods

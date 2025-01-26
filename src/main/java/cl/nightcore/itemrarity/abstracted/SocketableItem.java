@@ -1,6 +1,7 @@
 package cl.nightcore.itemrarity.abstracted;
 
 import cl.nightcore.itemrarity.GemManager;
+import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.item.GemObject;
 import cl.nightcore.itemrarity.model.GemModel;
@@ -81,9 +82,47 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
         updateLoreWithSockets();
     }
 
-    public boolean installGem(GemModel gem) {
+    public boolean installGem(GemModel gem, Player player) {
+        // Verificar si hay espacios disponibles para gemas
+        if (!hasAvailableSockets()) {
+            player.sendMessage(ItemConfig.GEMSTONE_PREFIX
+                    .append(Component.text("Este objeto no tiene espacios disponibles para gemas.")
+                            .color(NamedTextColor.RED)));
+            return false;
+        }
 
+        // Verificar si ya hay una gema del mismo tipo
+        if (hasGemWithStat(gem.getStat())) {
+            player.sendMessage(ItemConfig.GEMSTONE_PREFIX
+                    .append(Component.text("El objeto ya tiene una gema de este tipo.")
+                            .color(NamedTextColor.RED)));
+            return false;
+        }
 
+        // Verificar si la gema es compatible con las stats posibles para un item
+        if (!gem.isCompatible(ItemUtil.getStatProvider(this))) {
+            List<Component> availableStatsComponents = new ArrayList<>();
+            // Construir la lista de componentes
+            ItemUtil.getStatProvider(this)
+                    .getAvailableStats()
+                    .forEach(stat -> availableStatsComponents.add(
+                            Component.text(stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
+                                    .color(ItemUtil.getColorOfStat(stat))
+                    ));
+            // Mostrar gemas compatibles
+            Component baseMessage = Component.text("El tipo de objeto no es compatible con la gema, intenta con: ")
+                    .color(NamedTextColor.RED);
+            for (int i = 0; i < availableStatsComponents.size(); i++) {
+                baseMessage = baseMessage.append(availableStatsComponents.get(i));
+                if (i < availableStatsComponents.size() - 1) {
+                    baseMessage = baseMessage.append(Component.text(", ").color(NamedTextColor.GRAY));
+                }
+            }
+            player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(baseMessage));
+            return false;
+        }
+
+        // Si todas las verificaciones pasan, proceder a instalar la gema
         Stat stat = gem.getStat();
 
         // Aplicar la gema primero
@@ -106,6 +145,11 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
 
         setItemMeta(meta);
         updateLoreWithSockets();
+
+        player.sendMessage(ItemConfig.GEMSTONE_PREFIX
+                .append(Component.text("¡Gema instalada con éxito!")
+                        .color(NamedTextColor.GREEN)));
+
         return true;
     }
 
@@ -133,11 +177,11 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
         return getAvailableSockets() > 0;
     }
 
-    public Map<Stats, Integer> getInstalledGems() {
-        Map<Stats, Integer> gems = new HashMap<>();
+    public Map<Stat, Integer> getInstalledGems() {
+        Map<Stat, Integer> gems = new HashMap<>();
         PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
 
-        for (Stats stat : Stats.values()) {
+        for (Stat stat : CombinedStats.values()) {
             String key = GEM_KEY_PREFIX + stat.name();
             String value = container.get(new NamespacedKey(PLUGIN, key),
                     PersistentDataType.STRING);
@@ -165,9 +209,9 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
         socketInfo.add(GEMS_HEADER);
 
         // Add installed gems
-        Map<Stats, Integer> installedGems = getInstalledGems();
-        for (Map.Entry<Stats, Integer> entry : installedGems.entrySet()) {
-            Stats stat = entry.getKey();
+        Map<Stat, Integer> installedGems = getInstalledGems();
+        for (Map.Entry<Stat, Integer> entry : installedGems.entrySet()) {
+            Stat stat = entry.getKey();
             int level = entry.getValue();
             int value = calculateGemValue(level);
 
@@ -214,23 +258,23 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
         // Si no se encuentra la línea de rareza, insertar al inicio
         return lore.size();
     }
-    public void extractAllGems(Player player) {
-        Map<Stats, Integer> installedGems = getInstalledGems();
+    public boolean extractAllGems(Player player) {
+        Map<Stat, Integer> installedGems = getInstalledGems();
 
         if (installedGems.isEmpty()) {
             player.sendMessage(
-                    ItemConfig.PLUGIN_PREFIX
+                    ItemConfig.GEMSTONE_PREFIX
                             .append(Component.text("Este objeto no tiene gemas instaladas.")
                                     .color(NamedTextColor.GRAY))
             );
-            return;
+            return false;
         }
         // Recolectar las gemas extraídas
         List<GemObject> extractedGems = new ArrayList<>();
 
         // Procesar cada gema instalada
-        for (Map.Entry<Stats, Integer> entry : installedGems.entrySet()) {
-            Stats stat = entry.getKey();
+        for (Map.Entry<Stat, Integer> entry : installedGems.entrySet()) {
+            Stat stat = entry.getKey();
             int gemLevel = entry.getValue();
 
             // Crear una instancia de la gema extraída
@@ -242,9 +286,18 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
 
             // Remover el modificador actual
             StatModifier currentModifier = getStatModifiers().stream()
-                    .filter(modifier -> modifier.type().equals(stat))
+                    .filter(modifier -> {
+                        try {
+                            // Comparar directamente los nombres de las stats
+                            return CombinedStats.valueOf(modifier.type().name()).equals(CombinedStats.valueOf(stat.name()));
+                        } catch (IllegalArgumentException e) {
+                            // Si la stat no existe en CombinedStats, ignorarla
+                            return false;
+                        }
+                    })
                     .findFirst()
                     .orElse(null);
+
 
             if (currentModifier != null) {
                 removeSpecificModifier(stat);
@@ -260,7 +313,7 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
         ItemMeta meta = getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
 
-        for (Stat stat : Stats.values()){
+        for (Stat stat : CombinedStats.values()){
             container.remove(new NamespacedKey(PLUGIN, GEM_KEY_PREFIX + stat.name()));
             container.remove(new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + stat.name()));
             container.remove(new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + stat.name()));
@@ -268,11 +321,9 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
         }
         container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, getMaxSockets());
         setItemMeta(meta);
-
         // Actualizar el lore después de todos los cambios
         updateLoreWithSockets();
         setLore();
-
         // Entregar las gemas al jugador
         for (GemObject gem : extractedGems) {
             HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(gem);
@@ -280,12 +331,12 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
                 player.getWorld().dropItemNaturally(player.getLocation(), gem);
             }
         }
-
         // Notificar al jugador
         player.sendMessage(
                 ItemConfig.PLUGIN_PREFIX
                         .append(Component.text("Has extraído todas las gemas del objeto."))
                         .color(NamedTextColor.GRAY)
         );
+        return true;
     }
 }

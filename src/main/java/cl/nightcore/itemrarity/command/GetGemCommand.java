@@ -1,7 +1,9 @@
 package cl.nightcore.itemrarity.command;
 
 import cl.nightcore.itemrarity.GemManager;
+import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.item.GemObject;
+import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.Stats;
 import org.bukkit.command.Command;
@@ -28,10 +30,10 @@ public class GetGemCommand implements CommandExecutor {
         // Obtener el Stat a partir del argumento
         Stat stat;
         try {
-            stat = Stats.valueOf(args[0].toUpperCase()); // Convertir a mayúsculas para coincidir con el enum
+            stat = CombinedStats.valueOf(args[0].toUpperCase()); // Convertir a mayúsculas para coincidir con el enum
         } catch (IllegalArgumentException e) {
             player.sendMessage("El Stat proporcionado no es válido. Los disponibles son:");
-            for (Stats availableStat : Stats.values()) {
+            for (Stat availableStat : CombinedStats.values()) {
                 player.sendMessage("- " + availableStat.name());
             }
             return true;
@@ -63,7 +65,7 @@ public class GetGemCommand implements CommandExecutor {
         GemObject strengthGem = gemManager.createGem(amount, level, args[0].toUpperCase());
         player.getInventory().addItem(strengthGem);
 
-        player.sendMessage("¡Has recibido " + amount + " gema(s) de " + stat.name() + " de nivel " + level + "!");
+        player.sendMessage("¡Has recibido " + amount + " gema(s) de " + stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()) + " de nivel " + level + "!");
         return true;
     }
 }

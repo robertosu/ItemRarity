@@ -1,6 +1,7 @@
 package cl.nightcore.itemrarity.item;
 
 import cl.nightcore.itemrarity.ItemRarity;
+import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.stat.Stat;
@@ -78,7 +79,7 @@ public class GemObject extends ItemStack {
         PersistentDataContainer container = meta.getPersistentDataContainer();
         NamespacedKey key = new NamespacedKey(ItemRarity.PLUGIN, GEM_STAT_KEY);
         String statfromnbt = container.get(key, PersistentDataType.STRING);
-        return Stats.valueOf(statfromnbt);
+        return CombinedStats.valueOf(statfromnbt);
     }
 
     private void setupGemLore() {

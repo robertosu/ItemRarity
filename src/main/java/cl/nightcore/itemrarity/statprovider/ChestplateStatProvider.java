@@ -8,22 +8,22 @@ import dev.aurelium.auraskills.api.stat.Stats;
 import java.util.Arrays;
 import java.util.List;
 
-public class BootsStatProvider implements StatProvider {
-    private static final List<Stat> BOOTS_STATS = Arrays.asList(
+public class ChestplateStatProvider implements StatProvider {
+    private static final List<Stat> CHESTPLATE_STATS = Arrays.asList(
             CombinedStats.CRIT_CHANCE, CombinedStats.CRIT_DAMAGE, CombinedStats.HEALTH, CombinedStats.LUCK,
-            CombinedStats.REGENERATION, CombinedStats.DEXTERITY, CombinedStats.STRENGTH, CombinedStats.TOUGHNESS,
+            CombinedStats.REGENERATION,  CombinedStats.DEXTERITY, CombinedStats.STRENGTH, CombinedStats.TOUGHNESS,
             CombinedStats.WISDOM, CombinedStats.ACCURACY
     );
-    private static final List<Stat> GAUSS_BOOTS_STATS = Arrays.asList(CombinedStats.CRIT_DAMAGE, CombinedStats.CRIT_CHANCE);
+    private static final List<Stat> GAUSS_CHESTPLATE_STATS = Arrays.asList(CombinedStats.HEALTH, CombinedStats.TOUGHNESS);
 
     @Override
     public List<Stat> getAvailableStats() {
-        return BOOTS_STATS;
+        return CHESTPLATE_STATS;
     }
 
     @Override
     public List<Stat> getGaussStats() {
-        return GAUSS_BOOTS_STATS;
+        return GAUSS_CHESTPLATE_STATS;
     }
 
     @Override

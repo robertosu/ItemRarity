@@ -1,8 +1,6 @@
 package cl.nightcore.itemrarity.config;
 
-import cl.nightcore.itemrarity.item.BlessingObject;
-import cl.nightcore.itemrarity.item.MagicObject;
-import cl.nightcore.itemrarity.item.RedemptionObject;
+import cl.nightcore.itemrarity.item.*;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -15,9 +13,14 @@ public class ItemConfig {
     public static final String ROLLCOUNT_KEY = "magicobject_roll_count";
     public static final String ITEM_LEVEL_KEY = "item_level";
     public static final String SCROLLED_IDENTIFIER_KEY = "is_identify_scrolled";
+    public static final String MAX_BONUSES_KEY = "maxbonuses";
 
     public static final NamespacedKey LEVEL_KEY_NS;
     public static final NamespacedKey ROLLCOUNT_KEY_NS;
+    public static final NamespacedKey SCROLLED_IDENTIFIER_KEY_NS;
+    public static final NamespacedKey MAX_BONUSES_KEY_NS;
+    public static final NamespacedKey GEM_REMOVER_KEY_NS;
+    public static final NamespacedKey ITEM_UPGRADER_KEY_NS;
 
     public static final TextColor COMMON_COLOR = TextColor.color(0xDEDEDE);
     public static final TextColor UNCOMMON_COLOR = TextColor.color(0x2CAF34);
@@ -31,16 +34,23 @@ public class ItemConfig {
     public static final Component REDEMPTION_PREFIX = Component.text("[Redención]: ").color(RedemptionObject.getPrimaryColor());
     public static final Component BLESSING_PREFIX = Component.text("[Bendición]: ").color(BlessingObject.getPrimaryColor());
     public static final Component GEMSTONE_PREFIX = Component.text("[Gemas]: ").color(TextColor.color(0x2DF0FF));
+    public static final Component BLESSING_BALL_PREFIX = Component.text("[Bola Bendición]: ").color(BlessingBall.getPrimaryColor());
+    public static final Component ITEM_UPGRADER_PREFIX = Component.text("[Runa activa]: ").color(ItemUpgrader.getPrimaryColor());
 
     public static final String BLESSING_OBJECT_KEY = "blessing_object";
     public static final String GEM_REMOVER_KEY = "gem_remover";
     public static final String IDENTIFY_SCROLL_KEY = "identify_scroll";
     public static final String MAGIC_OBJECT_KEY = "magic_object";
     public static final String REDEEM_OBJECT_KEY = "redemption_object";
+    public static final String BLESSING_BALL_KEY = "blessing_ball";
+    public static final String ITEM_UPGRADER_KEY = "item_upgrader";
 
     static {
         LEVEL_KEY_NS = new NamespacedKey(PLUGIN, ITEM_LEVEL_KEY);
         ROLLCOUNT_KEY_NS = new NamespacedKey(PLUGIN, ROLLCOUNT_KEY);
-        
+        SCROLLED_IDENTIFIER_KEY_NS = new NamespacedKey(PLUGIN, SCROLLED_IDENTIFIER_KEY);
+        MAX_BONUSES_KEY_NS = new NamespacedKey(PLUGIN, MAX_BONUSES_KEY);
+        GEM_REMOVER_KEY_NS = new NamespacedKey(PLUGIN, GEM_REMOVER_KEY);
+        ITEM_UPGRADER_KEY_NS = new NamespacedKey(PLUGIN, ITEM_UPGRADER_KEY);
     }
 }

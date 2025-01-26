@@ -1,7 +1,9 @@
 package cl.nightcore.itemrarity.type;
 
 import cl.nightcore.itemrarity.config.ItemConfig;
+import cl.nightcore.itemrarity.item.ItemUpgrader;
 import cl.nightcore.itemrarity.item.MagicObject;
+import cl.nightcore.itemrarity.model.ItemUpgraderModel;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
@@ -9,6 +11,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 import static cl.nightcore.itemrarity.config.ItemConfig.LEVEL_KEY_NS;
 import static cl.nightcore.itemrarity.config.ItemConfig.ROLLCOUNT_KEY_NS;
@@ -21,7 +25,7 @@ public class RolledAbstract extends IdentifiedAbstract {
         super(item);
     }
 
-    public void incrementLevel(Player player) {
+    public void incrementRollCount(Player player) {
         ItemMeta meta = this.getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
         int rollcount = container.getOrDefault(ROLLCOUNT_KEY_NS, PersistentDataType.INTEGER, 0);
@@ -55,5 +59,48 @@ public class RolledAbstract extends IdentifiedAbstract {
             container.set(ROLLCOUNT_KEY_NS, PersistentDataType.INTEGER, rollcount);
             this.setItemMeta(meta);
         }
+
+
+
+    }
+    public boolean incrementLevel(Player player, ItemUpgraderModel itemUpgrader){
+        ItemMeta meta = this.getItemMeta();
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        int level = container.get(LEVEL_KEY_NS, PersistentDataType.INTEGER);
+        if(level<4){
+            if (rollthedice(itemUpgrader)) {
+                int newlevel = level+1;
+                container.set(LEVEL_KEY_NS,PersistentDataType.INTEGER,newlevel);
+                player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX
+                        .append(Component.text("Mejora exitosa, tu objeto subió a: ", ItemUpgrader.getLoreColor())
+                                .append(Component.text("Nivel "+newlevel, NamedTextColor.DARK_GRAY))));
+                this.setItemMeta(meta);
+                this.setLore();
+            }else{
+                if (level > 1) {
+                    int newlevel = level-1;
+                    container.set(LEVEL_KEY_NS,PersistentDataType.INTEGER,newlevel);
+                    player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX
+                            .append(Component.text("La mejora falló, tu bajó a: ", NamedTextColor.RED)
+                                    .append(Component.text("Nivel "+newlevel, ItemUpgrader.getPrimaryColor()))));
+                    this.setItemMeta(meta);
+                    this.setLore();
+                }else{
+                    player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX
+                            .append(Component.text("La mejora falló.", NamedTextColor.RED)));
+                }
+            }
+            return true;
+        }else{
+            player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX
+                    .append(Component.text("Tu objeto ya es del nivel máximo. ", ItemUpgrader.getLoreColor())));
+            return false;
+        }
+
+    }
+
+    private boolean rollthedice(ItemUpgraderModel itemUpgrader){
+        double chance = itemUpgrader.getPercentage() / 100.0;
+        return chance > ThreadLocalRandom.current().nextDouble();
     }
 }
