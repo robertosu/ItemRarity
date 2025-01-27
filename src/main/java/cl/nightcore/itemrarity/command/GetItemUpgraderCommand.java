@@ -1,14 +1,13 @@
 package cl.nightcore.itemrarity.command;
 
-import cl.nightcore.itemrarity.ItemRarity;
-import cl.nightcore.itemrarity.item.GemRemover;
+import cl.nightcore.itemrarity.item.ItemUpgrader;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-public class GetGemRemoverCommand implements CommandExecutor {
+public class GetItemUpgraderCommand implements CommandExecutor {
     @Override
     public boolean onCommand(
             @NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String @NotNull [] args) {
@@ -24,15 +23,15 @@ public class GetGemRemoverCommand implements CommandExecutor {
             try {
                 amount = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
-                player.sendMessage("Uso: /getremover [cantidad] [nivel]");
+                player.sendMessage("Uso: /getitemupgrader [cantidad] [nivel] [type]");
                 return true;
             }
         }
 
-        GemRemover gemRemover = new GemRemover(amount, Integer.parseInt(args[1]));
+        ItemUpgrader itemUpgrader = new ItemUpgrader(amount, Integer.parseInt(args[1]),Integer.parseInt(args[2]));
 
-        player.getInventory().addItem(gemRemover);
-        player.sendMessage("¡Has obtenido " + amount + " removedor(es) de gema nivel " + args[1] +"!");
+        player.getInventory().addItem(itemUpgrader);
+        player.sendMessage("¡Has obtenido " + amount + " Runa(s) Activa(s)!");
 
         return true;
     }

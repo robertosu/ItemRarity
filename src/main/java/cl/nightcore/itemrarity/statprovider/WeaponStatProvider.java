@@ -1,7 +1,7 @@
 package cl.nightcore.itemrarity.statprovider;
 
+import cl.nightcore.itemrarity.config.CombinedStats;
 import dev.aurelium.auraskills.api.stat.Stat;
-import dev.aurelium.auraskills.api.stat.Stats;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,9 +10,10 @@ public class WeaponStatProvider implements StatProvider {
 
 
     private static final List<Stat> ITEM_STATS = Arrays.asList(
-            Stats.CRIT_CHANCE, Stats.CRIT_DAMAGE, Stats.SPEED, Stats.STRENGTH, Stats.REGENERATION, Stats.TOUGHNESS
+            CombinedStats.CRIT_CHANCE, CombinedStats.CRIT_DAMAGE,  CombinedStats.DEXTERITY,
+            CombinedStats.STRENGTH, CombinedStats.REGENERATION, CombinedStats.TOUGHNESS, CombinedStats.ACCURACY
     );
-    private static final List<Stat> GAUSS_ITEM_STATS = Arrays.asList(Stats.STRENGTH, Stats.CRIT_CHANCE);
+    private static final List<Stat> GAUSS_ITEM_STATS = Arrays.asList(CombinedStats.STRENGTH, CombinedStats.CRIT_CHANCE);
 
     @Override
     public List<Stat> getAvailableStats() {

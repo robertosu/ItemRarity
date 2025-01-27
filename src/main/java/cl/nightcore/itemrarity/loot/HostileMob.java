@@ -41,8 +41,7 @@ public enum HostileMob {
     BREEZE(EntityType.BREEZE),
     ZOMBIFIED_PIGLIN(EntityType.ZOMBIFIED_PIGLIN),
     SHULKER(EntityType.SHULKER),
-    GUARDIAN(EntityType.GUARDIAN),
-    ;
+    GUARDIAN(EntityType.GUARDIAN);
 
     private final EntityType entityType;
 

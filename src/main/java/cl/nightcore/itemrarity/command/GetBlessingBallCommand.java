@@ -1,14 +1,14 @@
 package cl.nightcore.itemrarity.command;
 
 import cl.nightcore.itemrarity.ItemRarity;
-import cl.nightcore.itemrarity.item.GemRemover;
+import cl.nightcore.itemrarity.item.BlessingBall;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-public class GetGemRemoverCommand implements CommandExecutor {
+public class GetBlessingBallCommand implements CommandExecutor {
     @Override
     public boolean onCommand(
             @NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String @NotNull [] args) {
@@ -24,15 +24,15 @@ public class GetGemRemoverCommand implements CommandExecutor {
             try {
                 amount = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
-                player.sendMessage("Uso: /getremover [cantidad] [nivel]");
+                player.sendMessage("Uso: /getblessingball [cantidad]");
                 return true;
             }
         }
 
-        GemRemover gemRemover = new GemRemover(amount, Integer.parseInt(args[1]));
+        BlessingBall blessingBall = new BlessingBall(amount, ItemRarity.getPlugin(ItemRarity.class));
 
-        player.getInventory().addItem(gemRemover);
-        player.sendMessage("¡Has obtenido " + amount + " removedor(es) de gema nivel " + args[1] +"!");
+        player.getInventory().addItem(blessingBall);
+        player.sendMessage("¡Has obtenido " + amount + " bola(s) bendición!");
 
         return true;
     }

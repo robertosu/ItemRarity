@@ -1,6 +1,7 @@
 package cl.nightcore.itemrarity.abstracted;
 
 import cl.nightcore.itemrarity.classes.*;
+import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.statprovider.StatProvider;
 import cl.nightcore.itemrarity.util.ItemUtil;
@@ -10,7 +11,6 @@ import dev.aurelium.auraskills.api.AuraSkillsBukkit;
 import dev.aurelium.auraskills.api.item.ModifierType;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.StatModifier;
-import dev.aurelium.auraskills.api.stat.Stats;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -24,13 +24,15 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
 import static cl.nightcore.itemrarity.abstracted.EnhancedSocketableItem.BASE_STAT_VALUE_PREFIX;
 import static cl.nightcore.itemrarity.abstracted.EnhancedSocketableItem.GEM_BOOST_PREFIX;
-import static cl.nightcore.itemrarity.util.ItemUtil.getStatProvider;
-import static cl.nightcore.itemrarity.util.ItemUtil.isIdentified;
+import static cl.nightcore.itemrarity.util.ItemUtil.*;
 
 public abstract class IdentifiedItem extends ItemStack {
 
@@ -41,21 +43,20 @@ public abstract class IdentifiedItem extends ItemStack {
     protected RollQuality rollQuality;
     protected Component rarity;
 
-    Component reset = Component.text().content("").color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false).build();
-
     public IdentifiedItem(ItemStack item) {
         super(item);
-        rollQuality = getRollQuality();
         this.statProvider = getStatProvider(this);
         this.addedStats = new ArrayList<>();
         this.statValues = new ArrayList<>();
         this.MODIFIER_TYPE = ItemUtil.getModifierType(item);
         if (!isIdentified(item)) {
+            setIdentifiedNBT();
+            setMaxBonuses(5);
             generateStats();
             applyStatsToItem();
-            setIdentifiedNBT();
             setLore();
         }
+        this.rollQuality = getRollQuality();
     }
 
     public Component getRarityComponent() {
@@ -131,7 +132,7 @@ public abstract class IdentifiedItem extends ItemStack {
         for (NamespacedKey key : container.getKeys()) {
             if (key.getKey().startsWith(GEM_BOOST_PREFIX)) {
                 String statName = key.getKey().substring(GEM_BOOST_PREFIX.length()).toUpperCase();
-                Stat stat = Stats.valueOf(statName);
+                Stat stat = CombinedStats.valueOf(statName);
                 int boost = container.get(key, PersistentDataType.INTEGER);
                 gemBoosts.put(stat, boost);
             }
@@ -162,12 +163,13 @@ public abstract class IdentifiedItem extends ItemStack {
     }
 
     protected void generateStatsExceptHighestStat(Stat excludedStat) {
-        Random random = new Random();
-        int statsCount = random.nextInt(2) + 4; // 4 o 5 estadísticas
+        int statsCount = getMaxBonuses(); // 5 o 6 estadísticas
         StatProvider statProvider = ItemUtil.getStatProvider(this);
         List<Stat> availableStats = statProvider.getAvailableStats();
         addedStats.clear();
         statValues.clear();
+
+        // 1. Agregar estadísticas Gauss (excluyendo excludedStat)
         for (Stat stat : statProvider.getGaussStats()) {
             if (stat != excludedStat) {
                 getAddedStats().add(stat);
@@ -175,8 +177,13 @@ public abstract class IdentifiedItem extends ItemStack {
                 getStatValues().add(value);
             }
         }
+
+        // 2. Calcular cuántas estadísticas adicionales se necesitan
         int gaussStatsAdded = getAddedStats().size();
-        for (int i = 0; i < statsCount - gaussStatsAdded; i++) {
+        int additionalStatsNeeded = statsCount - gaussStatsAdded;
+
+        // 3. Agregar estadísticas adicionales (excluyendo excludedStat)
+        for (int i = 0; i < additionalStatsNeeded; i++) {
             Stat stat;
             do {
                 stat = availableStats.get(random.nextInt(availableStats.size()));
@@ -204,7 +211,7 @@ public abstract class IdentifiedItem extends ItemStack {
     }
 
     public void removeModifiers() {
-        for (Stats stat : Stats.values()) {
+        for (Stat stat : CombinedStats.values()) {
             this.setItemMeta(AuraSkillsBukkit.get().getItemManager().removeStatModifier(this, MODIFIER_TYPE, stat).getItemMeta());
         }
     }
@@ -218,15 +225,12 @@ public abstract class IdentifiedItem extends ItemStack {
 
     public RollQuality getRollQuality() {
         int level = getLevel();
-        if (level == 4) {
-            return new GodRollQuality();
-        } else if (level == 3) {
-            return new HighRollQuality();
-        } else if (level == 2) {
-            return new MediumRollQuality();
-        } else {
-            return new LowRollQuality();
-        }
+        return switch (level) {
+            case 4 -> new GodRollQuality();
+            case 3 -> new HighRollQuality();
+            case 2 -> new MediumRollQuality();
+            default -> new LowRollQuality();
+        };
     }
 
 
@@ -246,7 +250,6 @@ public abstract class IdentifiedItem extends ItemStack {
                         PersistentDataType.INTEGER,
                         0
                 );
-
                 // Si el valor total del modificador es igual al boost de la gema,
                 // significa que toda la stat proviene de la gema, así que la ignoramos completamente
                 if (currentValue == gemBoost) {
@@ -266,7 +269,7 @@ public abstract class IdentifiedItem extends ItemStack {
 
             // Calcular el promedio solo si hay stats válidas
             double average = (statCount > 0) ? totalValue / statCount : 0.0;
-            this.rarity = ItemUtil.calculateRarity(this.rollQuality, average);
+            this.rarity = ItemUtil.calculateRarity(getRollQuality(), average);
         }
     }
 
@@ -277,20 +280,32 @@ public abstract class IdentifiedItem extends ItemStack {
 
     public int getLevel() {
         PersistentDataContainer container = this.getItemMeta().getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(PLUGIN, ItemConfig.ITEM_LEVEL_KEY);
-        return container.getOrDefault(key, PersistentDataType.INTEGER, 1);
-
+        return container.get(ItemConfig.LEVEL_KEY_NS, PersistentDataType.INTEGER);
     }
 
     public void setIdentifiedNBT() {
         ItemMeta meta = this.getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(PLUGIN, ItemConfig.SCROLLED_IDENTIFIER_KEY);
-        container.set(key, PersistentDataType.BOOLEAN, true);
+        container.set(ItemConfig.SCROLLED_IDENTIFIER_KEY_NS, PersistentDataType.BOOLEAN, true);
+        container.set(ItemConfig.LEVEL_KEY_NS,PersistentDataType.INTEGER,1);
         this.setItemMeta(meta);
     }
 
-    void setLore() {
+    protected int getMaxBonuses(){
+        ItemMeta meta = this.getItemMeta();
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        return container.get(ItemConfig.MAX_BONUSES_KEY_NS,PersistentDataType.INTEGER);
+
+    }
+
+    protected void setMaxBonuses(int amount){
+        ItemMeta meta = this.getItemMeta();
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        container.set(ItemConfig.MAX_BONUSES_KEY_NS,PersistentDataType.INTEGER,amount);
+        this.setItemMeta(meta);
+    }
+
+    protected void setLore() {
         obtainRarity();
         ItemMeta meta = getItemMeta();
         @Nullable List<Component> lore;
@@ -330,11 +345,11 @@ public abstract class IdentifiedItem extends ItemStack {
         meta.lore(lore);
 
         // Resto del código para manejar nombres y atributos
-        handleAttributesInLoreAndName(meta, NexoItems.idFromItem(this) != null, ItemUtil.getItemType(this));
+        handleCustomNameAndAttributesInLore(meta, NexoItems.idFromItem(this) != null, ItemUtil.getItemType(this));
         updateLoreWithSockets();
     }
 
-    private void handleAttributesInLoreAndName(ItemMeta meta, boolean isNexoItem, String itemType) {
+    private void handleCustomNameAndAttributesInLore(ItemMeta meta, boolean isNexoItem, String itemType) {
         if (isNexoItem) {
             String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
             Component component = Component.text(plainText, getRarityColor())
@@ -344,7 +359,7 @@ public abstract class IdentifiedItem extends ItemStack {
             if (!meta.hasCustomName()) {
                 String itemTranslationKey = this.translationKey();
                 TranslatableComponent translatedName = Component.translatable(itemTranslationKey).color(getRarityColor());
-                Component newName = reset.append(translatedName);
+                Component newName = ItemUtil.reset.append(translatedName);
                 meta.itemName(newName);
             } else {
                 Component component = meta.customName();

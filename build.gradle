@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'cl.nightcore'
-version = '0.2.1'
+version = '0.2.2'
 
 sourceCompatibility = '21'
 targetCompatibility = '21'
@@ -45,7 +45,9 @@ repositories {
     maven {
         url "https://jitpack.io"
     }
-
+    maven {
+        url = uri("https://repo.papermc.io/repository/maven-public/")
+    }
 }
 
 configurations {

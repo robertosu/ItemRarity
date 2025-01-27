@@ -35,6 +35,7 @@ public class ItemUtil {
 
     public static final Random random = new Random();
     public static final DecimalFormat df = new DecimalFormat("0.#");
+    public static Component reset = Component.text().content("").color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false).build();
 
     public static boolean isNotEmpty(ItemStack item) {
         return item != null && !item.getType().isAir();
@@ -58,6 +59,9 @@ public class ItemUtil {
 
     public static boolean isBlessingObject(ItemStack item) {
         return checkBooleanTag(item, BlessingObject.getBlessingObjectKey());
+    }
+    public static boolean isBlessingBall(ItemStack item) {
+        return checkBooleanTag(item, ItemConfig.BLESSING_BALL_KEY);
     }
 
     private static boolean checkBooleanTag(ItemStack item, String key) {
@@ -136,15 +140,21 @@ public class ItemUtil {
     public static boolean isGem(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(ItemRarity.PLUGIN, GemModel.getGemStatKey());
-        return container.has(key, PersistentDataType.STRING);
+        return container.has(GemModel.getGemStatKeyNs(), PersistentDataType.STRING);
+
     }
+
+    public static boolean isItemUpgrader(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return false;
+        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
+        return container.has(ItemUpgrader.getItemUpgraderKeyNs(), PersistentDataType.INTEGER);
+    }
+
 
     public static boolean isGemRemover(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(ItemRarity.PLUGIN, GemRemover.getGemRemoverKey());
-        return container.has(key, PersistentDataType.INTEGER);
+        return container.has(GemRemover.getGemRemoverKeyNs(), PersistentDataType.INTEGER);
     }
 
 

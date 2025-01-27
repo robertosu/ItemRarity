@@ -1,18 +1,18 @@
 package cl.nightcore.itemrarity.statprovider;
 
+import cl.nightcore.itemrarity.config.CombinedStats;
 import dev.aurelium.auraskills.api.stat.Stat;
-import dev.aurelium.auraskills.api.stat.Stats;
 
 import java.util.Arrays;
 import java.util.List;
 
 public class LeggingsStatProvider implements StatProvider {
     private static final List<Stat> LEGGINGS_STATS = Arrays.asList(
-            Stats.CRIT_CHANCE, Stats.CRIT_DAMAGE, Stats.HEALTH, Stats.LUCK,
-            Stats.REGENERATION, Stats.SPEED, Stats.STRENGTH, Stats.TOUGHNESS,
-            Stats.WISDOM
+            CombinedStats.CRIT_CHANCE, CombinedStats.CRIT_DAMAGE, CombinedStats.HEALTH, CombinedStats.LUCK,
+            CombinedStats.REGENERATION, CombinedStats.STRENGTH, CombinedStats.TOUGHNESS, CombinedStats.DEXTERITY,
+            CombinedStats.WISDOM, CombinedStats.ACCURACY
     );
-    private static final List<Stat> GAUSS_LEGGINGS_STATS = Arrays.asList(Stats.CRIT_DAMAGE, Stats.TOUGHNESS);
+    private static final List<Stat> GAUSS_LEGGINGS_STATS = Arrays.asList(CombinedStats.CRIT_DAMAGE, CombinedStats.TOUGHNESS);
 
     @Override
     public List<Stat> getAvailableStats() {

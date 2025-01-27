@@ -40,10 +40,10 @@ public class CustomDropsManager implements Listener {
         List<EntityType> hostileMobs = enumToEntityTypes();
 
         // Configurar drops para todos los mobs hostiles
-        addDropToEntities(hostileMobs, blessingObject, 0.01, 1, 3);
-        addDropToEntities(hostileMobs, identifyScroll, 0.10, 1, 2);
-        addDropToEntities(hostileMobs, magicObject, 0.05, 1, 2);
-        addDropToEntities(hostileMobs, redemptionObject, 0.30, 1, 2);
+        addDropToEntities(hostileMobs, blessingObject, 0.05, 1, 2);
+        addDropToEntities(hostileMobs, identifyScroll, 0.05, 1, 2);
+        addDropToEntities(hostileMobs, magicObject, 0.1, 1, 2);
+        addDropToEntities(hostileMobs, redemptionObject, 0.05, 1, 2);
 
         // Mantener la configuración de drops de cofres
         addGlobalChestDrop(blessingObject, 0.30, 1, 4);
