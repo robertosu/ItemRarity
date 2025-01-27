@@ -2,6 +2,7 @@ package cl.nightcore.itemrarity.model;
 
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.config.CombinedStats;
+import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.statprovider.StatProvider;
 import dev.aurelium.auraskills.api.stat.Stat;
 import org.bukkit.NamespacedKey;
@@ -9,19 +10,20 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
 public record GemModel(ItemStack item) {
-    private static final String GEM_STAT_KEY = "gem_stat";
-    private static final String GEM_LEVEL_KEY = "gem_level";
-    public static final NamespacedKey GEM_STAT_KEY_NS = new NamespacedKey(ItemRarity.PLUGIN, GEM_LEVEL_KEY);
 
     public static String getGemStatKey() {
-        return GEM_STAT_KEY;
+        return ItemConfig.GEM_STAT_KEY;
+    }
+
+    public static NamespacedKey getGemStatKeyNs(){
+        return ItemConfig.GEM_STAT_KEY_NS;
     }
 
     public Stat getStat() {
 
         String statName = item.getItemMeta()
                 .getPersistentDataContainer()
-                .get(new NamespacedKey(ItemRarity.PLUGIN, GEM_STAT_KEY), PersistentDataType.STRING);
+                .get(new NamespacedKey(ItemRarity.PLUGIN, ItemConfig.GEM_STAT_KEY), PersistentDataType.STRING);
 
         try {
             return CombinedStats.valueOf(statName);
@@ -33,7 +35,7 @@ public record GemModel(ItemStack item) {
     public int getLevel() {
         return item.getItemMeta()
                 .getPersistentDataContainer()
-                .getOrDefault(new NamespacedKey(ItemRarity.PLUGIN, GEM_LEVEL_KEY), PersistentDataType.INTEGER, 0);
+                .getOrDefault(new NamespacedKey(ItemRarity.PLUGIN, ItemConfig.GEM_LEVEL_KEY), PersistentDataType.INTEGER, 0);
     }
 
     public int getValue() {

@@ -45,7 +45,9 @@ repositories {
     maven {
         url "https://jitpack.io"
     }
-
+    maven {
+        url = uri("https://repo.papermc.io/repository/maven-public/")
+    }
 }
 
 configurations {

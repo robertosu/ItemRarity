@@ -10,7 +10,6 @@ import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.AuraSkillsBukkit;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.StatModifier;
-import dev.aurelium.auraskills.api.stat.Stats;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -490,10 +489,11 @@ public class EnhancedSocketableItem extends IdentifiedItem {
             } catch (Exception e) {
                 // Manejar cualquier excepción inesperada
                 System.err.println("[ItemRarity] Error al agregar una stat aleatoria al ítem:");
-                e.printStackTrace();
+
                 player.sendMessage(ItemConfig.BLESSING_BALL_PREFIX
                         .append(Component.text("Ocurrió un error al agregar la estadística. Por favor, contacta a un administrador.")
                                 .color(NamedTextColor.RED)));
+                throw e;
             }
         }
         return true;

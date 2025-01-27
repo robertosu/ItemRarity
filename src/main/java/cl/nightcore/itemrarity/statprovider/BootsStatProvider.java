@@ -1,9 +1,7 @@
 package cl.nightcore.itemrarity.statprovider;
 
 import cl.nightcore.itemrarity.config.CombinedStats;
-import cl.nightcore.itemrarity.customstats.CustomStats;
 import dev.aurelium.auraskills.api.stat.Stat;
-import dev.aurelium.auraskills.api.stat.Stats;
 
 import java.util.Arrays;
 import java.util.List;

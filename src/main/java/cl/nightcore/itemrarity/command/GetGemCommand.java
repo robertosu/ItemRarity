@@ -5,7 +5,6 @@ import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.item.GemObject;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.stat.Stat;
-import dev.aurelium.auraskills.api.stat.Stats;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;

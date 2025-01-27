@@ -140,21 +140,23 @@ public class ItemUtil {
     public static boolean isGem(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        return container.has(GemModel.GEM_STAT_KEY_NS, PersistentDataType.STRING);
+        return container.has(GemModel.getGemStatKeyNs(), PersistentDataType.STRING);
+
     }
 
     public static boolean isItemUpgrader(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        return container.has(ItemConfig.ITEM_UPGRADER_KEY_NS, PersistentDataType.INTEGER);
+        return container.has(ItemUpgrader.getItemUpgraderKeyNs(), PersistentDataType.INTEGER);
     }
 
 
     public static boolean isGemRemover(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        return container.has(ItemConfig.GEM_REMOVER_KEY_NS, PersistentDataType.INTEGER);
+        return container.has(GemRemover.getGemRemoverKeyNs(), PersistentDataType.INTEGER);
     }
+
 
     public static TextColor getColorOfStat(Stat stat) {
         return TextColor.fromHexString(

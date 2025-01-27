@@ -24,15 +24,15 @@ public class GetGemRemoverCommand implements CommandExecutor {
             try {
                 amount = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
-                player.sendMessage("Uso: /getremover [cantidad]");
+                player.sendMessage("Uso: /getremover [cantidad] [nivel]");
                 return true;
             }
         }
 
-        GemRemover gemRemover = new GemRemover(amount, ItemRarity.PLUGIN);
+        GemRemover gemRemover = new GemRemover(amount, Integer.parseInt(args[1]));
 
         player.getInventory().addItem(gemRemover);
-        player.sendMessage("¡Has obtenido " + amount + " removedor(es) de gema!");
+        player.sendMessage("¡Has obtenido " + amount + " removedor(es) de gema nivel " + args[1] +"!");
 
         return true;
     }

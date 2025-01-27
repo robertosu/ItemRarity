@@ -4,6 +4,7 @@ import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.abstracted.SocketableItem;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.model.GemModel;
+import cl.nightcore.itemrarity.model.GemRemoverModel;
 import cl.nightcore.itemrarity.model.ItemUpgraderModel;
 import cl.nightcore.itemrarity.type.IdentifiedAbstract;
 import cl.nightcore.itemrarity.type.RolledAbstract;
@@ -140,8 +141,9 @@ public class IdentifyScrollListener implements Listener {
 
     private void handleGemRemoval(InventoryClickEvent event, ItemStack targetItem,ItemStack cursor, Player player){
         SocketableItem item = new IdentifiedAbstract(targetItem);
+        GemRemoverModel remover = new GemRemoverModel(cursor);
 
-        if (item.extractAllGems(player)){
+        if (item.extractAllGems(player,remover)){
             event.setCurrentItem(item);
             consumeItem(event, cursor);
             event.setCancelled(true);

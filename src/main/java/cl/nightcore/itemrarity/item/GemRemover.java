@@ -14,6 +14,8 @@ import org.bukkit.plugin.Plugin;
 import java.util.ArrayList;
 import java.util.List;
 
+import static cl.nightcore.itemrarity.config.ItemConfig.GEM_REMOVER_KEY_NS;
+
 public class GemRemover extends ItemStack {
     private static final TextColor PRIMARY_COLOR = TextColor.fromHexString("#e67415");
     private static final TextColor LORE_COLOR = TextColor.fromHexString("#d9a253");
@@ -21,23 +23,19 @@ public class GemRemover extends ItemStack {
             .color(PRIMARY_COLOR)
             .decoration(TextDecoration.ITALIC, false);
 
-    public GemRemover(int amount, Plugin plugin) {
+    public GemRemover(int amount, int level) {
         super(Material.PAPER, amount);
         ItemMeta meta = this.getItemMeta();
 
         // Set persistent data
-        NamespacedKey key = new NamespacedKey(plugin, ItemConfig.GEM_REMOVER_KEY);
-        meta.getPersistentDataContainer().set(key, PersistentDataType.INTEGER, 1);
+
+        meta.getPersistentDataContainer().set(GEM_REMOVER_KEY_NS, PersistentDataType.INTEGER, level);
 
         // Set display name using Adventure API
-        meta.displayName(DISPLAY_NAME);
-
-        // Set Oraxen model
-        //NamespacedKey itemModel = new NamespacedKey(NexoPlugin.instance(), "blessing_object");
-        //meta.setItemModel(itemModel);
+        meta.displayName(DISPLAY_NAME.append(Component.text(" "+getRomanNumber(level)).color(PRIMARY_COLOR)));
 
 
-        meta.setCustomModelData(6005);
+        meta.setCustomModelData(getCustomModelData(level));
 
         // Set lore using Adventure API
         List<Component> lore = new ArrayList<>();
@@ -45,6 +43,8 @@ public class GemRemover extends ItemStack {
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
         lore.add(Component.text("se cuidadoso al remover, algunas pueden romperse.")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
+        lore.add(Component.text("Este removedor tiene un " +getPercentage(level)+"% de éxito")
+                .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
         meta.lore(lore);
 
         // Set glint effect
@@ -53,15 +53,50 @@ public class GemRemover extends ItemStack {
         this.setItemMeta(meta);
     }
 
+    public static int getCustomModelData(int level){
+        switch (level) {
+            case 1 -> { return 6020; }
+            case 2 -> { return 6021; }
+            case 3 -> { return 6022; }
+            // Add more cases for other numbers
+            default -> { return 6005;}
+
+        }
+    }
+
+    public int getPercentage( int level){
+        switch (level) {
+            case 1 -> { return 25; }
+            case 2 -> { return 50; }
+            case 3 -> { return 75; }
+            // Add more cases for other numbers
+            default -> { return 25;}
+        }
+    }
+
+    public String getRomanNumber(int level) {
+        switch (level) {
+            case 1 -> { return "I"; }
+            case 2 -> { return "II"; }
+            case 3 -> { return "III"; }
+            // Add more cases for other numbers
+            default -> { return "I ERROR"; }
+        }
+    }
+
     public static TextColor getPrimaryColor() {
         return PRIMARY_COLOR;
     }
-
     public static TextColor getLoreColor() {
         return LORE_COLOR;
     }
 
+
     public static String getGemRemoverKey() {
         return ItemConfig.GEM_REMOVER_KEY;
+    }
+
+    public static NamespacedKey getGemRemoverKeyNs() {
+        return GEM_REMOVER_KEY_NS;
     }
 }

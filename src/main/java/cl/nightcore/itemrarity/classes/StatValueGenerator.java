@@ -17,14 +17,14 @@ public class StatValueGenerator {
     private static int generateValueUsingNormalDistribution(RollQuality rollQuality) {
         NormalDistribution distribution = new NormalDistribution(rollQuality.getMean(), rollQuality.getSd());
         int value = (int) Math.round(distribution.sample());
-        value = Math.max(value, 6); // Asegurar que el valor sea al menos 6
-        value = Math.min(value, 50); // Asegurar que el valor no exceda 50
+        value = Math.max(value, 10); // Asegurar que el valor sea al menos 6
+        //value = Math.min(value, 60); // Asegurar que el valor no exceda 50
         return value;
     }
 
     private static int generateValueUsingRandomDistribution(RollQuality rollQuality) {
         int minValue = rollQuality.getMinStatValue();
         int bound = rollQuality.getBound();
-        return minValue + random.nextInt(bound);
+        return Math.max(random.nextInt(bound),minValue);
     }
 }

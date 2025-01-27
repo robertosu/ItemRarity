@@ -225,15 +225,12 @@ public abstract class IdentifiedItem extends ItemStack {
 
     public RollQuality getRollQuality() {
         int level = getLevel();
-        if (level == 4) {
-            return new GodRollQuality();
-        } else if (level == 3) {
-            return new HighRollQuality();
-        } else if (level == 2) {
-            return new MediumRollQuality();
-        } else {
-            return new LowRollQuality();
-        }
+        return switch (level) {
+            case 4 -> new GodRollQuality();
+            case 3 -> new HighRollQuality();
+            case 2 -> new MediumRollQuality();
+            default -> new LowRollQuality();
+        };
     }
 
 
@@ -253,7 +250,6 @@ public abstract class IdentifiedItem extends ItemStack {
                         PersistentDataType.INTEGER,
                         0
                 );
-
                 // Si el valor total del modificador es igual al boost de la gema,
                 // significa que toda la stat proviene de la gema, así que la ignoramos completamente
                 if (currentValue == gemBoost) {
@@ -349,11 +345,11 @@ public abstract class IdentifiedItem extends ItemStack {
         meta.lore(lore);
 
         // Resto del código para manejar nombres y atributos
-        handleAttributesInLoreAndName(meta, NexoItems.idFromItem(this) != null, ItemUtil.getItemType(this));
+        handleCustomNameAndAttributesInLore(meta, NexoItems.idFromItem(this) != null, ItemUtil.getItemType(this));
         updateLoreWithSockets();
     }
 
-    private void handleAttributesInLoreAndName(ItemMeta meta, boolean isNexoItem, String itemType) {
+    private void handleCustomNameAndAttributesInLore(ItemMeta meta, boolean isNexoItem, String itemType) {
         if (isNexoItem) {
             String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
             Component component = Component.text(plainText, getRarityColor())

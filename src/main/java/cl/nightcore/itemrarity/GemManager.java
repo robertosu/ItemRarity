@@ -4,7 +4,6 @@ import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.item.GemObject;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
-import dev.aurelium.auraskills.api.stat.Stats;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;

@@ -5,11 +5,11 @@ import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.item.GemObject;
 import cl.nightcore.itemrarity.model.GemModel;
+import cl.nightcore.itemrarity.model.GemRemoverModel;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.StatModifier;
-import dev.aurelium.auraskills.api.stat.Stats;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
 import static cl.nightcore.itemrarity.util.ItemUtil.random;
@@ -189,7 +190,6 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
                 gems.put(stat, Integer.parseInt(value));
             }
         }
-
         return gems;
     }
 
@@ -258,7 +258,9 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
         // Si no se encuentra la línea de rareza, insertar al inicio
         return lore.size();
     }
-    public boolean extractAllGems(Player player) {
+
+
+    public boolean extractAllGems(Player player, GemRemoverModel gemRemover) {
         Map<Stat, Integer> installedGems = getInstalledGems();
 
         if (installedGems.isEmpty()) {
@@ -269,6 +271,7 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
             );
             return false;
         }
+
         // Recolectar las gemas extraídas
         List<GemObject> extractedGems = new ArrayList<>();
 
@@ -277,14 +280,24 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
             Stat stat = entry.getKey();
             int gemLevel = entry.getValue();
 
-            // Crear una instancia de la gema extraída
-            GemObject extractedGem = gemManager.createGem(1, gemLevel, stat.name());
-            extractedGems.add(extractedGem);
+            // Verificar si la gema se rompe
+            if (gemBreaks(gemRemover.getPercentage())) {
+                player.sendMessage(ItemConfig.GEMSTONE_PREFIX
+                        .append(Component.text("La gema de ")
+                                .color(NamedTextColor.RED)
+                                .append(Component.text(stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
+                                        .color(ItemUtil.getColorOfStat(stat)))
+                                .append(Component.text(" se rompió durante la extracción."))));
+            } else {
+                // Crear una instancia de la gema extraída
+                GemObject extractedGem = gemManager.createGem(1, gemLevel, stat.name());
+                extractedGems.add(extractedGem);
+            }
 
             // Obtener el valor aportado por la gema usando su nivel y fórmula
             int gemValue = 4 + (gemLevel - 1) * gemLevel / 2;
 
-            // Remover el modificador actual
+            // Remover el modificador actual (esto se hace siempre, independientemente de si la gema se rompe o no)
             StatModifier currentModifier = getStatModifiers().stream()
                     .filter(modifier -> {
                         try {
@@ -298,7 +311,6 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
                     .findFirst()
                     .orElse(null);
 
-
             if (currentModifier != null) {
                 removeSpecificModifier(stat);
                 removeSpecificStatLoreLine(stat);
@@ -310,20 +322,22 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
                 }
             }
         }
+
         ItemMeta meta = getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
 
-        for (Stat stat : CombinedStats.values()){
+        for (Stat stat : CombinedStats.values()) {
             container.remove(new NamespacedKey(PLUGIN, GEM_KEY_PREFIX + stat.name()));
             container.remove(new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + stat.name()));
             container.remove(new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + stat.name()));
-
         }
+
         container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, getMaxSockets());
         setItemMeta(meta);
         // Actualizar el lore después de todos los cambios
         updateLoreWithSockets();
         setLore();
+
         // Entregar las gemas al jugador
         for (GemObject gem : extractedGems) {
             HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(gem);
@@ -331,12 +345,19 @@ public abstract class SocketableItem extends EnhancedSocketableItem {
                 player.getWorld().dropItemNaturally(player.getLocation(), gem);
             }
         }
+
         // Notificar al jugador
         player.sendMessage(
-                ItemConfig.PLUGIN_PREFIX
-                        .append(Component.text("Has extraído todas las gemas del objeto."))
+                ItemConfig.GEMSTONE_PREFIX
+                        .append(Component.text("Has extraído las gemas del objeto."))
                         .color(NamedTextColor.GRAY)
         );
+
         return true;
+    }
+
+    private boolean gemBreaks(int percentage) {
+        double chance = percentage / 100.0;
+        return chance > ThreadLocalRandom.current().nextDouble();
     }
 }
