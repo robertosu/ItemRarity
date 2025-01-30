@@ -29,3 +29,6 @@ commands:
   getitemupgrader:
     description: Obtienes una Runa activa.
     usage: /getitemupgrader <cantidad> <nivel>
+  testdistr:
+    description: Testea las probabilidades.
+    usage: /testdistr <rollqualityNumber> <testCount>

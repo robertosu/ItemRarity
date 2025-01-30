@@ -9,6 +9,7 @@ import cl.nightcore.itemrarity.customstats.DodgeChanceTrait;
 import cl.nightcore.itemrarity.customstats.HitChanceTrait;
 import cl.nightcore.itemrarity.item.IdentifyScroll;
 import cl.nightcore.itemrarity.item.MagicObject;
+import cl.nightcore.itemrarity.listener.AnvilListener;
 import cl.nightcore.itemrarity.listener.CancelUsageInRecipesListener;
 import cl.nightcore.itemrarity.listener.IdentifyScrollListener;
 import cl.nightcore.itemrarity.listener.ItemClickListener;
@@ -23,8 +24,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 
 public class ItemRarity extends JavaPlugin implements CommandExecutor {
 
@@ -71,6 +74,7 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         Objects.requireNonNull(getCommand("getremover")).setExecutor(new GetGemRemoverCommand());
         Objects.requireNonNull(getCommand("getblessingball")).setExecutor(new GetBlessingBallCommand());
         Objects.requireNonNull(getCommand("getitemupgrader")).setExecutor(new GetItemUpgraderCommand());
+        Objects.requireNonNull(getCommand("testdistr")).setExecutor(new TestCommand());
 
         getServer().getPluginManager().registerEvents(new ItemClickListener(), this);
         getServer().getPluginManager().registerEvents(new IdentifyScrollListener(), this);
@@ -80,6 +84,7 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         AuraSkillsApi auraSkills = AuraSkillsApi.get();
         NamespacedRegistry registry = auraSkills.useRegistry("itemrarity", getDataFolder());
         loadAuraSkillsCustoms(registry, auraSkills);
+        loadRepairableItems();
     }
 
     private void loadAuraSkillsCustoms(NamespacedRegistry registry, AuraSkillsApi auraSkills) {
@@ -90,6 +95,23 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         auraSkills.getHandlers().registerTraitHandler(new DodgeChanceTrait(auraSkills));
         auraSkills.getHandlers().registerTraitHandler(new HitChanceTrait(auraSkills));
         saveResource("stats.yml", false);
+    }
+
+    private void loadRepairableItems(){
+
+        ItemRepairManager repairManager = new ItemRepairManager();
+        Set<String> zafiroItems = new HashSet<>();
+        zafiroItems.add("sapphire_sword");
+        zafiroItems.add("sapphire_chestplate");
+        zafiroItems.add("sapphire_helmet");
+        zafiroItems.add("sapphire_boots");
+        zafiroItems.add("sapphire_leggings");
+        repairManager.registerRepairGroup(zafiroItems, "sapphire");
+
+        // Registrar el listener del yunque
+        getServer().getPluginManager().registerEvents(new AnvilListener(repairManager, this), this);
+
+
     }
 
 }

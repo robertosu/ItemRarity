@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("unused")
 public class CustomDropsManager implements Listener {
 
     private final Random random = new Random();

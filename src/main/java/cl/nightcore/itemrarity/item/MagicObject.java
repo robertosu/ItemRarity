@@ -14,6 +14,7 @@ import org.bukkit.plugin.Plugin;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("commented-code")
 public class MagicObject extends ItemStack {
     private static final TextColor PRIMARY_COLOR = TextColor.fromHexString("#6E6FF8");
     private static final TextColor LORE_COLOR = TextColor.fromHexString("#CA9CDE");
@@ -33,7 +34,7 @@ public class MagicObject extends ItemStack {
         meta.displayName(DISPLAY_NAME);
 
         // Set Oraxen model
-        /*NamespacedKey itemModel = new NamespacedKey(NexoPlugin.instance(), "enchanted_object");
+        /* ignoreNamespacedKey itemModel = new NamespacedKey(NexoPlugin.instance(), "enchanted_object");
         meta.setItemModel(itemModel);*/
 
         meta.setCustomModelData(6001);

@@ -11,10 +11,6 @@ import org.bukkit.persistence.PersistentDataType;
 
 public record GemModel(ItemStack item) {
 
-    public static String getGemStatKey() {
-        return ItemConfig.GEM_STAT_KEY;
-    }
-
     public static NamespacedKey getGemStatKeyNs(){
         return ItemConfig.GEM_STAT_KEY_NS;
     }

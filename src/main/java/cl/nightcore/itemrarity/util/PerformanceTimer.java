@@ -1,5 +1,7 @@
 package cl.nightcore.itemrarity.util;
 
+
+@SuppressWarnings("unused")
 public class PerformanceTimer {
     private long startTime;
     private long endTime;

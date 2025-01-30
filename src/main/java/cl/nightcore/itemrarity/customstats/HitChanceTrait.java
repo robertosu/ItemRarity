@@ -10,6 +10,7 @@ import org.bukkit.event.Listener;
 
 import java.util.Locale;
 
+@SuppressWarnings("All")
 public class HitChanceTrait implements BukkitTraitHandler, Listener {
 
     private final AuraSkillsApi auraSkills;
@@ -45,4 +46,5 @@ public class HitChanceTrait implements BukkitTraitHandler, Listener {
             return "+" + NumberUtil.format1(value);
         }
     }
+
 }

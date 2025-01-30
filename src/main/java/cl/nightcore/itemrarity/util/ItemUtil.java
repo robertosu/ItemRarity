@@ -1,10 +1,6 @@
 package cl.nightcore.itemrarity.util;
 
 import cl.nightcore.itemrarity.ItemRarity;
-import cl.nightcore.itemrarity.abstracted.RollQuality;
-import cl.nightcore.itemrarity.classes.GodRollQuality;
-import cl.nightcore.itemrarity.classes.HighRollQuality;
-import cl.nightcore.itemrarity.classes.MediumRollQuality;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.item.*;
 import cl.nightcore.itemrarity.model.GemModel;
@@ -164,44 +160,22 @@ public class ItemUtil {
                         .replaceAll("[<>]", ""));
     }
 
-    public static double calculateTotalDamage(ItemStack item) {
-        double baseDamage;
-        ItemMeta meta = item.getItemMeta();
 
-        // Manejo de ítems vanilla
-        if (NexoItems.idFromItem(item) == null) {
-            baseDamage = getDefaultDamage(item.getType());
-            Collection<AttributeModifier> baseModifiers = item.getItemMeta().getAttributeModifiers(Attribute.ATTACK_DAMAGE);
-            if (baseModifiers != null) {
-                for (AttributeModifier modifier : baseModifiers) {
-                    if (modifier.getOperation() == AttributeModifier.Operation.ADD_NUMBER) {
-                        baseDamage = modifier.getAmount() + 1;
-                    }
-                }
-            }
-        }
-        // Manejo de ítems Oraxen
-        else {
-            baseDamage = getDefaultDamage(item.getType());
-            if (meta.hasAttributeModifiers()) {
-                Collection<AttributeModifier> modifiers = meta.getAttributeModifiers(Attribute.ATTACK_DAMAGE);
-                if (modifiers != null) {
-                    for (AttributeModifier modifier : modifiers) {
-                        if (modifier.getOperation() == AttributeModifier.Operation.ADD_NUMBER) {
-                            baseDamage = modifier.getAmount() + 1; // Reemplaza el valor base para ítems Oraxen
-                            break; // Asumimos que solo hay un modificador relevante
-                        }
-                    }
-                }
-            }
-        }
+    public static double calculateTotalDamage(ItemStack item, double baseDamage) {
 
-        // Aplicar encantamiento de Sharpness
-        int sharpnessLevel = item.getEnchantmentLevel(Enchantment.SHARPNESS);
-        double sharpnessDamage = sharpnessLevel > 0 ? (0.5 * sharpnessLevel + 0.5) : 0;
+        //double baseDamage = getBaseDamage(item);
+
+
+        double sharpnessDamage = calculateSharpnessDamage(item);
 
         return baseDamage + sharpnessDamage;
     }
+
+    private static double calculateSharpnessDamage(ItemStack item) {
+        int sharpnessLevel = item.getEnchantmentLevel(Enchantment.SHARPNESS);
+        return sharpnessLevel > 0 ? (0.5 * sharpnessLevel + 0.5) : 0;
+    }
+
 
     public static double calculateAttackSpeed(ItemStack item) {
         double baseSpeed = 0;
@@ -233,126 +207,31 @@ public class ItemUtil {
         return baseSpeed;
     }
 
-    private static double getDefaultDamage(Material material) {
-        return switch (material) {
-            case WOODEN_SWORD, GOLDEN_SWORD -> 4;
-            case STONE_SWORD -> 5;
-            case IRON_SWORD -> 6;
-            case DIAMOND_SWORD, WOODEN_AXE, GOLDEN_AXE -> 7;
-            case NETHERITE_SWORD -> 8;
-            case STONE_AXE, IRON_AXE, DIAMOND_AXE -> 9;
-            case NETHERITE_AXE -> 10;
-            default -> 1;
-        };
-    }
-
-    public static Component calculateRarity(RollQuality rollQuality, double average) {
-        TextColor color;
-        String rarityText;
-
-        switch (rollQuality) {
-            case GodRollQuality godRollQuality -> {
-                if (average >= 25.0) {
-                    color = ItemConfig.GODLIKE_COLOR;
-                    rarityText = "Divino";
-                } else if (average >= 23.0) {
-                    color = ItemConfig.LEGENDARY_COLOR;
-                    rarityText = "Legendario";
-                } else if (average >= 20.5) {
-                    color = ItemConfig.EPIC_COLOR;
-                    rarityText = "Épico";
-                } else if (average >= 17.5) {
-                    color = ItemConfig.RARE_COLOR;
-                    rarityText = "Raro";
-                } else if (average >= 14.0) {
-                    color = ItemConfig.UNCOMMON_COLOR;
-                    rarityText = "Común";
-                } else {
-                    color = ItemConfig.COMMON_COLOR;
-                    rarityText = "Basura";
-                }
-            }
-            case HighRollQuality highRollQuality -> {
-                if (average >= 23.5) {
-                    color = ItemConfig.GODLIKE_COLOR;
-                    rarityText = "Divino";
-                } else if (average >= 21.5) {
-                    color = ItemConfig.LEGENDARY_COLOR;
-                    rarityText = "Legendario";
-                } else if (average >= 19) {
-                    color = ItemConfig.EPIC_COLOR;
-                    rarityText = "Épico";
-                } else if (average >= 16) {
-                    color = ItemConfig.RARE_COLOR;
-                    rarityText = "Raro";
-                } else if (average >= 12.5) {
-                    color = ItemConfig.UNCOMMON_COLOR;
-                    rarityText = "Común";
-                } else {
-                    color = ItemConfig.COMMON_COLOR;
-                    rarityText = "Basura";
-                }
-            }
-            case MediumRollQuality mediumRollQuality -> {
-                if (average >= 22.0) {
-                    color = ItemConfig.GODLIKE_COLOR;
-                    rarityText = "Divino";
-                } else if (average >= 20.0) {
-                    color = ItemConfig.LEGENDARY_COLOR;
-                    rarityText = "Legendario";
-                } else if (average >= 17.5) {
-                    color = ItemConfig.EPIC_COLOR;
-                    rarityText = "Épico";
-                } else if (average >= 14.5) {
-                    color = ItemConfig.RARE_COLOR;
-                    rarityText = "Raro";
-                } else if (average >= 11.0) {
-                    color = ItemConfig.UNCOMMON_COLOR;
-                    rarityText = "Común";
-                } else {
-                    color = ItemConfig.COMMON_COLOR;
-                    rarityText = "Basura";
-                }
-            }
-            case null, default -> {
-                if (average >= 19.0) {
-                    color = ItemConfig.GODLIKE_COLOR;
-                    rarityText = "Divino";
-                } else if (average >= 17.0) {
-                    color = ItemConfig.LEGENDARY_COLOR;
-                    rarityText = "Legendario";
-                } else if (average >= 14.5) {
-                    color = ItemConfig.EPIC_COLOR;
-                    rarityText = "Épico";
-                } else if (average >= 11.5) {
-                    color = ItemConfig.RARE_COLOR;
-                    rarityText = "Raro";
-                } else if (average >= 8.0) {
-                    color = ItemConfig.UNCOMMON_COLOR;
-                    rarityText = "Común";
-                } else {
-                    color = ItemConfig.COMMON_COLOR;
-                    rarityText = "Basura";
-                }
-            }
-        }
-
-        return Component.text(rarityText).color(color).decoration(TextDecoration.ITALIC, false);
-    }
-
 
     public static void attributesDisplayInLore(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
 
-        // Restablecer modificadores de atributo si el ítem no es personalizado
-        if (NexoItems.idFromItem(item) == null) {
+        //set the default modifiers so minecraft don't mess with the green vanilla attributes
+        if(meta.getAttributeModifiers() == null){
+
+            //System.out.println("Set the default modifiers");
             var defaultModifiers = item.getType().getDefaultAttributeModifiers();
             meta.setAttributeModifiers(defaultModifiers);
             item.setItemMeta(meta);
         }
+        double baseDamage = 1;
 
-        double totalDamage = calculateTotalDamage(item);
+        Collection<AttributeModifier> modifiers = meta.getAttributeModifiers(Attribute.ATTACK_DAMAGE);
+        if (modifiers != null) {
+            for (AttributeModifier modifier : modifiers) {
+                if (modifier.getOperation() == AttributeModifier.Operation.ADD_NUMBER) {
+                    baseDamage = baseDamage + modifier.getAmount(); // Usar el valor del modificador
+                }
+            }
+        }
+
+        double totalDamage = calculateTotalDamage(item, baseDamage);
         double attackSpeed = calculateAttackSpeed(item);
         String attackSpeedDisplay = String.format("%.1f", attackSpeed);
 
@@ -361,12 +240,12 @@ public class ItemUtil {
         if (lore == null) lore = new ArrayList<>();
 
         // Filtrar líneas existentes que contengan atributos
-        lore.removeIf(line -> line.toString().contains("Daño de ataque") || line.toString().contains("Velocidad de ataque") || line.toString().contains("En la mano") || line.toString().contains("En la mano") || line.toString().contains("          "));
+        lore.removeIf(line -> line.toString().contains("Daño p") || line.toString().contains("Velocidad d") || line.toString().contains("En la mano") || line.toString().contains("          "));
 
         // Añadir nuevas líneas
         lore.add(Component.text("          "));
         lore.add(Component.text("En la mano principal:", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text(" " + df.format(totalDamage) + " ", NamedTextColor.BLUE).append(Component.text("Daño de ataque", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text(" " + df.format(totalDamage) + " ", NamedTextColor.BLUE).append(Component.text("Daño por ataque", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));
         lore.add(Component.text(" " + attackSpeedDisplay + " ", NamedTextColor.BLUE).append(Component.text("Velocidad de ataque", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));
 
         // Aplicar la nueva lore
@@ -374,6 +253,7 @@ public class ItemUtil {
 
         // Ocultar atributos por defecto
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+
         item.setItemMeta(meta);
     }
 }

@@ -1,6 +1,5 @@
 package cl.nightcore.itemrarity.command;
 
-import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.item.GemRemover;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

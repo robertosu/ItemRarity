@@ -28,7 +28,7 @@ public class GetItemUpgraderCommand implements CommandExecutor {
             }
         }
 
-        ItemUpgrader itemUpgrader = new ItemUpgrader(amount, Integer.parseInt(args[1]),Integer.parseInt(args[2]));
+        ItemUpgrader itemUpgrader = new ItemUpgrader(amount, Integer.parseInt(args[1]), Integer.parseInt(args[2]));
 
         player.getInventory().addItem(itemUpgrader);
         player.sendMessage("¡Has obtenido " + amount + " Runa(s) Activa(s)!");

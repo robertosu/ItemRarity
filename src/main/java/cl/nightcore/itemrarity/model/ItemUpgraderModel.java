@@ -37,8 +37,8 @@ public record ItemUpgraderModel(ItemStack item) {
 
     public int getPercentage(){
         switch (this.getLevel()) {
-            case 1 -> { return 50; }
-            case 2 -> { return 75; }
+            case 1 -> { return 65; }
+            case 2 -> { return 85; }
             // Add more cases for other numbers
             default -> { return 0;}
         }

@@ -34,9 +34,10 @@ public class ItemConfig {
     public static final Component REROLL_PREFIX = Component.text("[Objeto Mágico]: ").color(MagicObject.getPrimaryColor());
     public static final Component REDEMPTION_PREFIX = Component.text("[Redención]: ").color(RedemptionObject.getPrimaryColor());
     public static final Component BLESSING_PREFIX = Component.text("[Bendición]: ").color(BlessingObject.getPrimaryColor());
-    public static final Component GEMSTONE_PREFIX = Component.text("[Gemas]: ").color(TextColor.color(0x2DF0FF));
+    public static final Component GEMSTONE_PREFIX = Component.text("[Gemas]: ").color(GemObject.getPrimaryColor());
     public static final Component BLESSING_BALL_PREFIX = Component.text("[Bola Bendición]: ").color(BlessingBall.getPrimaryColor());
     public static final Component ITEM_UPGRADER_PREFIX = Component.text("[Forja]: ");
+    public static final Component GEM_REMOVER_PREFIX = Component.text("[Remover gema]: ").color(GemRemover.getPrimaryColor());
 
     public static final String BLESSING_OBJECT_KEY = "blessing_object";
     public static final String GEM_REMOVER_KEY = "gem_remover";

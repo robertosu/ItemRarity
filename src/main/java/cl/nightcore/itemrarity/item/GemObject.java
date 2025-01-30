@@ -1,12 +1,12 @@
 package cl.nightcore.itemrarity.item;
 
 import cl.nightcore.itemrarity.ItemRarity;
-import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.stat.Stat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -20,6 +20,7 @@ import java.util.List;
 public class GemObject extends ItemStack {
     private static final String GEM_STAT_KEY = "gem_stat";
     private static final String GEM_LEVEL_KEY = "gem_level";
+    private static final TextColor PRIMARY_COLOR = TextColor.fromHexString("#2DF0FF");
     private final Stat stat;
     private final int value;
     private final int level;
@@ -40,23 +41,6 @@ public class GemObject extends ItemStack {
 
     }
 
-    public static String getGemStatKey(){
-        return GEM_STAT_KEY;
-    }
-
-    public static String getGemLevelKey(){
-        return GEM_LEVEL_KEY;
-    }
-
-    public int getLevel() {
-        return level;
-    }
-
-
-    public Component getGemName() {
-        return gemName;
-    }
-
     private void setGemNBT() {
         PersistentDataContainer container = meta.getPersistentDataContainer();
         NamespacedKey key = new NamespacedKey(ItemRarity.PLUGIN, GEM_STAT_KEY);
@@ -67,19 +51,7 @@ public class GemObject extends ItemStack {
         setItemMeta(meta);
 
     }
-    public int getValueFromNBT(){
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-        NamespacedKey lvlkey = new NamespacedKey(ItemRarity.PLUGIN, GEM_LEVEL_KEY);
-        int levelfromnbt = container.get(lvlkey, PersistentDataType.INTEGER);
-        return 4 + (levelfromnbt - 1) * levelfromnbt / 2;
-    }
 
-    public Stat getStatFromNBT(){
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-        NamespacedKey key = new NamespacedKey(ItemRarity.PLUGIN, GEM_STAT_KEY);
-        String statfromnbt = container.get(key, PersistentDataType.STRING);
-        return CombinedStats.valueOf(statfromnbt);
-    }
 
     private void setupGemLore() {
         List<Component> lore = new ArrayList<>();
@@ -101,11 +73,11 @@ public class GemObject extends ItemStack {
         setItemMeta(meta);
     }
 
+    public static TextColor getPrimaryColor(){
+        return PRIMARY_COLOR;
+    }
     public Stat getStat() {
         return stat;
     }
 
-    public int getValue() {
-        return value;
-    }
 }

@@ -6,6 +6,7 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import static cl.nightcore.itemrarity.util.ItemUtil.random;
 
 public class StatValueGenerator {
+
     public static int generateValueForStat(RollQuality rollQuality, boolean useNormalDistribution) {
         if (useNormalDistribution) {
             return generateValueUsingNormalDistribution(rollQuality);
@@ -17,8 +18,7 @@ public class StatValueGenerator {
     private static int generateValueUsingNormalDistribution(RollQuality rollQuality) {
         NormalDistribution distribution = new NormalDistribution(rollQuality.getMean(), rollQuality.getSd());
         int value = (int) Math.round(distribution.sample());
-        value = Math.max(value, 10); // Asegurar que el valor sea al menos 6
-        //value = Math.min(value, 60); // Asegurar que el valor no exceda 50
+        value = Math.max(value, 10);
         return value;
     }
 

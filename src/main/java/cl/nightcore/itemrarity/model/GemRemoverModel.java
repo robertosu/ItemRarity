@@ -4,7 +4,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
 import static cl.nightcore.itemrarity.config.ItemConfig.GEM_REMOVER_KEY_NS;
-import static cl.nightcore.itemrarity.config.ItemConfig.ITEM_UPGRADER_KEY_NS;
 
 public record GemRemoverModel(ItemStack item) {
 

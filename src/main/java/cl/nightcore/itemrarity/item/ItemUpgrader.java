@@ -18,6 +18,7 @@ import java.util.List;
 import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
 import static cl.nightcore.itemrarity.config.ItemConfig.ITEM_UPGRADER_KEY_NS;
 
+@SuppressWarnings("unused")
 public class ItemUpgrader extends ItemStack {
 
     public final static String ITEM_UPGRADER_TYPE_KEY = "upgradertype";

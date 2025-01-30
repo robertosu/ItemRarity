@@ -5,6 +5,7 @@ import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.statprovider.StatProvider;
 import cl.nightcore.itemrarity.util.ItemUtil;
+import cl.nightcore.itemrarity.util.RarityCalculator;
 import com.nexomc.nexo.api.NexoItems;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.AuraSkillsBukkit;
@@ -226,10 +227,16 @@ public abstract class IdentifiedItem extends ItemStack {
     public RollQuality getRollQuality() {
         int level = getLevel();
         return switch (level) {
-            case 4 -> new GodRollQuality();
-            case 3 -> new HighRollQuality();
-            case 2 -> new MediumRollQuality();
-            default -> new LowRollQuality();
+            case 9 -> _9RollQuality.getInstance();
+            case 8 -> _8RollQuality.getInstance();
+            case 7 -> _7RollQuality.getInstance();
+            case 6 -> _6RollQuality.getInstance();
+            case 5 -> _5RollQuality.getInstance();
+            case 4 -> _4RollQuality.getInstance();
+            case 3 -> _3RollQuality.getInstance();
+            case 2 -> _2RollQuality.getInstance();
+            case 1 -> _1RollQuality.getInstance();
+            default -> throw new IllegalStateException();
         };
     }
 
@@ -269,7 +276,7 @@ public abstract class IdentifiedItem extends ItemStack {
 
             // Calcular el promedio solo si hay stats válidas
             double average = (statCount > 0) ? totalValue / statCount : 0.0;
-            this.rarity = ItemUtil.calculateRarity(getRollQuality(), average);
+            this.rarity = RarityCalculator.calculateRarity(getRollQuality(), average);
         }
     }
 

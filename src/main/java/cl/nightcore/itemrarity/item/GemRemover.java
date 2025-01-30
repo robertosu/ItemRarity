@@ -9,13 +9,13 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static cl.nightcore.itemrarity.config.ItemConfig.GEM_REMOVER_KEY_NS;
 
+@SuppressWarnings("unused")
 public class GemRemover extends ItemStack {
     private static final TextColor PRIMARY_COLOR = TextColor.fromHexString("#e67415");
     private static final TextColor LORE_COLOR = TextColor.fromHexString("#d9a253");
@@ -64,6 +64,22 @@ public class GemRemover extends ItemStack {
         }
     }
 
+    public static TextColor getPrimaryColor() {
+        return PRIMARY_COLOR;
+    }
+
+    public static TextColor getLoreColor() {
+        return LORE_COLOR;
+    }
+
+    public static String getGemRemoverKey() {
+        return ItemConfig.GEM_REMOVER_KEY;
+    }
+
+    public static NamespacedKey getGemRemoverKeyNs() {
+        return GEM_REMOVER_KEY_NS;
+    }
+
     public int getPercentage( int level){
         switch (level) {
             case 1 -> { return 25; }
@@ -82,21 +98,5 @@ public class GemRemover extends ItemStack {
             // Add more cases for other numbers
             default -> { return "I ERROR"; }
         }
-    }
-
-    public static TextColor getPrimaryColor() {
-        return PRIMARY_COLOR;
-    }
-    public static TextColor getLoreColor() {
-        return LORE_COLOR;
-    }
-
-
-    public static String getGemRemoverKey() {
-        return ItemConfig.GEM_REMOVER_KEY;
-    }
-
-    public static NamespacedKey getGemRemoverKeyNs() {
-        return GEM_REMOVER_KEY_NS;
     }
 }

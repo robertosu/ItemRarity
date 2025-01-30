@@ -70,16 +70,11 @@ public class IdentifyScrollListener implements Listener {
     private void handleInteraction(InventoryClickEvent event, ItemStack targetItem, ItemStack cursor, ObjectType type) {
         Player player = (Player) event.getWhoClicked();
 
-        // Para objetos que no son gemas, verificar si el item está identificado
-        if (type != ObjectType.IDENTIFY_SCROLL && type != ObjectType.GEM && !isIdentified(targetItem)) {
-            sendErrorMessage(player, "Tu objeto debe estar identificado.", ItemConfig.PLUGIN_PREFIX);
-            event.setCancelled(true);
-            return;
-        }
+
         // Para gemas, verificar si el item está identificado
         if (type == ObjectType.GEM) {
             if (!isIdentified(targetItem)) {
-                sendErrorMessage(player, "Tu objeto debe estar identificado para insertar gemas.", ItemConfig.PLUGIN_PREFIX);
+                sendErrorMessage(player, "Tu objeto debe estar identificado para insertar gemas.", ItemConfig.GEMSTONE_PREFIX);
                 event.setCancelled(true);
                 return;
             }
@@ -89,27 +84,62 @@ public class IdentifyScrollListener implements Listener {
                 handleIdentifyScroll(event, targetItem, cursor, player);
                 break;
             case MAGIC_OBJECT:
+                if (!isIdentified(targetItem)) {
+                    sendErrorMessage(player, "Tu objeto debe estar identificado.", ItemConfig.REROLL_PREFIX);
+                    event.setCancelled(true);
+                    return;
+                }
                 handleObjectOperation(event, targetItem, cursor, player,
                         ItemRarity::rollStats);
                 break;
             case BLESSING_OBJECT:
+                if (!isIdentified(targetItem)) {
+                    sendErrorMessage(player, "Tu objeto debe estar identificado.", ItemConfig.BLESSING_PREFIX);
+                    event.setCancelled(true);
+                    return;
+                }
                 handleObjectOperation(event, targetItem, cursor, player,
                         ItemRarity::rerollLowestStat);
                 break;
             case REDEMPTION_OBJECT:
+                if (!isIdentified(targetItem)) {
+                    sendErrorMessage(player, "Tu objeto debe estar identificado.", ItemConfig.REDEMPTION_PREFIX);
+                    event.setCancelled(true);
+                    return;
+                }
                 handleObjectOperation(event, targetItem, cursor, player,
                         ItemRarity::rerollAllStatsExceptHighest);
                 break;
             case GEM:
+                if (!isIdentified(targetItem)) {
+                    sendErrorMessage(player, "Tu objeto debe estar identificado.", ItemConfig.GEMSTONE_PREFIX);
+                    event.setCancelled(true);
+                    return;
+                }
                 handleGemInsertion(event, targetItem, cursor, player);
                 break;
             case GEM_REMOVER:
+                if (!isIdentified(targetItem)) {
+                    sendErrorMessage(player, "Tu objeto debe estar identificado.", ItemConfig.GEM_REMOVER_PREFIX);
+                    event.setCancelled(true);
+                    return;
+                }
                 handleGemRemoval(event, targetItem, cursor, player);
                 break;
             case BLESSING_BALL:
+                if (!isIdentified(targetItem)) {
+                    sendErrorMessage(player, "Tu objeto debe estar identificado.", ItemConfig.BLESSING_BALL_PREFIX);
+                    event.setCancelled(true);
+                    return;
+                }
                 handleBlessingBall(event, targetItem, cursor, player);
                 break;
             case ITEM_UPGRADER:
+                if (!isIdentified(targetItem)) {
+                    sendErrorMessage(player, "Tu objeto debe estar identificado.", ItemConfig.ITEM_UPGRADER_PREFIX);
+                    event.setCancelled(true);
+                    return;
+                }
                 handleItemUpgrade(event, targetItem, cursor, player);
 
         }
@@ -199,11 +229,6 @@ public class IdentifyScrollListener implements Listener {
     private void sendErrorMessage(Player player, String message, Component prefix) {
         player.sendMessage(prefix.append(
                 Component.text(message).color(NamedTextColor.RED)
-        ));
-    }
-    private void sendErrorMessage(Player player, Component message, Component prefix) {
-        player.sendMessage(prefix.append(
-                message
         ));
     }
 
