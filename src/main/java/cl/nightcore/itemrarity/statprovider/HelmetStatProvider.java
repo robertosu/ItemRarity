@@ -11,7 +11,7 @@ public class HelmetStatProvider implements StatProvider {
     private static final List<Stat> HELMET_STATS = Arrays.asList(
             CombinedStats.CRIT_CHANCE, CombinedStats.CRIT_DAMAGE, CombinedStats.HEALTH, CombinedStats.LUCK,
             CombinedStats.REGENERATION,  CustomStats.DEXTERITY, CombinedStats.STRENGTH, CombinedStats.TOUGHNESS,
-            CombinedStats.WISDOM, CombinedStats.ACCURACY
+            CombinedStats.WISDOM, CombinedStats.EVASION
     );
     private static final List<Stat> GAUSS_HELMET_STATS = Arrays.asList(CombinedStats.HEALTH, CombinedStats.CRIT_CHANCE);
 

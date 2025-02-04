@@ -10,7 +10,7 @@ public class ChestplateStatProvider implements StatProvider {
     private static final List<Stat> CHESTPLATE_STATS = Arrays.asList(
             CombinedStats.CRIT_CHANCE, CombinedStats.CRIT_DAMAGE, CombinedStats.HEALTH, CombinedStats.LUCK,
             CombinedStats.REGENERATION,  CombinedStats.DEXTERITY, CombinedStats.STRENGTH, CombinedStats.TOUGHNESS,
-            CombinedStats.WISDOM, CombinedStats.ACCURACY
+            CombinedStats.WISDOM, CombinedStats.EVASION
     );
     private static final List<Stat> GAUSS_CHESTPLATE_STATS = Arrays.asList(CombinedStats.HEALTH, CombinedStats.TOUGHNESS);
 

@@ -108,7 +108,7 @@ public class RarityCalculator {
         }
 
         List<RarityThreshold> thresholds = RARITY_THRESHOLDS_CACHE.get(rollQuality);
-        System.out.println("Evaluando average: " + average);
+        //System.out.println("Evaluando average: " + average);
 
         for (RarityThreshold threshold : thresholds) {
             if (average >= threshold.minAverage) {

@@ -15,9 +15,10 @@ import org.bukkit.plugin.Plugin;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class BlessingBall extends ItemStack {
     private static final TextColor PRIMARY_COLOR = TextColor.fromHexString("#22E656");
-    private static final TextColor LORE_COLOR = TextColor.fromHexString("#1b9565");
+    private static final TextColor LORE_COLOR = TextColor.fromHexString("#519578");
     private static final Component DISPLAY_NAME = Component.text("Bola Bendición")
             .color(PRIMARY_COLOR)
             .decoration(TextDecoration.ITALIC, false);

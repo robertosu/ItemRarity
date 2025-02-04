@@ -2,23 +2,15 @@ package cl.nightcore.itemrarity;
 
 import cl.nightcore.itemrarity.abstracted.SocketableItem;
 import cl.nightcore.itemrarity.command.*;
-import cl.nightcore.itemrarity.config.ItemConfig;
-import cl.nightcore.itemrarity.customstats.CustomStats;
-import cl.nightcore.itemrarity.customstats.CustomTraits;
-import cl.nightcore.itemrarity.customstats.DodgeChanceTrait;
-import cl.nightcore.itemrarity.customstats.HitChanceTrait;
-import cl.nightcore.itemrarity.item.IdentifyScroll;
-import cl.nightcore.itemrarity.item.MagicObject;
+import cl.nightcore.itemrarity.customstats.*;
 import cl.nightcore.itemrarity.listener.AnvilListener;
 import cl.nightcore.itemrarity.listener.CancelUsageInRecipesListener;
 import cl.nightcore.itemrarity.listener.IdentifyScrollListener;
 import cl.nightcore.itemrarity.listener.ItemClickListener;
 import cl.nightcore.itemrarity.loot.CustomDropsManager;
-import cl.nightcore.itemrarity.type.IdentifiedAbstract;
 import cl.nightcore.itemrarity.type.RolledAbstract;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.registry.NamespacedRegistry;
-import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -35,33 +27,31 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
     public static Locale AURA_LOCALE;
 
     public static SocketableItem identifyItem(Player player, ItemStack item) {
-        IdentifiedAbstract weapon = new IdentifiedAbstract(item);
-        Component message = Component.text("¡Identificaste el arma! Calidad: ", IdentifyScroll.getLoreColor()).append(weapon.getRarityComponent());
-        player.sendMessage(ItemConfig.PLUGIN_PREFIX.append(message));
+        SocketableItem weapon = new SocketableItem(item);
+        weapon.identify(player);
+        weapon.initializeSocketData();
         return weapon;
     }
 
     public static SocketableItem rollStats(Player player, ItemStack item) {
         RolledAbstract rolledAbstract;
         rolledAbstract = new RolledAbstract(item);
-        rolledAbstract.incrementRollCount(player);
-        rolledAbstract.rerollStatsEnhanced();
-        Component message = Component.text("¡El objeto cambió! Rareza: ", MagicObject.getLoreColor());
-        player.sendMessage(ItemConfig.REROLL_PREFIX.append(message).append(rolledAbstract.getRarityComponent()));
+        rolledAbstract.rerollStatsEnhanced(player);
         return rolledAbstract;
     }
 
     public static SocketableItem rerollLowestStat(Player player, ItemStack item) {
-        IdentifiedAbstract moddedweapon = new IdentifiedAbstract(item);
+        SocketableItem moddedweapon = new SocketableItem(item);
         moddedweapon.rerollLowestStat(player);
         return moddedweapon;
     }
 
     public static SocketableItem rerollAllStatsExceptHighest(Player player, ItemStack item) {
-        IdentifiedAbstract moddedweapon = new IdentifiedAbstract(item);
+        SocketableItem moddedweapon = new SocketableItem(item);
         moddedweapon.rerollExceptHighestStat(player);
         return moddedweapon;
     }
+
 
     @Override
     public void onEnable() {
@@ -90,10 +80,12 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
     private void loadAuraSkillsCustoms(NamespacedRegistry registry, AuraSkillsApi auraSkills) {
         registry.registerTrait(CustomTraits.DODGE_CHANCE);
         registry.registerStat(CustomStats.DEXTERITY);
+        registry.registerTrait(CustomTraits.ATTACK_SPEED);
         registry.registerTrait(CustomTraits.HIT_CHANCE);
-        registry.registerStat(CustomStats.ACCURACY);
+        registry.registerStat(CustomStats.EVASION);
         auraSkills.getHandlers().registerTraitHandler(new DodgeChanceTrait(auraSkills));
         auraSkills.getHandlers().registerTraitHandler(new HitChanceTrait(auraSkills));
+        auraSkills.getHandlers().registerTraitHandler(new AttackSpeedTraitHandler(auraSkills));
         saveResource("stats.yml", false);
     }
 

@@ -10,7 +10,7 @@ public class LeggingsStatProvider implements StatProvider {
     private static final List<Stat> LEGGINGS_STATS = Arrays.asList(
             CombinedStats.CRIT_CHANCE, CombinedStats.CRIT_DAMAGE, CombinedStats.HEALTH, CombinedStats.LUCK,
             CombinedStats.REGENERATION, CombinedStats.STRENGTH, CombinedStats.TOUGHNESS, CombinedStats.DEXTERITY,
-            CombinedStats.WISDOM, CombinedStats.ACCURACY
+            CombinedStats.WISDOM, CombinedStats.EVASION
     );
     private static final List<Stat> GAUSS_LEGGINGS_STATS = Arrays.asList(CombinedStats.CRIT_DAMAGE, CombinedStats.TOUGHNESS);
 

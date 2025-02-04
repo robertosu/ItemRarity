@@ -1,8 +1,8 @@
 package cl.nightcore.itemrarity.type;
 
+import cl.nightcore.itemrarity.abstracted.SocketableItem;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.item.ItemUpgrader;
-import cl.nightcore.itemrarity.item.MagicObject;
 import cl.nightcore.itemrarity.model.ItemUpgraderModel;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -22,57 +22,18 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
 import static cl.nightcore.itemrarity.config.ItemConfig.LEVEL_KEY_NS;
-import static cl.nightcore.itemrarity.config.ItemConfig.ROLLCOUNT_KEY_NS;
 
 @SuppressWarnings("UnstableApiUsage")
-public class RolledAbstract extends IdentifiedAbstract {
-    private static final int MAX_ROLLCOUNT = 30;
+public class RolledAbstract extends SocketableItem {
     private static final int MAX_LEVEL = 9;
-    private static final int ROLLS_PER_LEVEL = 10;
     private static final NamespacedKey DAMAGE_MODIFIER_KEY = new NamespacedKey(PLUGIN, "level_damage");
-
 
     public RolledAbstract(ItemStack item) {
         super(item);
     }
 
-    public void incrementRollCount(Player player) {
-        ItemMeta meta = this.getItemMeta();
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-        int rollcount = container.getOrDefault(ROLLCOUNT_KEY_NS, PersistentDataType.INTEGER, 0);
-
-        if (rollcount < MAX_ROLLCOUNT) {
-            rollcount += 1;
-            int currentLevel = getLevel();
-            int rollsInCurrentLevel = rollcount - (ROLLS_PER_LEVEL * (currentLevel - 1));
-
-            // Mensaje de progreso
-            Component message = Component.text()
-                    .append(Component.text("El objeto aumentó su nivel de magia ", MagicObject.getLoreColor()))
-                    .append(Component.text(rollsInCurrentLevel, NamedTextColor.BLUE))
-                    .append(Component.text("/", NamedTextColor.DARK_AQUA))
-                    .append(Component.text(ROLLS_PER_LEVEL, NamedTextColor.BLUE))
-                    .build();
-
-            player.sendMessage(ItemConfig.REROLL_PREFIX.append(message));
-
-            // Comprobar si debe subir de nivel
-            int newLevel = (rollcount / ROLLS_PER_LEVEL) + 1;
-            if (newLevel > currentLevel) {
-                container.set(LEVEL_KEY_NS, PersistentDataType.INTEGER, newLevel);
-                player.sendMessage(ItemConfig.REROLL_PREFIX
-                        .append(Component.text("Tu objeto ahora es ", MagicObject.getLoreColor())
-                                .append(Component.text("Nivel " + newLevel, NamedTextColor.DARK_GRAY))));
-            }
-
-            container.set(ROLLCOUNT_KEY_NS, PersistentDataType.INTEGER, rollcount);
-            this.setItemMeta(meta);
-        }
-    }
 
     public boolean incrementLevel(Player player, ItemUpgraderModel itemUpgrader) {
-
-
         ItemMeta meta = this.getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
         int level = container.get(LEVEL_KEY_NS, PersistentDataType.INTEGER);

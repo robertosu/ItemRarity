@@ -29,8 +29,8 @@ import java.util.*;
 
 public class ItemUtil {
 
-    public static final Random random = new Random();
-    public static final DecimalFormat df = new DecimalFormat("0.#");
+    public static final Random RANDOM = new Random();
+    public static final DecimalFormat DF = new DecimalFormat("0.#");
     public static Component reset = Component.text().content("").color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false).build();
 
     public static boolean isNotEmpty(ItemStack item) {
@@ -241,11 +241,10 @@ public class ItemUtil {
 
         // Filtrar líneas existentes que contengan atributos
         lore.removeIf(line -> line.toString().contains("Daño p") || line.toString().contains("Velocidad d") || line.toString().contains("En la mano") || line.toString().contains("          "));
-
         // Añadir nuevas líneas
         lore.add(Component.text("          "));
         lore.add(Component.text("En la mano principal:", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text(" " + df.format(totalDamage) + " ", NamedTextColor.BLUE).append(Component.text("Daño por ataque", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text(" " + DF.format(totalDamage) + " ", NamedTextColor.BLUE).append(Component.text("Daño por ataque", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));
         lore.add(Component.text(" " + attackSpeedDisplay + " ", NamedTextColor.BLUE).append(Component.text("Velocidad de ataque", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));
 
         // Aplicar la nueva lore

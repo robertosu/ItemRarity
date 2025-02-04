@@ -27,8 +27,8 @@ public class ItemConfig {
     public static final TextColor UNCOMMON_COLOR = TextColor.color(0x2CAF34);
     public static final TextColor RARE_COLOR = TextColor.color(0x0333AF);
     public static final TextColor EPIC_COLOR = TextColor.color(0x812EDD);
-    public static final TextColor LEGENDARY_COLOR =TextColor.color(0xFFDB00);
-    public static final TextColor GODLIKE_COLOR = TextColor.color(0xFF181B);
+    public static final TextColor LEGENDARY_COLOR =TextColor.color(0xFFBF00);
+    public static final TextColor GODLIKE_COLOR = TextColor.color(0xFF0003);
 
     public static final Component PLUGIN_PREFIX = Component.text("[Pergamino]: ").color(NamedTextColor.GOLD);
     public static final Component REROLL_PREFIX = Component.text("[Objeto Mágico]: ").color(MagicObject.getPrimaryColor());

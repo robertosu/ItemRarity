@@ -6,7 +6,6 @@ import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.model.GemRemoverModel;
 import cl.nightcore.itemrarity.model.ItemUpgraderModel;
-import cl.nightcore.itemrarity.type.IdentifiedAbstract;
 import cl.nightcore.itemrarity.type.RolledAbstract;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import cl.nightcore.itemrarity.util.PerformanceTimer;
@@ -159,7 +158,7 @@ public class IdentifyScrollListener implements Listener {
     }
 
     private void handleBlessingBall(InventoryClickEvent event, ItemStack targetItem, ItemStack cursor, Player player) {
-        SocketableItem item = new IdentifiedAbstract(targetItem);
+        SocketableItem item = new SocketableItem(targetItem);
         if (item.addRandomMissingStat(player)) {
             event.setCurrentItem(item);
             consumeItem(event, cursor);
@@ -170,7 +169,7 @@ public class IdentifyScrollListener implements Listener {
     }
 
     private void handleGemRemoval(InventoryClickEvent event, ItemStack targetItem,ItemStack cursor, Player player){
-        SocketableItem item = new IdentifiedAbstract(targetItem);
+        SocketableItem item = new SocketableItem(targetItem);
         GemRemoverModel remover = new GemRemoverModel(cursor);
 
         if (item.extractAllGems(player,remover)){
@@ -184,7 +183,7 @@ public class IdentifyScrollListener implements Listener {
     }
     private void handleGemInsertion(InventoryClickEvent event, ItemStack targetItem, ItemStack cursor, Player player) {
         GemModel gem = new GemModel(cursor);
-        SocketableItem item = new IdentifiedAbstract(targetItem);
+        SocketableItem item = new SocketableItem(targetItem);
 
         // Intentar instalar la gema
         if (item.installGem(gem, player)) {

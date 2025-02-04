@@ -23,7 +23,7 @@ public enum CombinedStats implements Stat {
 
     // Custom Stats
     DEXTERITY(CustomStats.DEXTERITY),
-    ACCURACY(CustomStats.ACCURACY);
+    EVASION(CustomStats.EVASION);
 
     private final Stat delegateStat;
 

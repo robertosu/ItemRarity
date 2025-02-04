@@ -81,13 +81,16 @@ public class AnvilListener implements Listener {
             // Establecer costo y forzar actualización
             int repairCost = availableItems + (newName.isEmpty() ? 0 : 1); // Costo de reparación + renombre
             event.getView().setRepairCost(repairCost);
+            
+            //event.getInventory().setRepairCost(repairCost);
 
             event.setResult(repairedItem);
 
-            anvilInv.getViewers().forEach(human -> {
-                if (human instanceof Player) ((Player) human).updateInventory();
 
-            });
+            // Actualizar interfaz después de 1 tick
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> anvilInv.getViewers().forEach(human -> {
+                if (human instanceof Player) ((Player) human).updateInventory();
+            }), 1L);
         }
     }
 

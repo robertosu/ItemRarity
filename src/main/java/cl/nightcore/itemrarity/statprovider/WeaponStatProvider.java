@@ -11,7 +11,7 @@ public class WeaponStatProvider implements StatProvider {
 
     private static final List<Stat> ITEM_STATS = Arrays.asList(
             CombinedStats.CRIT_CHANCE, CombinedStats.CRIT_DAMAGE,  CombinedStats.DEXTERITY,
-            CombinedStats.STRENGTH, CombinedStats.REGENERATION, CombinedStats.TOUGHNESS, CombinedStats.ACCURACY
+            CombinedStats.STRENGTH, CombinedStats.REGENERATION, CombinedStats.TOUGHNESS, CombinedStats.EVASION
     );
     private static final List<Stat> GAUSS_ITEM_STATS = Arrays.asList(CombinedStats.STRENGTH, CombinedStats.CRIT_CHANCE);
 

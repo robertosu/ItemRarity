@@ -10,7 +10,7 @@ public class BootsStatProvider implements StatProvider {
     private static final List<Stat> BOOTS_STATS = Arrays.asList(
             CombinedStats.CRIT_CHANCE, CombinedStats.CRIT_DAMAGE, CombinedStats.HEALTH, CombinedStats.LUCK,
             CombinedStats.REGENERATION, CombinedStats.DEXTERITY, CombinedStats.STRENGTH, CombinedStats.TOUGHNESS,
-            CombinedStats.WISDOM, CombinedStats.ACCURACY
+            CombinedStats.WISDOM, CombinedStats.EVASION
     );
     private static final List<Stat> GAUSS_BOOTS_STATS = Arrays.asList(CombinedStats.CRIT_DAMAGE, CombinedStats.CRIT_CHANCE);
 

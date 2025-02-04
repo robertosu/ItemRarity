@@ -2,12 +2,12 @@ stats:
   itemrarity/dexterity:
     enabled: true
     traits:
-      itemrarity/dodge_chance:
+      itemrarity/hit_chance:
         modifier: 0.5 # Overrides the value passed in with CustomStatBuilder#trait
-  itemrarity/accuracy:
+  itemrarity/evasion:
     enabled: true
     traits:
-      itemrarity/hit_chance:
+      itemrarity/dodge_chance:
         modifier: 0.5 # Overrides the value passed in with CustomStatBuilder#trait
 traits:
   itemrarity/dodge_chance:

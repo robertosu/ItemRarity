@@ -12,4 +12,8 @@ public class CustomTraits {
     public static final CustomTrait HIT_CHANCE = CustomTrait.builder(NamespacedId.of("itemrarity", "hit_chance"))
             .displayName("Probabilidad de acertar")
             .build();
+
+    public static final CustomTrait ATTACK_SPEED = CustomTrait.builder(NamespacedId.of("itemrarity", "attack_speed"))
+            .displayName("Velocidad de Ataque")
+            .build();
 }
