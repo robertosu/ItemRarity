@@ -189,6 +189,7 @@ public class IdentifyScrollListener implements Listener {
         if (item.installGem(gem, player)) {
             consumeItem(event, cursor);
             event.setCurrentItem(item);
+            event.setCancelled(true);
         } else {
             event.setCancelled(true);
         }

@@ -46,6 +46,7 @@ public abstract class IdentifiedItem extends ItemStack {
 
     private final List<Stat> addedStats;
     private final List<Integer> statValues;
+    private static final String statModifierName = "identifiedstats";
 
     protected final ModifierType modifierType;
     protected final StatProvider statProvider;
@@ -69,6 +70,7 @@ public abstract class IdentifiedItem extends ItemStack {
                 .append(rarity);
         player.sendMessage(ItemConfig.PLUGIN_PREFIX.append(message));
     }
+
 
     protected void generateStats() {
         int statsCount = getMaxBonuses(); // Número total de stats a generar
@@ -100,7 +102,7 @@ public abstract class IdentifiedItem extends ItemStack {
     protected void removeSpecificModifier(Stat stat) {
         this.setItemMeta(AuraSkillsBukkit.get()
                 .getItemManager()
-                .removeStatModifier(this, modifierType, stat)
+                .removeStatModifier(this, modifierType, stat, statModifierName)
                 .getItemMeta());
     }
 
@@ -240,7 +242,7 @@ public abstract class IdentifiedItem extends ItemStack {
             double value = this.statValues.get(i);
             this.setItemMeta(AuraSkillsBukkit.get()
                     .getItemManager()
-                    .addStatModifier(this, modifierType, stat, value, true)
+                    .addStatModifier(this, modifierType, stat,statModifierName , value, true)
                     .getItemMeta());
         }
     }
@@ -249,7 +251,7 @@ public abstract class IdentifiedItem extends ItemStack {
         for (Stat stat : CombinedStats.values()) {
             this.setItemMeta(AuraSkillsBukkit.get()
                     .getItemManager()
-                    .removeStatModifier(this, modifierType, stat)
+                    .removeStatModifier(this, modifierType, stat, statModifierName)
                     .getItemMeta());
         }
     }
@@ -264,7 +266,7 @@ public abstract class IdentifiedItem extends ItemStack {
     protected void reApplyMultipliers(){
         var multipliers = AuraSkillsBukkit.get().getItemManager().getMultipliers(this,modifierType);
         for (Multiplier multiplier : multipliers){
-             this.setItemMeta(AuraSkillsBukkit.get().getItemManager().removeMultiplier(this,modifierType,multiplier.skill()).getItemMeta());
+            this.setItemMeta(AuraSkillsBukkit.get().getItemManager().removeMultiplier(this,modifierType,multiplier.skill()).getItemMeta());
             this.setItemMeta(AuraSkillsBukkit.get().getItemManager().addMultiplier(this,modifierType,multiplier.skill(),multiplier.value(),true).getItemMeta());
         }
     }
@@ -400,12 +402,9 @@ public abstract class IdentifiedItem extends ItemStack {
         meta.lore(lore);
         this.setItemMeta(meta);
 
-        // Resto del código para manejar nombres y atributos
-        reApplyMultipliers();
-
-
         handleCustomNameAndAttributesInLore(this.getItemMeta(), NexoItems.idFromItem(this) != null, ItemUtil.getItemType(this));
         updateLoreWithSockets();
+        reApplyMultipliers();
     }
 
     private void handleCustomNameAndAttributesInLore(ItemMeta meta, boolean isNexoItem, String itemType) {
@@ -437,7 +436,7 @@ public abstract class IdentifiedItem extends ItemStack {
     protected void addModifier(Stat stat, int value, boolean generateLore) {
         this.setItemMeta(AuraSkillsBukkit.get()
                 .getItemManager()
-                .addStatModifier(this, modifierType, stat, value, generateLore)
+                .addStatModifier(this, modifierType, stat, statModifierName, value, generateLore)
                 .getItemMeta());
     }
 
@@ -622,7 +621,6 @@ public abstract class IdentifiedItem extends ItemStack {
 
         // Remover todos los modificadores existentes
         removeAllModifierStats();
-
         // Generar nuevas stats excepto la más alta
         generateStatsExceptHighestStat(highestStat);
         applyStatsToItem();
