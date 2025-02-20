@@ -3,7 +3,9 @@ package cl.nightcore.itemrarity.model;
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.config.ItemConfig;
-import cl.nightcore.itemrarity.statprovider.StatProvider;
+import cl.nightcore.itemrarity.item.GemObject;
+import cl.nightcore.itemrarity.item.ItemUpgrader;
+import cl.nightcore.itemrarity.statprovider.ModifierProvider;
 import dev.aurelium.auraskills.api.stat.Stat;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -39,9 +41,11 @@ public record GemModel(ItemStack item) {
         return 4 + (level - 1) * level / 2;
     }
 
-    public Boolean isCompatible(StatProvider statProvider) {
+    public boolean isCompatible(ModifierProvider statProvider) {
         System.out.println(this.getStat());
         System.out.println(this.getStat().toString());
         return statProvider.getAvailableStats().contains(this.getStat());
     }
+
+
 }

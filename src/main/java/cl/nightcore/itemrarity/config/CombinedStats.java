@@ -14,7 +14,7 @@ public enum CombinedStats implements Stat {
     // Original Stats
     STRENGTH(Stats.STRENGTH),
     HEALTH(Stats.HEALTH),
-    REGENERATION(Stats.REGENERATION),
+    //(Stats.REGENERATION),
     LUCK(Stats.LUCK),
     WISDOM(Stats.WISDOM),
     TOUGHNESS(Stats.TOUGHNESS),
@@ -23,7 +23,12 @@ public enum CombinedStats implements Stat {
 
     // Custom Stats
     DEXTERITY(CustomStats.DEXTERITY),
-    EVASION(CustomStats.EVASION);
+    EVASION(CustomStats.EVASION),
+    ACCURACY(CustomStats.ACCURACY);
+
+    public Stat getDelegateStat() {
+        return delegateStat;
+    }
 
     private final Stat delegateStat;
 

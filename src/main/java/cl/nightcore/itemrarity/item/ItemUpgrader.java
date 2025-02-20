@@ -46,13 +46,12 @@ public class ItemUpgrader extends ItemStack {
         this.primaryColor = getPrimaryColor(type);
         // Set display name using Adventure API
         meta.displayName(getDisplayName());
-
         meta.setCustomModelData(getCustomModelData());
 
         // Set lore using Adventure API
         List<Component> lore = getLore(type, level);
         if(level==2){
-            lore.addFirst(Component.text("Este objeto tiene mas probabilidad de éxito").color(NamedTextColor.WHITE));
+            lore.addFirst(Component.text("Nivel superior: Esta forja tiene mayor tasa de éxito").color(NamedTextColor.WHITE));
         }
         meta.lore(lore);
 
@@ -103,15 +102,15 @@ public class ItemUpgrader extends ItemStack {
 
     public Component getDisplayName(){
          switch (type){
-            case 1->{return Component.text("Forja inestable " + suffix)
+            case 1->{return Component.text("Forja Inestable " + suffix)
                     .color(primaryColor)
                     .decoration(TextDecoration.ITALIC, false);
             }
-            case 2 ->{return Component.text("Forja activa " + suffix)
+            case 2 ->{return Component.text("Forja Activa " + suffix)
                     .color(primaryColor)
                     .decoration(TextDecoration.ITALIC, false);
             }
-            case 3 ->{return Component.text("Forja estable " + suffix)
+            case 3 ->{return Component.text("Forja Estable " + suffix)
                      .color(primaryColor)
                      .decoration(TextDecoration.ITALIC, false);
             }
@@ -142,11 +141,13 @@ public class ItemUpgrader extends ItemStack {
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Arrastra esta runa al objeto que deseas mejorar")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text(" ")
+                .color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
         lore.add(Component.text("Si la mejora es exitosa tu objeto sube de nivel")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text("Si la mejora falla tu objeto no se romperá ni")
-                .color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text("bajará de nivel")
+        lore.add(Component.text(" ")
+                .color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text("Al fallar tu objeto no se rompe ni baja de nivel")
                 .color(NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false));
         return lore;
     }
@@ -155,9 +156,13 @@ public class ItemUpgrader extends ItemStack {
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Arrastra esta runa al objeto que deseas mejorar")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text(" ")
+                .color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
         lore.add(Component.text("Si la mejora es exitosa tu objeto sube de nivel")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text("Si falla tu objeto bajará de nivel pero no se romperá")
+        lore.add(Component.text(" ")
+                .color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text("Al fallar tu objeto bajará de nivel pero no se romperá")
                 .color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
         return lore;
     }
@@ -166,9 +171,13 @@ public class ItemUpgrader extends ItemStack {
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Arrastra esta runa al objeto que deseas mejorar")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text(" ")
+                .color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
         lore.add(Component.text("Si la mejora es exitosa tu objeto sube de nivel")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text("Si esta falla, tu objeto se romperá")
+        lore.add(Component.text(" ")
+                .color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text("Al fallar, tu objeto se romperá")
                 .color(NamedTextColor.RED).decoration(TextDecoration.ITALIC, false));
         return lore;
     }
@@ -176,7 +185,7 @@ public class ItemUpgrader extends ItemStack {
     public String getSuffix(int level) {
         switch (level) {
             case 1 -> { return ""; }
-            case 2 -> { return "superior"; }
+            case 2 -> { return "de nivel superior"; }
             // Add more cases for other numbers
             default -> { return "ERROR ERROR"; }
         }

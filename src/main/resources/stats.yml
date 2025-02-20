@@ -2,12 +2,19 @@ stats:
   itemrarity/dexterity:
     enabled: true
     traits:
-      itemrarity/hit_chance:
-        modifier: 0.5 # Overrides the value passed in with CustomStatBuilder#trait
+      itemrarity/attack_speed:
+        modifier: 0.01
+      auraskills/movement_speed:
+        modifier: 1.0
   itemrarity/evasion:
     enabled: true
     traits:
       itemrarity/dodge_chance:
+        modifier: 0.5 # Overrides the value passed in with CustomStatBuilder#trait
+  itemrarity/accuracy:
+    enabled: true
+    traits:
+      itemrarity/hit_chance:
         modifier: 0.5 # Overrides the value passed in with CustomStatBuilder#trait
 traits:
   itemrarity/dodge_chance:
@@ -18,3 +25,6 @@ traits:
     enabled: true
     use_percent: true
     # Add configurable options here accessed using Trait#option... methods
+  itemrarity/attack_speed:
+    enabled: true
+    use_percent: false

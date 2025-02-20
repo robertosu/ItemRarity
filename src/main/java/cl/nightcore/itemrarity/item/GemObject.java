@@ -1,6 +1,9 @@
 package cl.nightcore.itemrarity.item;
 
 import cl.nightcore.itemrarity.ItemRarity;
+import cl.nightcore.itemrarity.config.ItemConfig;
+import cl.nightcore.itemrarity.model.GemModel;
+import cl.nightcore.itemrarity.model.ItemUpgraderModel;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.stat.Stat;
@@ -9,6 +12,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -16,6 +21,8 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static cl.nightcore.itemrarity.config.ItemConfig.LEVEL_KEY_NS;
 
 public class GemObject extends ItemStack {
     private static final String GEM_STAT_KEY = "gem_stat";
@@ -38,7 +45,6 @@ public class GemObject extends ItemStack {
         setupCustomName();
         setupGemLore();
         setGemNBT();
-
     }
 
     private void setGemNBT() {
@@ -48,10 +54,9 @@ public class GemObject extends ItemStack {
         NamespacedKey lvlkey = new NamespacedKey(ItemRarity.PLUGIN, GEM_LEVEL_KEY);
         container.set(lvlkey, PersistentDataType.INTEGER, level);
         meta.setCustomModelData(customModelData);
+        meta.setMaxStackSize(1);
         setItemMeta(meta);
-
     }
-
 
     private void setupGemLore() {
         List<Component> lore = new ArrayList<>();

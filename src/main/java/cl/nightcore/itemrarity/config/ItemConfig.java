@@ -21,7 +21,9 @@ public class ItemConfig {
     public static final NamespacedKey MAX_BONUSES_KEY_NS;
     public static final NamespacedKey GEM_REMOVER_KEY_NS;
     public static final NamespacedKey ITEM_UPGRADER_KEY_NS;
+    public static final NamespacedKey GEM_UPGRADER_KEY_NS;
     public static final NamespacedKey GEM_STAT_KEY_NS;
+    public static final NamespacedKey SOCKET_GEM_KEY_NS;
 
     public static final TextColor COMMON_COLOR = TextColor.color(0xDEDEDE);
     public static final TextColor UNCOMMON_COLOR = TextColor.color(0x2CAF34);
@@ -37,7 +39,9 @@ public class ItemConfig {
     public static final Component GEMSTONE_PREFIX = Component.text("[Gemas]: ").color(GemObject.getPrimaryColor());
     public static final Component BLESSING_BALL_PREFIX = Component.text("[Bola Bendición]: ").color(BlessingBall.getPrimaryColor());
     public static final Component ITEM_UPGRADER_PREFIX = Component.text("[Forja]: ");
-    public static final Component GEM_REMOVER_PREFIX = Component.text("[Remover gema]: ").color(GemRemover.getPrimaryColor());
+    public static final Component GEM_REMOVER_PREFIX = Component.text("[Removedor]: ").color(GemRemover.getPrimaryColor());
+    public static final Component GEM_UPGRADER_PREFIX = Component.text("[Forja de gemas]: ").color(GemRemover.getPrimaryColor());
+
 
     public static final String BLESSING_OBJECT_KEY = "blessing_object";
     public static final String GEM_REMOVER_KEY = "gem_remover";
@@ -48,6 +52,10 @@ public class ItemConfig {
     public static final String ITEM_UPGRADER_KEY = "item_upgrader";
     public static final String GEM_STAT_KEY = "gem_stat";
     public static final String GEM_LEVEL_KEY = "gem_level";
+    public static final String GEM_UPGRADER_KEY = "gem_upgrader";
+    public static final String SOCKET_GEM_KEY = "socket_gem";
+
+
 
 
     static {
@@ -58,5 +66,8 @@ public class ItemConfig {
         GEM_REMOVER_KEY_NS = new NamespacedKey(PLUGIN, GEM_REMOVER_KEY);
         ITEM_UPGRADER_KEY_NS = new NamespacedKey(PLUGIN, ITEM_UPGRADER_KEY);
         GEM_STAT_KEY_NS = new NamespacedKey(PLUGIN, GEM_STAT_KEY);
+        GEM_UPGRADER_KEY_NS = new NamespacedKey(PLUGIN,GEM_UPGRADER_KEY);
+        SOCKET_GEM_KEY_NS = new NamespacedKey(PLUGIN,SOCKET_GEM_KEY);
+
     }
 }

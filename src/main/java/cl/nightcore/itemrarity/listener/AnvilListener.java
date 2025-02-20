@@ -1,6 +1,6 @@
 package cl.nightcore.itemrarity.listener;
 
-import cl.nightcore.itemrarity.ItemRepairManager;
+import cl.nightcore.itemrarity.util.ItemRepairManager;
 import com.nexomc.nexo.api.NexoItems;
 import net.kyori.adventure.text.Component;
 import org.bukkit.NamespacedKey;
@@ -127,7 +127,6 @@ public class AnvilListener implements Listener {
                 anvilInv.setFirstItem(null);
             }
         }
-
 
         // Limpiar metadata y actualizar
         meta.getPersistentDataContainer().remove(new NamespacedKey(plugin, "repair_items_needed"));

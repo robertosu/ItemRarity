@@ -96,6 +96,6 @@ public class AttackSpeedTraitHandler implements BukkitTraitHandler, Listener {
 
     @Override
     public String getMenuDisplay(double value, Trait trait, Locale locale) {
-        return /*"+" + */NumberUtil.format1(value);
+        return /*"+" + */NumberUtil.format2(value);
     }
 }

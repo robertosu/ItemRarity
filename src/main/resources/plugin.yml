@@ -29,6 +29,9 @@ commands:
   getitemupgrader:
     description: Obtienes una Runa activa.
     usage: /getitemupgrader <cantidad> <nivel>
+  getsocketstone:
+    description: Obtienes una piedra afilada.
+    usage: /getsocketstone <cantidad>
   testdistr:
     description: Testea las probabilidades.
     usage: /testdistr <rollqualityNumber> <testCount>

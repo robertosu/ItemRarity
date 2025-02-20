@@ -26,6 +26,9 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
+
+import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 
 public class ItemUtil {
 
@@ -71,27 +74,27 @@ public class ItemUtil {
                         == Boolean.TRUE;
     }
 
-    public static StatProvider getStatProvider(ItemStack item){
+    public static ModifierProvider getProvider(ItemStack item){
         Material material = item.getType();
         // Verificar si es armadura
         if (material.name().endsWith("_HELMET")){
-            return new HelmetStatProvider();
+            return new HelmetModifierProvider();
         }
         else if (material.name().endsWith("_CHESTPLATE")){
-            return new ChestplateStatProvider();
+            return new ChestplateModifierProvider();
         }
         else if (material.name().endsWith("_LEGGINGS")){
-            return new LeggingsStatProvider();
+            return new LeggingsModifierProvider();
         }
         else if (material.name().endsWith("_BOOTS")){
-            return new BootsStatProvider();
+            return new BootsModifierProvider();
         }
         else if (material.name().endsWith("_SWORD")
                 || material.name().endsWith("_AXE")
                 || material == Material.TRIDENT
                 || material == Material.BOW
                 || material == Material.CROSSBOW) {
-            return new WeaponStatProvider();
+            return new WeaponModifierProvider();
         } else {
             // Si no es armadura ni arma, retornar vacío.
             throw new IllegalArgumentException("Llamada ilegal de metodo");
@@ -111,23 +114,25 @@ public class ItemUtil {
         // Verificar si es arma
         else if (material.name().endsWith("_SWORD")
                 || material.name().endsWith("_AXE")
-                || material == Material.TRIDENT
-                || material == Material.BOW
-                || material == Material.CROSSBOW) {
+                || material == Material.TRIDENT){
             return "Weapon";
-        } else {
+        }
+        else if(material == Material.BOW || material == Material.CROSSBOW){
+            return "OtherWeapon";
+        }
+        else {
             // Si no es armadura ni arma, retornar vacío.
             return "Unknown";
         }
     }
 
     public static boolean isIdentifiable(ItemStack item) {
-        return getItemType(item).equals("Weapon") || getItemType(item).equals("Armor");
+        return getItemType(item).equals("Weapon") || getItemType(item).equals("Armor") || getItemType(item).equals("OtherWeapon");
     }
 
     public static ModifierType getModifierType(ItemStack item) {
         return switch (getItemType(item)) {
-            case "Weapon" -> ModifierType.ITEM;
+            case "Weapon","OtherWeapon" -> ModifierType.ITEM;
             case "Armor" -> ModifierType.ARMOR;
             default -> null;
         };
@@ -146,6 +151,11 @@ public class ItemUtil {
         return container.has(ItemUpgrader.getItemUpgraderKeyNs(), PersistentDataType.INTEGER);
     }
 
+    public static boolean isSocketStone(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return false;
+        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
+        return container.has(SocketStone.getSocketGemKeyNs(), PersistentDataType.BOOLEAN);
+    }
 
     public static boolean isGemRemover(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
@@ -153,18 +163,11 @@ public class ItemUtil {
         return container.has(GemRemover.getGemRemoverKeyNs(), PersistentDataType.INTEGER);
     }
 
-
     public static TextColor getColorOfStat(Stat stat) {
-        return TextColor.fromHexString(
-                stat.getColor(AuraSkillsApi.get().getMessageManager().getDefaultLanguage())
-                        .replaceAll("[<>]", ""));
+        return TextColor.fromHexString(stat.getColor(AURA_LOCALE).replaceAll("[<>]", ""));
     }
 
-
     public static double calculateTotalDamage(ItemStack item, double baseDamage) {
-
-        //double baseDamage = getBaseDamage(item);
-
 
         double sharpnessDamage = calculateSharpnessDamage(item);
 
@@ -193,7 +196,6 @@ public class ItemUtil {
         if (NexoItems.idFromItem(item) != null) {
             if (meta.getAttributeModifiers(Attribute.ATTACK_SPEED) != null) {
                 for (AttributeModifier modifier : Objects.requireNonNull(meta.getAttributeModifiers(Attribute.ATTACK_SPEED))) {
-                    // DEBUG ATTACK SPEED System.out.println(modifier.getAmount());
                     baseSpeed = modifier.getAmount() + 4;
                     return baseSpeed;
                 }
@@ -207,14 +209,12 @@ public class ItemUtil {
         return baseSpeed;
     }
 
-
     public static void attributesDisplayInLore(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
 
         //set the default modifiers so minecraft don't mess with the green vanilla attributes
         if(meta.getAttributeModifiers() == null){
-
             //System.out.println("Set the default modifiers");
             var defaultModifiers = item.getType().getDefaultAttributeModifiers();
             meta.setAttributeModifiers(defaultModifiers);
@@ -238,9 +238,9 @@ public class ItemUtil {
         // Recuperar o inicializar la lore como componentes
         List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
         if (lore == null) lore = new ArrayList<>();
+        // Filtrar líneas existentes que contengan atributos sin quitar la primera
 
-        // Filtrar líneas existentes que contengan atributos
-        lore.removeIf(line -> line.toString().contains("Daño p") || line.toString().contains("Velocidad d") || line.toString().contains("En la mano") || line.toString().contains("          "));
+        lore.removeIf(line ->  !line.toString().contains("|") && (line.toString().contains("Daño p") || line.toString().contains("Velocidad d") || line.toString().contains("En la mano") || line.toString().contains("          ")));
         // Añadir nuevas líneas
         lore.add(Component.text("          "));
         lore.add(Component.text("En la mano principal:", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
@@ -249,10 +249,14 @@ public class ItemUtil {
 
         // Aplicar la nueva lore
         meta.lore(lore);
-
         // Ocultar atributos por defecto
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
 
         item.setItemMeta(meta);
+    }
+
+    public static boolean rollthedice(double percentage){
+        double chance = percentage / 100.0;
+        return chance > ThreadLocalRandom.current().nextDouble();
     }
 }

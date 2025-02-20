@@ -1,4 +1,4 @@
-package cl.nightcore.itemrarity;
+package cl.nightcore.itemrarity.util;
 
 import java.util.HashMap;
 import java.util.Map;

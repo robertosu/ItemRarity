@@ -1,29 +1,28 @@
 package cl.nightcore.itemrarity.abstracted;
 
-import cl.nightcore.itemrarity.classes.*;
 import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.item.BlessingObject;
 import cl.nightcore.itemrarity.item.IdentifyScroll;
 import cl.nightcore.itemrarity.item.MagicObject;
 import cl.nightcore.itemrarity.item.RedemptionObject;
-import cl.nightcore.itemrarity.statprovider.StatProvider;
+import cl.nightcore.itemrarity.rollquality.*;
+import cl.nightcore.itemrarity.statprovider.ModifierProvider;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import cl.nightcore.itemrarity.util.RarityCalculator;
 import com.nexomc.nexo.api.NexoItems;
-import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.AuraSkillsBukkit;
 import dev.aurelium.auraskills.api.item.ModifierType;
 import dev.aurelium.auraskills.api.skill.Multiplier;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.StatModifier;
+import dev.aurelium.auraskills.api.trait.Trait;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -32,45 +31,51 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
-import static cl.nightcore.itemrarity.abstracted.SocketableItem.BASE_STAT_VALUE_PREFIX;
-import static cl.nightcore.itemrarity.abstracted.SocketableItem.GEM_BOOST_PREFIX;
-import static cl.nightcore.itemrarity.util.ItemUtil.RANDOM;
+import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 
 public abstract class IdentifiedItem extends ItemStack {
 
     private final List<Stat> addedStats;
     private final List<Integer> statValues;
-    private static final String statModifierName = "identifiedstats";
+    protected static final String NATIVE_STATMODIFIER = "native";
+    protected static final String MONOLITIC_TRAITMODIFIER = "monolitic";
+    protected static final String XP_MULTIPLIER = "multiplier";
+    protected static final String GEM_STATMODIFIER = "gema";
 
     protected final ModifierType modifierType;
-    protected final StatProvider statProvider;
+    protected final ModifierProvider statProvider;
     protected Component rarity;
+    protected boolean identified;
 
     public IdentifiedItem(ItemStack item) {
         super(item);
-        this.statProvider = ItemUtil.getStatProvider(item);
+        this.statProvider = ItemUtil.getProvider(item);
         this.modifierType = ItemUtil.getModifierType(item);
         this.addedStats = new ArrayList<>();
         this.statValues = new ArrayList<>();
     }
 
     public void identify(Player player) {
+        this.identified = false;
         setIdentifiedAndLevelNBT(1);
         setMaxBonuses(5);
         generateStats();
         applyStatsToItem();
         setLore();
+        if (ItemUtil.getItemType(this).equals("Weapon")) {
+            ItemUtil.attributesDisplayInLore(this);
+        }
+        setMonoliticStats(1);
+
+
         Component message = Component.text("¡Identificaste el arma! Calidad: ", IdentifyScroll.getLoreColor())
                 .append(rarity);
         player.sendMessage(ItemConfig.PLUGIN_PREFIX.append(message));
     }
-
 
     protected void generateStats() {
         int statsCount = getMaxBonuses(); // Número total de stats a generar
@@ -79,7 +84,7 @@ public abstract class IdentifiedItem extends ItemStack {
         // 1. Agregar stats gaussianas
         for (Stat stat : statProvider.getGaussStats()) {
             getAddedStats().add(stat);
-            int value = StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(stat));
+            int value = StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
             getStatValues().add(value);
         }
 
@@ -94,164 +99,151 @@ public abstract class IdentifiedItem extends ItemStack {
             } while (getAddedStats().contains(stat)); // Evitar duplicados
 
             getAddedStats().add(stat);
-            int value = StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(stat));
+            int value = StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
             getStatValues().add(value);
         }
     }
 
-    protected void removeSpecificModifier(Stat stat) {
+    protected void removeSpecificStatModifier(Stat stat) {
         this.setItemMeta(AuraSkillsBukkit.get()
                 .getItemManager()
-                .removeStatModifier(this, modifierType, stat, statModifierName)
+                .removeStatModifier(this, modifierType, stat, NATIVE_STATMODIFIER, false)
                 .getItemMeta());
     }
 
-    protected Stat getLowestModifier() {
-        PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
-        StatModifier lowestValidModifier = null;
+    protected void removeTraitModifierByName(ItemStack item, Trait trait, String name, boolean lore) {
+        this.setItemMeta(AuraSkillsBukkit.get()
+                .getItemManager()
+                .removeTraitModifier(item, modifierType, trait, name, lore)
+                .getItemMeta());
+    }
+
+    protected void removeStatModifierByName(Stat stat, String name, boolean lore) {
+        this.setItemMeta(AuraSkillsBukkit.get()
+                .getItemManager()
+                .removeStatModifier(this, modifierType, stat, name, lore)
+                .getItemMeta());
+    }
+
+    protected StatModifier getLowestModifier() {
+        // Obtener todos los modificadores de estadísticas nativas
+        List<StatModifier> nativeModifiers =
+                AuraSkillsBukkit.get().getItemManager().getStatModifiersByName(this, modifierType, NATIVE_STATMODIFIER);
+
+        StatModifier lowestModifier = null;
         double lowestValue = Double.MAX_VALUE;
 
-        // Obtener todos los modificadores actuales
-        for (StatModifier modifier : getStatModifiers()) {
-            Stat currentStat = modifier.type();
-
-            // Obtener el boost de gema si existe
-            int gemBoost = container.getOrDefault(
-                    new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + currentStat.name()), PersistentDataType.INTEGER, 0);
-
-            // Obtener el valor base (ya sea guardado en NBT o calculado)
-            double baseValue;
-            if (gemBoost > 0) {
-                // Si hay boost de gema, usar el valor base guardado
-                baseValue = container.getOrDefault(
-                        new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + currentStat.name()),
-                        PersistentDataType.INTEGER,
-                        (int) (modifier.value() - gemBoost));
-            } else {
-                // Si no hay boost de gema, usar el valor actual
-                baseValue = modifier.value();
-            }
-
-            // Comparar usando el valor base
-            if (baseValue < lowestValue) {
-                lowestValue = baseValue;
-                lowestValidModifier = modifier;
+        // Encontrar el modificador con el valor más bajo
+        for (StatModifier modifier : nativeModifiers) {
+            if (modifier.value() < lowestValue) {
+                lowestValue = modifier.value();
+                lowestModifier = modifier;
             }
         }
 
-        return lowestValidModifier != null ? lowestValidModifier.type() : null;
+        return lowestModifier;
     }
 
-    protected void removeSpecificStatLoreLine(Stat lowestStat) {
+/*    protected void removeSpecificModifierLoreLine(StatModifier lowesModifier) {
         ItemMeta meta = this.getItemMeta();
-        /*List<String> lore = Objects.requireNonNull(meta).getLore();*/
         @Nullable List<Component> lore = meta.lore();
         if (lore != null) {
-            String statDisplayName = lowestStat.getDisplayName(
-                    AuraSkillsApi.get().getMessageManager().getDefaultLanguage());
-            lore.removeIf(line -> line.toString().contains(statDisplayName));
+            String statDisplayName = lowesModifier.stat().getDisplayName(AURA_LOCALE);
+            String modifierValue = String.valueOf((int) Math.round(lowesModifier.value()));
+            lore.removeIf(line ->
+                    line.toString().contains(statDisplayName) && line.toString().contains(modifierValue));
             meta.lore(lore);
             this.setItemMeta(meta);
         }
-    }
-
+    }*/
 
     public StatModifier getHighestStatModifier() {
-        PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
-        StatModifier highestValidModifier = null;
+        // Obtener todos los modificadores de estadísticas nativas
+        List<StatModifier> nativeModifiers =
+                AuraSkillsBukkit.get().getItemManager().getStatModifiersByName(this, modifierType, NATIVE_STATMODIFIER);
+
+        StatModifier highestModifier = null;
         double highestValue = Double.MIN_VALUE;
 
-        // Recolectar boosts de gemas
-        Map<Stat, Integer> gemBoosts = new HashMap<>();
-        for (NamespacedKey key : container.getKeys()) {
-            if (key.getKey().startsWith(GEM_BOOST_PREFIX)) {
-                String statName =
-                        key.getKey().substring(GEM_BOOST_PREFIX.length()).toUpperCase();
-                Stat stat = CombinedStats.valueOf(statName);
-                int boost = container.get(key, PersistentDataType.INTEGER);
-                gemBoosts.put(stat, boost);
+        // Encontrar el modificador con el valor más alto
+        for (StatModifier modifier : nativeModifiers) {
+            if (modifier.value() > highestValue) {
+                highestValue = modifier.value();
+                highestModifier = modifier;
             }
         }
 
-        for (StatModifier modifier : getStatModifiers()) {
-            Stat currentStat = modifier.type();
-            int gemBoost = gemBoosts.getOrDefault(currentStat, 0);
-
-            // Obtener el valor base de la stat (si existe)
-            int baseValue = container.getOrDefault(
-                    new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + currentStat.name()),
-                    PersistentDataType.INTEGER,
-                    0);
-
-            // Solo considerar stats que tienen valor base o no tienen boost de gema
-            if (baseValue > 0 || gemBoost == 0) {
-                double value = gemBoost > 0 ? baseValue : modifier.value();
-                if (value > highestValue) {
-                    highestValue = value;
-                    highestValidModifier = modifier;
-                }
-            }
-        }
-
-        return highestValidModifier;
+        return highestModifier;
     }
 
-    protected void generateStatsExceptHighestStat(Stat excludedStat) {
-        int statsCount = getMaxBonuses(); // 5 o 6 estadísticas
-        StatProvider statProvider = ItemUtil.getStatProvider(this);
+    protected void generateStatsExceptHighestStat(Stat excludedStat, double excludedvalue) {
+        CombinedStats excludedCombinedStat =
+                CombinedStats.valueOf(excludedStat.getId().getKey().toUpperCase());
+
+        int statsCount = getMaxBonuses();
+        ModifierProvider statProvider = ItemUtil.getProvider(this);
         List<Stat> availableStats = statProvider.getAvailableStats();
+
         addedStats.clear();
         statValues.clear();
 
-        // 1. Agregar estadísticas Gauss (excluyendo excludedStat)
+        // 1. Procesar stats Gauss
         for (Stat stat : statProvider.getGaussStats()) {
-            if (stat != excludedStat) {
+            CombinedStats currentCombinedStat =
+                    CombinedStats.valueOf(stat.getId().getKey().toUpperCase());
+            if (!currentCombinedStat.equals(excludedCombinedStat)) {
                 getAddedStats().add(stat);
                 int value =
-                        StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(stat));
+                        StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
                 getStatValues().add(value);
             }
         }
 
-        // 2. Calcular cuántas estadísticas adicionales se necesitan
-        int gaussStatsAdded = getAddedStats().size();
-        int additionalStatsNeeded = statsCount - gaussStatsAdded;
+        getAddedStats().add(excludedStat);
+        getStatValues().add((int) Math.round(excludedvalue));
 
-        // 3. Agregar estadísticas adicionales (excluyendo excludedStat)
-        for (int i = 0; i < additionalStatsNeeded; i++) {
+        // 2. Calcular stats adicionales necesarias
+        int remainingStats = statsCount - getAddedStats().size();
+
+        // 3. Agregar stats aleatorias hasta alcanzar el límite
+        for (int i = 0; i < remainingStats; i++) {
             Stat stat;
             do {
-                stat = availableStats.get(RANDOM.nextInt(availableStats.size()));
-            } while (getAddedStats().contains(stat) || stat == excludedStat);
+                stat = availableStats.get(ThreadLocalRandom.current().nextInt(availableStats.size()));
+                CombinedStats currentCombinedStat =
+                        CombinedStats.valueOf(stat.getId().getKey().toUpperCase());
+                // Verificar que la stat no esté ya añadida y no sea la excluida
+            } while (getAddedStats().contains(stat)
+                    || CombinedStats.valueOf(stat.getId().getKey().toUpperCase())
+                            .equals(excludedCombinedStat));
+
             getAddedStats().add(stat);
-            int value = StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(stat));
+            int value = StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
             getStatValues().add(value);
         }
     }
 
-    protected void removeAllModifierStats() {
-        for (StatModifier stat : getStatModifiers()) {
-            removeSpecificModifier(stat.type());
-            removeSpecificStatLoreLine(stat.type());
+    protected void removeAllModifierStatsByName(String name, boolean lore) {
+        for (StatModifier modifier : getNativeStatModifiers()) {
+            removeStatModifierByName(modifier.type(), name, lore);
         }
     }
+
+
 
     protected void applyStatsToItem() {
         for (int i = this.addedStats.size() - 1; i >= 0; i--) {
             Stat stat = this.addedStats.get(i);
             double value = this.statValues.get(i);
-            this.setItemMeta(AuraSkillsBukkit.get()
-                    .getItemManager()
-                    .addStatModifier(this, modifierType, stat,statModifierName , value, true)
-                    .getItemMeta());
+            addNativeStatModifier(stat, value);
         }
     }
 
     public void removeModifiers() {
-        for (Stat stat : CombinedStats.values()) {
+        for (CombinedStats combinedStat : CombinedStats.values()) {
             this.setItemMeta(AuraSkillsBukkit.get()
                     .getItemManager()
-                    .removeStatModifier(this, modifierType, stat, statModifierName)
+                    .removeStatModifier(this, modifierType, combinedStat.getDelegateStat(), NATIVE_STATMODIFIER, false)
                     .getItemMeta());
         }
     }
@@ -263,67 +255,48 @@ public abstract class IdentifiedItem extends ItemStack {
         setItemMeta(meta);
     }
 
-    protected void reApplyMultipliers(){
-        var multipliers = AuraSkillsBukkit.get().getItemManager().getMultipliers(this,modifierType);
-        for (Multiplier multiplier : multipliers){
-            this.setItemMeta(AuraSkillsBukkit.get().getItemManager().removeMultiplier(this,modifierType,multiplier.skill()).getItemMeta());
-            this.setItemMeta(AuraSkillsBukkit.get().getItemManager().addMultiplier(this,modifierType,multiplier.skill(),multiplier.value(),true).getItemMeta());
+    protected void reApplyMultipliers() {
+        var multipliers = AuraSkillsBukkit.get().getItemManager().getMultipliers(this, modifierType);
+        if (!multipliers.isEmpty()) {
+            for (Multiplier multiplier : multipliers) {
+                this.setItemMeta(AuraSkillsBukkit.get()
+                        .getItemManager()
+                        .removeMultiplier(this, modifierType, multiplier.skill(), XP_MULTIPLIER, true)
+                        .getItemMeta());
+                this.setItemMeta(AuraSkillsBukkit.get()
+                        .getItemManager()
+                        .addMultiplier(this, modifierType, multiplier.skill(), XP_MULTIPLIER, multiplier.value(), true)
+                        .getItemMeta());
+            }
         }
     }
 
 
-    public RollQuality getRollQuality() {
-        return switch (getLevel()) {
-            case 9 -> _9RollQuality.getInstance();
-            case 8 -> _8RollQuality.getInstance();
-            case 7 -> _7RollQuality.getInstance();
-            case 6 -> _6RollQuality.getInstance();
-            case 5 -> _5RollQuality.getInstance();
-            case 4 -> _4RollQuality.getInstance();
-            case 3 -> _3RollQuality.getInstance();
-            case 2 -> _2RollQuality.getInstance();
-            case 1 -> _1RollQuality.getInstance();
-            default -> throw new IllegalStateException();
-        };
-    }
+
 
     public double calculateAverage() {
-
-        if (getStatModifiers().isEmpty()) {
-            throw new IllegalStateException();
+        // Obtener todos los modificadores de estadísticas nativas
+        List<StatModifier> nativeModifiers =
+                AuraSkillsBukkit.get().getItemManager().getStatModifiersByName(this, modifierType, NATIVE_STATMODIFIER);
+        if (nativeModifiers.isEmpty()) {
+            throw new IllegalStateException("No hay estadísticas nativas para calcular el promedio.");
         }
 
-        PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
         double totalValue = 0;
         int statCount = 0;
 
-        for (StatModifier modifier : getStatModifiers()) {
-            Stat currentStat = modifier.type();
-            double currentValue = modifier.value();
-
-            // Obtener el boost de la gema si existe
-            int gemBoost = container.getOrDefault(
-                    new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + currentStat.name()), PersistentDataType.INTEGER, 0);
-            // Si el valor total del modificador es igual al boost de la gema,
-            // significa que toda la stat proviene de la gema, así que la ignoramos completamente
-            if (currentValue == gemBoost) {
-                continue; // No contar esta stat ni para el total ni para el contador
-            }
-            // Si hay un boost de gema pero no es el valor total, restar el boost antes de agregar al total
-            if (gemBoost > 0) {
-                currentValue -= gemBoost;
-            }
-
-            // Agregar al total y aumentar el contador
-            totalValue += currentValue;
+        // Sumar los valores de las estadísticas nativas
+        for (StatModifier modifier : nativeModifiers) {
+            totalValue += modifier.value();
             statCount++;
         }
-        // Calcular el promedio solo si hay stats válidas
-        return (statCount > 0) ? totalValue / statCount : 0.0;
+
+        // Calcular el promedio
+        return totalValue / statCount;
     }
 
     public void setRarity(double average) {
-        this.rarity = RarityCalculator.calculateRarity(getRollQuality(), average);
+        this.rarity = RarityCalculator.calculateRarity(MainRollQuality.getInstance(), average);
     }
 
     public TextColor getRarityColor() {
@@ -358,7 +331,7 @@ public abstract class IdentifiedItem extends ItemStack {
 
     protected void setLore() {
         setRarity(calculateAverage());
-        ItemMeta meta = getItemMeta();
+        ItemMeta meta = this.getItemMeta();
         @Nullable List<Component> lore;
         if (meta.lore() != null) {
             lore = meta.lore();
@@ -366,23 +339,21 @@ public abstract class IdentifiedItem extends ItemStack {
             lore = new ArrayList<>();
         }
         // Eliminar líneas de rareza existentes
-        if (lore != null) {
-            lore.removeIf(line -> line.toString().contains("●"));
-            lore.removeIf(line -> line.toString().contains("%"));
-        }
+        lore.removeIf(line -> line.toString().contains("●") || line.toString().contains("|"));
+
         // Encontrar el índice después de la última línea que comienza con "+"
         int lastStatIndex = -1;
-        if (lore != null) {
-            for (int i = 0; i < lore.size(); i++) {
-                String line = PlainTextComponentSerializer.plainText().serialize(lore.get(i));
-                if (line.trim().startsWith("+")) {
-                    lastStatIndex = i;
-                }
+        for (int i = 0; i < lore.size(); i++) {
+            String line = PlainTextComponentSerializer.plainText().serialize(lore.get(i));
+            if (line.startsWith("+")) {
+                lastStatIndex = i;
             }
         }
+
         Component ilvl = Component.text("● Nivel " + getLevel() + " ● ")
                 .color(NamedTextColor.DARK_GRAY)
                 .decorate(TextDecoration.ITALIC);
+
         Component rarityLine = ilvl.append(Component.text("[")
                 .color(rarity.color())
                 .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE)
@@ -392,311 +363,187 @@ public abstract class IdentifiedItem extends ItemStack {
                         .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE)));
         // Insertar en la posición correcta
         int insertIndex = lastStatIndex != -1 ? lastStatIndex + 1 : 0;
-        assert lore != null;
         if (insertIndex < lore.size()) {
             lore.add(insertIndex, rarityLine);
         } else {
             lore.add(rarityLine);
         }
-
         meta.lore(lore);
         this.setItemMeta(meta);
 
-        handleCustomNameAndAttributesInLore(this.getItemMeta(), NexoItems.idFromItem(this) != null, ItemUtil.getItemType(this));
+        handleCustomName();
+
         updateLoreWithSockets();
-        reApplyMultipliers();
     }
 
-    private void handleCustomNameAndAttributesInLore(ItemMeta meta, boolean isNexoItem, String itemType) {
-        if (isNexoItem) {
+    protected List<Component> getAttributeLines() {
+        var lore = this.lore();
+        List<Component> lines = new ArrayList<>();
+        // Tomamos la línea monolítica del principio
+        lines.add(lore.getFirst());
+
+        if (ItemUtil.getModifierType(this).equals(ModifierType.ITEM)) {
+            // Tomamos las líneas de atributos del final pero en orden correcto
+            List<Component> reversed = new ArrayList<>(lore);
+            Collections.reverse(reversed);
+            lines.add(reversed.get(0));     // Velocidad de ataque
+            lines.add(reversed.get(1));     // Daño por ataque
+            lines.add(reversed.get(2));     // "En la mano principal:"
+            lines.add(reversed.get(3));     // Espaciador
+        }
+        return lines;
+    }
+
+    private void handleCustomName() {
+        var meta = this.getItemMeta();
+        if (NexoItems.idFromItem(this) != null) {
             String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
             Component component = Component.text(plainText, getRarityColor()).decoration(TextDecoration.ITALIC, false);
             meta.customName(component);
         } else {
-            if (!meta.hasCustomName()) {
+            if (meta.hasCustomName()) {
+                Component component = meta.customName();
+                component =
+                        component.color(getRarityColor()).decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE);
+                meta.displayName(component);
+
+            } else {
                 String itemTranslationKey = this.translationKey();
                 TranslatableComponent translatedName =
                         Component.translatable(itemTranslationKey).color(getRarityColor());
                 Component newName = ItemUtil.reset.append(translatedName);
                 meta.itemName(newName);
-            } else {
-                Component component = meta.customName();
-                assert component != null;
-                component =
-                        component.color(getRarityColor()).decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE);
-                meta.displayName(component);
             }
         }
         setItemMeta(meta);
-        if (itemType.equals("Weapon")) {
-            ItemUtil.attributesDisplayInLore(this);
-        }
     }
 
-    protected void addModifier(Stat stat, int value, boolean generateLore) {
+    protected void addNativeStatModifier(Stat stat, double value) {
         this.setItemMeta(AuraSkillsBukkit.get()
                 .getItemManager()
-                .addStatModifier(this, modifierType, stat, statModifierName, value, generateLore)
+                .addStatModifier(this, modifierType, stat, NATIVE_STATMODIFIER, value, true)
+                .getItemMeta());
+    }
+
+    protected void addMonoliticTraitModifier(ItemStack item, Trait trait, double value) {
+        this.setItemMeta(AuraSkillsBukkit.get()
+                .getItemManager()
+                .addTraitModifier(item, modifierType, trait, MONOLITIC_TRAITMODIFIER, value, false)
                 .getItemMeta());
     }
 
     public void rerollStatsEnhanced(Player player) {
-        // Guardar los boosts de gemas antes de reroll
-        Map<Stat, Integer> gemBoosts = new HashMap<>();
-        PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
-
-        // Recolectar todos los boosts de gemas
-        for (NamespacedKey key : container.getKeys()) {
-            if (key.getKey().startsWith(GEM_BOOST_PREFIX)) {
-                String statName =
-                        key.getKey().substring(GEM_BOOST_PREFIX.length()).toUpperCase();
-                Stat stat = CombinedStats.valueOf(statName);
-                int boost = container.getOrDefault(key, PersistentDataType.INTEGER, 0);
-                gemBoosts.put(stat, boost);
-            }
-        }
-
-        // Limpiar stats existentes y generar nuevas
+        var attributeLines = getAttributeLines();
         emptyLore();
         removeModifiers();
+        // Generar nuevas stats
         generateStats();
-
-        // Aplicar nuevas stats y boosts en una sola pasada
-        for (int i = this.getAddedStats().size() - 1; i >= 0; i--) {
-            Stat stat = this.getAddedStats().get(i);
-            int baseValue = this.getStatValues().get(i);
-            int gemBoost = gemBoosts.getOrDefault(stat, 0);
-
-            if (gemBoost > 0) {
-                // Si hay boost de gema, guardar el valor base y aplicar el total
-                ItemMeta meta = getItemMeta();
-                container = meta.getPersistentDataContainer();
-                container.set(
-                        new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + stat.name()),
-                        PersistentDataType.INTEGER,
-                        baseValue);
-                setItemMeta(meta);
-
-                addModifier(stat, baseValue + gemBoost, false);
-                addStatBreakdownToLore(stat, baseValue, gemBoost);
-            } else {
-                // Si no hay boost, aplicar solo el valor base
-                addModifier(stat, baseValue, true);
-            }
-        }
-
-        // Aplicar gemas que no coinciden con ninguna stat base
-        for (Map.Entry<Stat, Integer> entry : gemBoosts.entrySet()) {
-            Stat stat = entry.getKey();
-            int gemBoost = entry.getValue();
-
-            // Solo aplicar si la stat no estaba en las nuevas stats generadas
-            if (!getAddedStats().contains(stat)) {
-                addModifier(stat, gemBoost, false);
-            }
-        }
+        // Aplicar nuevas stats
+        applyStatsToItem();
+        // Generar lore compuesto
         setLore();
-        updateLoreWithSockets();
+
+        reApplyMultipliers();
+
+        appendAttributeLines(attributeLines);
+
         Component message = Component.text("¡El objeto cambió! Rareza: ", MagicObject.getLoreColor());
         player.sendMessage(ItemConfig.REROLL_PREFIX.append(message).append(rarity));
     }
 
-    protected void addStatBreakdownToLore(Stat stat, int baseValue, int gemBoost) {
-        ItemMeta meta = getItemMeta();
-        List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
-        int total = baseValue + gemBoost;
-        // Crear el componente de desglose
-        Component breakdown = Component.text("+" + baseValue + " ")
-                .color(ItemUtil.getColorOfStat(stat))
-                .append(Component.text(stat.getDisplayName(
-                                AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
-                        .color(NamedTextColor.GRAY))
-                .decoration(TextDecoration.ITALIC, false)
-                .append(Component.text(" (+" + total + ")")
-                        .color(NamedTextColor.DARK_GRAY)
-                        .decoration(TextDecoration.ITALIC, false));
+    protected void appendAttributeLines(List<Component> attributeLines) {
 
-        // Encontrar la posición correcta para insertar el stat
-        int insertIndex = 0;
-        for (int i = 0; i < lore.size(); i++) {
-            String line = lore.get(i).toString();
-            if (line.contains("[")) {
-                insertIndex = i;
-                break;
-            }
+        ItemMeta meta = this.getItemMeta();
+        @Nullable List<Component> lore = meta.lore();
+
+        // Agregar línea monolítica al principio
+        lore.addFirst(attributeLines.get(0));
+
+        if (ItemUtil.getItemType(this).equals("Weapon")) {
+            // Agregar líneas de atributos al final en orden correcto, en caso de ser arma que tiene este lore
+            lore.add(attributeLines.get(4));    // Espaciador
+            lore.add(attributeLines.get(3));    // "En la mano principal:"
+            lore.add(attributeLines.get(2));    // Daño por ataque
+            lore.add(attributeLines.get(1));    // Velocidad de ataque
         }
 
-        lore.add(insertIndex, breakdown);
         meta.lore(lore);
-        setItemMeta(meta);
+        this.setItemMeta(meta);
     }
 
     public void rerollLowestStat(Player player) {
-        Stat lowestStat = getLowestModifier();
-        if (lowestStat == null) {
-            player.sendMessage(
-                    ItemConfig.BLESSING_PREFIX.append(Component.text("No hay estadísticas válidas para rerollear.")
-                            .color(BlessingObject.getLoreColor())));
-            return;
-        }
+        // Obtener la stat más baja
+        StatModifier lowestModifier = getLowestModifier();
+        Stat stat = lowestModifier.stat();
 
-        PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
-
-        // Obtener el boost de gema actual si existe
-        int gemBoost = container.getOrDefault(
-                new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + lowestStat.name()), PersistentDataType.INTEGER, 0);
+        var attributeLines = getAttributeLines();
 
         // Remover la stat actual
-        removeSpecificStatLoreLine(lowestStat);
-        removeSpecificModifier(lowestStat);
+        removeStatModifierByName(lowestModifier.stat(), NATIVE_STATMODIFIER, false);
 
         // Generar nuevo valor base
         int newBaseValue =
-                StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(lowestStat));
+                StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
 
-        // Actualizar NBT y aplicar la stat
-        ItemMeta meta = getItemMeta();
-        container = meta.getPersistentDataContainer();
+        // Aplicar el nuevo valor base como una stat nativa
+        addNativeStatModifier(stat, newBaseValue);
 
-        if (gemBoost > 0) {
-            // Guardar el nuevo valor base en NBT
-            container.set(
-                    new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + lowestStat.name()),
-                    PersistentDataType.INTEGER,
-                    newBaseValue);
-            setItemMeta(meta);
+        emptyLore();
 
-            // Aplicar el valor total (base + boost)
-            addModifier(lowestStat, newBaseValue + gemBoost, false);
-            addStatBreakdownToLore(lowestStat, newBaseValue, gemBoost);
-        } else {
-            // Si no hay boost, aplicar solo el nuevo valor base
-            addModifier(lowestStat, newBaseValue, true);
+        var statModifiers = getNativeStatModifiers();
+
+        for (StatModifier modifier : statModifiers){
+            addNativeStatModifier(modifier.stat(),modifier.value());
         }
 
+        setLore();
+
+        reApplyMultipliers();
+
+        appendAttributeLines(attributeLines);
+
+        // Notificar al jugador
+
         Component message = Component.text("Nuevo bonus: ", BlessingObject.getLoreColor())
-                .append(Component.text(lowestStat.getDisplayName(
-                                AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
-                        .color(ItemUtil.getColorOfStat(lowestStat)))
+                .append(Component.text(stat.getDisplayName(AURA_LOCALE)).color(ItemUtil.getColorOfStat(stat)))
                 .append(Component.text(" +")
                         .append(Component.text(newBaseValue))
-                        .color(ItemUtil.getColorOfStat(lowestStat)));
+                        .color(ItemUtil.getColorOfStat(stat)));
         player.sendMessage(ItemConfig.BLESSING_PREFIX.append(message));
     }
 
     public void rerollExceptHighestStat(Player player) {
         // Obtener la stat más alta válida
         StatModifier highestMod = getHighestStatModifier();
-        if (highestMod == null) {
-            player.sendMessage(
-                    ItemConfig.REDEMPTION_PREFIX.append(Component.text("No hay estadísticas válidas para preservar.")
-                            .color(RedemptionObject.getLoreColor())));
-            return;
-        }
-
-        Stat highestStat = highestMod.type();
-        PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
-
-        // Guardar el boost de gema si existe
-        int gemBoost = container.getOrDefault(
-                new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + highestStat.name()), PersistentDataType.INTEGER, 0);
-
-        // Obtener el valor base guardado (si existe) o calcularlo
-        int baseValue = container.getOrDefault(
-                new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + highestStat.name()),
-                PersistentDataType.INTEGER,
-                gemBoost > 0 ? (int) (highestMod.value() - gemBoost) : (int) highestMod.value());
-
-        // Guardar todos los boosts de gemas actuales
-        Map<Stat, Integer> allGemBoosts = new HashMap<>();
-        for (NamespacedKey key : container.getKeys()) {
-            if (key.getKey().startsWith(GEM_BOOST_PREFIX)) {
-                String statName =
-                        key.getKey().substring(GEM_BOOST_PREFIX.length()).toUpperCase();
-                Stat stat = CombinedStats.valueOf(statName);
-                int boost = container.get(key, PersistentDataType.INTEGER);
-                allGemBoosts.put(stat, boost);
-            }
-        }
-
+        Stat stat = highestMod.type();
+        double value = highestMod.value();
+        var attributeLines = getAttributeLines();
+        // vaciar lore
+        emptyLore();
+        // generar las stat deseadas
+        generateStatsExceptHighestStat(stat, value);
         // Remover todos los modificadores existentes
-        removeAllModifierStats();
+        removeModifiers();
         // Generar nuevas stats excepto la más alta
-        generateStatsExceptHighestStat(highestStat);
         applyStatsToItem();
-
-        // Reaplicar la stat más alta con su valor base y boost si existe
-        removeSpecificModifier(highestStat);
-        removeSpecificStatLoreLine(highestStat);
-
-        if (gemBoost > 0) {
-            // Si tiene boost de gema
-            addModifier(highestStat, baseValue + gemBoost, false);
-            addStatBreakdownToLore(highestStat, baseValue, gemBoost);
-
-            // Actualizar el valor base en NBT
-            ItemMeta meta = getItemMeta();
-            container = meta.getPersistentDataContainer();
-            container.set(
-                    new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + highestStat.name()),
-                    PersistentDataType.INTEGER,
-                    baseValue);
-            setItemMeta(meta);
-        } else {
-            addModifier(highestStat, baseValue, true);
-        }
-
-        // Reaplicar todos los boosts de gemas a las nuevas stats
-        for (Map.Entry<Stat, Integer> entry : allGemBoosts.entrySet()) {
-            Stat stat = entry.getKey();
-            if (stat != highestStat) { // No procesar la stat más alta de nuevo
-                int boost = entry.getValue();
-
-                StatModifier newMod = getStatModifiers().stream()
-                        .filter(mod ->
-                                CombinedStats.valueOf(mod.type().name()).equals(CombinedStats.valueOf(stat.name())))
-                        .findFirst()
-                        .orElse(null);
-
-                if (newMod != null) {
-                    removeSpecificModifier(stat);
-                    removeSpecificStatLoreLine(stat);
-                    int newBaseValue = (int) newMod.value();
-                    addModifier(stat, newBaseValue + boost, false);
-                    addStatBreakdownToLore(stat, newBaseValue, boost);
-
-                    // Actualizar el valor base en NBT
-                    ItemMeta meta = getItemMeta();
-                    container = meta.getPersistentDataContainer();
-                    container.set(
-                            new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + stat.name()),
-                            PersistentDataType.INTEGER,
-                            newBaseValue);
-                    setItemMeta(meta);
-                } else {
-                    addModifier(stat, boost, false);
-                }
-            }
-        }
-
         // Actualizar el lore
         setLore();
-
+        // re aplicar multiplicadores y su lore en el indice correpospondiente
+        reApplyMultipliers();
+        // re aplicar lineas de abajo y de arriba
+        appendAttributeLines(attributeLines);
         // Notificar al jugador
-        Component message = Component.text("Se conservó: ")
+        Component message = Component.text("¡Se conservó ")
                 .color(RedemptionObject.getLoreColor())
-                .append(Component.text(highestStat.getDisplayName(
-                                AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
-                        .color(TextColor.fromHexString(highestStat
-                                .getColor(
-                                        AuraSkillsApi.get().getMessageManager().getDefaultLanguage())
-                                .replaceAll("[<>]", ""))))
-                .append(Component.text(" Nueva calidad: ").append(rarity));
+                .append(Component.text(stat.getDisplayName(AURA_LOCALE))
+                        .color(TextColor.fromHexString(
+                                stat.getColor(AURA_LOCALE).replaceAll("[<>]", ""))))
+                .append(Component.text(" Rareza: ").append(rarity));
         player.sendMessage(ItemConfig.REDEMPTION_PREFIX.append(message));
     }
 
-    public List<StatModifier> getStatModifiers() {
-        return AuraSkillsBukkit.get().getItemManager().getStatModifiers(this, modifierType);
+    public List<StatModifier> getNativeStatModifiers() {
+        return AuraSkillsBukkit.get().getItemManager().getStatModifiersByName(this, modifierType, NATIVE_STATMODIFIER);
     }
 
     public List<Integer> getStatValues() {
@@ -707,5 +554,7 @@ public abstract class IdentifiedItem extends ItemStack {
         return addedStats;
     }
 
-    public abstract void updateLoreWithSockets();
+    protected abstract void updateLoreWithSockets();
+
+    protected abstract void setMonoliticStats(int level);
 }

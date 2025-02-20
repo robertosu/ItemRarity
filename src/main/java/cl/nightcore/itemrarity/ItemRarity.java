@@ -8,7 +8,8 @@ import cl.nightcore.itemrarity.listener.CancelUsageInRecipesListener;
 import cl.nightcore.itemrarity.listener.IdentifyScrollListener;
 import cl.nightcore.itemrarity.listener.ItemClickListener;
 import cl.nightcore.itemrarity.loot.CustomDropsManager;
-import cl.nightcore.itemrarity.type.RolledAbstract;
+import cl.nightcore.itemrarity.abstracted.UpradeableItem;
+import cl.nightcore.itemrarity.util.ItemRepairManager;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.registry.NamespacedRegistry;
 import org.bukkit.command.CommandExecutor;
@@ -26,28 +27,28 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
     public static ItemRarity PLUGIN;
     public static Locale AURA_LOCALE;
 
-    public static SocketableItem identifyItem(Player player, ItemStack item) {
-        SocketableItem weapon = new SocketableItem(item);
+    public static UpradeableItem identifyItem(Player player, ItemStack item) {
+        UpradeableItem weapon = new UpradeableItem(item);
         weapon.identify(player);
         weapon.initializeSocketData();
         return weapon;
     }
 
-    public static SocketableItem rollStats(Player player, ItemStack item) {
-        RolledAbstract rolledAbstract;
-        rolledAbstract = new RolledAbstract(item);
-        rolledAbstract.rerollStatsEnhanced(player);
-        return rolledAbstract;
+    public static UpradeableItem rollStats(Player player, ItemStack item) {
+        UpradeableItem upradeableItem;
+        upradeableItem = new UpradeableItem(item);
+        upradeableItem.rerollStatsEnhanced(player);
+        return upradeableItem;
     }
 
-    public static SocketableItem rerollLowestStat(Player player, ItemStack item) {
-        SocketableItem moddedweapon = new SocketableItem(item);
+    public static UpradeableItem rerollLowestStat(Player player, ItemStack item) {
+        UpradeableItem moddedweapon = new UpradeableItem(item);
         moddedweapon.rerollLowestStat(player);
         return moddedweapon;
     }
 
-    public static SocketableItem rerollAllStatsExceptHighest(Player player, ItemStack item) {
-        SocketableItem moddedweapon = new SocketableItem(item);
+    public static UpradeableItem rerollAllStatsExceptHighest(Player player, ItemStack item) {
+        UpradeableItem moddedweapon = new UpradeableItem(item);
         moddedweapon.rerollExceptHighestStat(player);
         return moddedweapon;
     }
@@ -64,6 +65,7 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         Objects.requireNonNull(getCommand("getremover")).setExecutor(new GetGemRemoverCommand());
         Objects.requireNonNull(getCommand("getblessingball")).setExecutor(new GetBlessingBallCommand());
         Objects.requireNonNull(getCommand("getitemupgrader")).setExecutor(new GetItemUpgraderCommand());
+        Objects.requireNonNull(getCommand("getsocketstone")).setExecutor(new GetSocketStoneCommand());
         Objects.requireNonNull(getCommand("testdistr")).setExecutor(new TestCommand());
 
         getServer().getPluginManager().registerEvents(new ItemClickListener(), this);
@@ -83,6 +85,7 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         registry.registerTrait(CustomTraits.ATTACK_SPEED);
         registry.registerTrait(CustomTraits.HIT_CHANCE);
         registry.registerStat(CustomStats.EVASION);
+        registry.registerStat(CustomStats.ACCURACY);
         auraSkills.getHandlers().registerTraitHandler(new DodgeChanceTrait(auraSkills));
         auraSkills.getHandlers().registerTraitHandler(new HitChanceTrait(auraSkills));
         auraSkills.getHandlers().registerTraitHandler(new AttackSpeedTraitHandler(auraSkills));
