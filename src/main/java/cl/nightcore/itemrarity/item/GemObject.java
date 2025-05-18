@@ -22,6 +22,7 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.ArrayList;
 import java.util.List;
 
+import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 import static cl.nightcore.itemrarity.config.ItemConfig.LEVEL_KEY_NS;
 
 public class GemObject extends ItemStack {
@@ -61,28 +62,35 @@ public class GemObject extends ItemStack {
     private void setupGemLore() {
         List<Component> lore = new ArrayList<>();
 
-        lore.add(Component.text("Insertala en tu objeto para agregar ").color(NamedTextColor.GRAY)
-                .append(gemName)
+        lore.add(Component.empty());
+        lore.add(Component.text("Al incrustar: ")
+                .color(NamedTextColor.GRAY)
+                .append(Component.text(String.format("+%d %s", value, stat.getDisplayName(AURA_LOCALE)))
+                        .color(ItemUtil.getColorOfStat(stat))
+                        .decoration(TextDecoration.ITALIC, false))
                 .decoration(TextDecoration.ITALIC, false));
-
-        lore.add(Component.text(String.format("+%d %s", value,
-                        stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage())))
-                .color(ItemUtil.getColorOfStat(stat))
-                .decoration(TextDecoration.ITALIC, false));
-
+        lore.add(Component.empty());
+        lore.add(Component.text("Mejorable con Forja").color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC,true));
         meta.lore(lore);
         setItemMeta(meta);
     }
-    private void setupCustomName(){
-        meta.customName(Component.text("Gema de "+ stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()) + " +" + this.level).color(ItemUtil.getColorOfStat(stat)).decoration(TextDecoration.ITALIC,false));
+
+    private void setupCustomName() {
+        var levelComponent = Component.text(" [+" + this.level + "]")
+                .color(NamedTextColor.DARK_GRAY)
+                .decoration(TextDecoration.ITALIC, false);
+        meta.customName(Component.text("Gema de " + stat.getDisplayName(AURA_LOCALE))
+                .color(ItemUtil.getColorOfStat(stat))
+                .decoration(TextDecoration.ITALIC, false)
+                .append(levelComponent));
         setItemMeta(meta);
     }
 
-    public static TextColor getPrimaryColor(){
+    public static TextColor getPrimaryColor() {
         return PRIMARY_COLOR;
     }
+
     public Stat getStat() {
         return stat;
     }
-
 }

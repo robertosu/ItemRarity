@@ -4,14 +4,14 @@ plugins {
 }
 
 group = 'cl.nightcore'
-version = '0.2.2'
+version = '0.2.3'
 
 sourceCompatibility = '21'
 targetCompatibility = '21'
 
 repositories {
-    mavenCentral()
     mavenLocal()
+    mavenCentral()
     maven {
         url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
     }
@@ -46,10 +46,10 @@ repositories {
         url "https://jitpack.io"
     }
     maven {
-        url = uri("https://repo.papermc.io/repository/maven-public/")
+        url "https://repo.papermc.io/repository/maven-public/"
     }
     maven {
-        url = 'https://repo.extendedclip.com/releases/'
+        url "https://repo.extendedclip.com/releases/"
     }
 }
 
@@ -62,9 +62,9 @@ dependencies {
     compileOnly 'org.jetbrains:annotations:22.0.0'
     compileOnly 'com.nexomc:nexo:0.7.0'
     compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
-    compileOnly 'dev.aurelium:auraskills-api-bukkit:2.2.7'
+    compileOnly 'dev.aurelium:auraskills-api-bukkit:2.3.3'
     compileOnly 'me.clip:placeholderapi:2.11.6'
-    compileOnly 'dev.aurelium:auraskills-api:2.2.7'
+    compileOnly 'dev.aurelium:auraskills-api:2.3.3'
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -79,6 +79,10 @@ jar {
                 'Implementation-Version': version
         )
     }
+}
+
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
 }
 
 shadowJar {

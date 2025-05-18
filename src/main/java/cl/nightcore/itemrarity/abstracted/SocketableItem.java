@@ -13,6 +13,7 @@ import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.AuraSkillsBukkit;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.StatModifier;
+import dev.aurelium.auraskills.api.util.AuraSkillsModifier;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -116,7 +117,7 @@ public class SocketableItem extends IdentifiedItem {
         // Aplicar la gema usando el nuevo método de la API
         ItemStack modifiedItem = AuraSkillsBukkit.get()
                 .getItemManager()
-                .addStatModifier(this, modifierType, stat, "gema", gem.getValue(), false);
+                .addStatModifier(this, modifierType, stat, gem.getValue() , AuraSkillsModifier.Operation.ADD,"gemstone",false);
 
         setItemMeta(modifiedItem.getItemMeta());
 
@@ -177,7 +178,7 @@ public class SocketableItem extends IdentifiedItem {
                 extractedGems.add(extractedGem);
             }
 
-            removeStatModifierByName(stat, GEM_STATMODIFIER, false);
+            removeStatModifierByName(stat, GEM_STATMODIFIER);
             // Remover el modificador de la gema
         }
 
@@ -310,7 +311,7 @@ public class SocketableItem extends IdentifiedItem {
         // Obtener stats nativas actuales
         List<StatModifier> nativeStats = AuraSkillsBukkit.get()
                 .getItemManager()
-                .getStatModifiersByName(this, modifierType, NATIVE_STATMODIFIER);
+                .getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
 
         // Verificar límite de stats
         if (nativeStats.size() >= 6) {
@@ -351,8 +352,9 @@ public class SocketableItem extends IdentifiedItem {
         // Aplicar modificador
         ItemStack modifiedItem = AuraSkillsBukkit.get()
                 .getItemManager()
-                .addStatModifier(this, modifierType, statToAdd, NATIVE_STATMODIFIER, baseValue, true);
+                .addStatModifier(this, modifierType, statToAdd, baseValue, AuraSkillsModifier.Operation.ADD, NATIVE_STATMODIFIER, true);
 
+        modifiedItem.getType().getBlockTranslationKey();
         setItemMeta(modifiedItem.getItemMeta());
 
         // Notificar al jugador del éxito

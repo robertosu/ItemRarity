@@ -4,16 +4,14 @@ import cl.nightcore.itemrarity.GemManager;
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.abstracted.SocketableItem;
 import cl.nightcore.itemrarity.config.ItemConfig;
-import cl.nightcore.itemrarity.item.GemObject;
 import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.model.GemRemoverModel;
 import cl.nightcore.itemrarity.model.ItemUpgraderModel;
-import cl.nightcore.itemrarity.abstracted.UpradeableItem;
+import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import cl.nightcore.itemrarity.util.PerformanceTimer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -24,6 +22,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.function.BiFunction;
 
+import static cl.nightcore.itemrarity.util.ItemUtil.isGem;
 import static cl.nightcore.itemrarity.util.ItemUtil.isIdentified;
 
 public class IdentifyScrollListener implements Listener {
@@ -84,6 +83,9 @@ public class IdentifyScrollListener implements Listener {
 
         switch (type) {
             case IDENTIFY_SCROLL:
+                if (isGem(targetItem)){
+                    return;
+                }
                 handleIdentifyScroll(event, targetItem, cursor, player);
                 break;
             case MAGIC_OBJECT:
@@ -172,7 +174,7 @@ public class IdentifyScrollListener implements Listener {
 
     private void handleItemUpgrade(InventoryClickEvent event, ItemStack targetItem, ItemStack cursor, Player player) {
         if (!ItemUtil.isGem(targetItem)) {
-            UpradeableItem item = new UpradeableItem(targetItem);
+            UpgradeableItem item = new UpgradeableItem(targetItem);
             ItemUpgraderModel upgrader = new ItemUpgraderModel(cursor);
 
             if (item.incrementLevel(player, upgrader)) {

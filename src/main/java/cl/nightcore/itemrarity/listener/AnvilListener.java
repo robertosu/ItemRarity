@@ -1,6 +1,8 @@
 package cl.nightcore.itemrarity.listener;
 
+import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
 import cl.nightcore.itemrarity.util.ItemRepairManager;
+import cl.nightcore.itemrarity.util.ItemUtil;
 import com.nexomc.nexo.api.NexoItems;
 import net.kyori.adventure.text.Component;
 import org.bukkit.NamespacedKey;
@@ -83,9 +85,13 @@ public class AnvilListener implements Listener {
             event.getView().setRepairCost(repairCost);
             
             //event.getInventory().setRepairCost(repairCost);
-
-            event.setResult(repairedItem);
-
+            if(ItemUtil.isIdentified(repairedItem)){
+                UpgradeableItem uitem = new UpgradeableItem(repairedItem);
+                uitem.handleCustomName();
+                event.setResult(uitem);
+            }else{
+                event.setResult(repairedItem);
+            }
 
             // Actualizar interfaz después de 1 tick
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> anvilInv.getViewers().forEach(human -> {
@@ -93,6 +99,7 @@ public class AnvilListener implements Listener {
             }), 1L);
         }
     }
+
 
     @EventHandler
     public void onAnvilClick(InventoryClickEvent event) {

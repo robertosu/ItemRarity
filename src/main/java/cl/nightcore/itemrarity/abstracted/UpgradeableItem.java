@@ -23,12 +23,12 @@ import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
 import static cl.nightcore.itemrarity.config.ItemConfig.LEVEL_KEY_NS;
 
-public class UpradeableItem extends SocketableItem {
+public class UpgradeableItem extends SocketableItem {
     private static final int MAX_LEVEL = 9;
     private static final NamespacedKey DAMAGE_MODIFIER_KEY = new NamespacedKey(PLUGIN, "level_damage");
 
 
-    public UpradeableItem(ItemStack item) {
+    public UpgradeableItem(ItemStack item) {
         super(item);
     }
 
@@ -144,7 +144,7 @@ public class UpradeableItem extends SocketableItem {
         for (Trait trait : monoliticTraits) {
             var added = determineValueIncreasePerLevelForTrait(trait);
             var value = level * added + added;
-            removeTraitModifierByName(this, trait, MONOLITIC_TRAITMODIFIER, false);
+            removeTraitModifierByName(this, trait, MONOLITIC_TRAITMODIFIER);
             addMonoliticTraitModifier(this, trait, value);
             var component =
             Component.text(" +" + getFormattedValue(value,trait) + " ").color(getTraitColor(trait)).decoration(TextDecoration.ITALIC,TextDecoration.State.FALSE)

@@ -1,6 +1,5 @@
 package cl.nightcore.itemrarity;
 
-import cl.nightcore.itemrarity.abstracted.SocketableItem;
 import cl.nightcore.itemrarity.command.*;
 import cl.nightcore.itemrarity.customstats.*;
 import cl.nightcore.itemrarity.listener.AnvilListener;
@@ -8,7 +7,7 @@ import cl.nightcore.itemrarity.listener.CancelUsageInRecipesListener;
 import cl.nightcore.itemrarity.listener.IdentifyScrollListener;
 import cl.nightcore.itemrarity.listener.ItemClickListener;
 import cl.nightcore.itemrarity.loot.CustomDropsManager;
-import cl.nightcore.itemrarity.abstracted.UpradeableItem;
+import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
 import cl.nightcore.itemrarity.util.ItemRepairManager;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.registry.NamespacedRegistry;
@@ -27,28 +26,28 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
     public static ItemRarity PLUGIN;
     public static Locale AURA_LOCALE;
 
-    public static UpradeableItem identifyItem(Player player, ItemStack item) {
-        UpradeableItem weapon = new UpradeableItem(item);
+    public static UpgradeableItem identifyItem(Player player, ItemStack item) {
+        UpgradeableItem weapon = new UpgradeableItem(item);
         weapon.identify(player);
         weapon.initializeSocketData();
         return weapon;
     }
 
-    public static UpradeableItem rollStats(Player player, ItemStack item) {
-        UpradeableItem upradeableItem;
-        upradeableItem = new UpradeableItem(item);
-        upradeableItem.rerollStatsEnhanced(player);
-        return upradeableItem;
+    public static UpgradeableItem rollStats(Player player, ItemStack item) {
+        UpgradeableItem upgradeableItem;
+        upgradeableItem = new UpgradeableItem(item);
+        upgradeableItem.rerollStatsEnhanced(player);
+        return upgradeableItem;
     }
 
-    public static UpradeableItem rerollLowestStat(Player player, ItemStack item) {
-        UpradeableItem moddedweapon = new UpradeableItem(item);
+    public static UpgradeableItem rerollLowestStat(Player player, ItemStack item) {
+        UpgradeableItem moddedweapon = new UpgradeableItem(item);
         moddedweapon.rerollLowestStat(player);
         return moddedweapon;
     }
 
-    public static UpradeableItem rerollAllStatsExceptHighest(Player player, ItemStack item) {
-        UpradeableItem moddedweapon = new UpradeableItem(item);
+    public static UpgradeableItem rerollAllStatsExceptHighest(Player player, ItemStack item) {
+        UpgradeableItem moddedweapon = new UpgradeableItem(item);
         moddedweapon.rerollExceptHighestStat(player);
         return moddedweapon;
     }

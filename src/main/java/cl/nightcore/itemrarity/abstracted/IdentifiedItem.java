@@ -17,6 +17,7 @@ import dev.aurelium.auraskills.api.skill.Multiplier;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.StatModifier;
 import dev.aurelium.auraskills.api.trait.Trait;
+import dev.aurelium.auraskills.api.util.AuraSkillsModifier;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -43,7 +44,6 @@ public abstract class IdentifiedItem extends ItemStack {
     private final List<Integer> statValues;
     protected static final String NATIVE_STATMODIFIER = "native";
     protected static final String MONOLITIC_TRAITMODIFIER = "monolitic";
-    protected static final String XP_MULTIPLIER = "multiplier";
     protected static final String GEM_STATMODIFIER = "gema";
 
     protected final ModifierType modifierType;
@@ -104,31 +104,31 @@ public abstract class IdentifiedItem extends ItemStack {
         }
     }
 
-    protected void removeSpecificStatModifier(Stat stat) {
+ /*   protected void removeSpecificStatModifier(Stat stat) {
         this.setItemMeta(AuraSkillsBukkit.get()
                 .getItemManager()
                 .removeStatModifier(this, modifierType, stat, NATIVE_STATMODIFIER, false)
                 .getItemMeta());
     }
-
-    protected void removeTraitModifierByName(ItemStack item, Trait trait, String name, boolean lore) {
+*/
+    protected void removeTraitModifierByName(ItemStack item, Trait trait, String name) {
         this.setItemMeta(AuraSkillsBukkit.get()
                 .getItemManager()
-                .removeTraitModifier(item, modifierType, trait, name, lore)
+                .removeTraitModifier(item, modifierType, trait, name)
                 .getItemMeta());
     }
 
-    protected void removeStatModifierByName(Stat stat, String name, boolean lore) {
+    protected void removeStatModifierByName(Stat stat, String name) {
         this.setItemMeta(AuraSkillsBukkit.get()
                 .getItemManager()
-                .removeStatModifier(this, modifierType, stat, name, lore)
+                .removeStatModifier(this, modifierType, stat, name)
                 .getItemMeta());
     }
 
     protected StatModifier getLowestModifier() {
         // Obtener todos los modificadores de estadísticas nativas
         List<StatModifier> nativeModifiers =
-                AuraSkillsBukkit.get().getItemManager().getStatModifiersByName(this, modifierType, NATIVE_STATMODIFIER);
+                AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
 
         StatModifier lowestModifier = null;
         double lowestValue = Double.MAX_VALUE;
@@ -160,7 +160,7 @@ public abstract class IdentifiedItem extends ItemStack {
     public StatModifier getHighestStatModifier() {
         // Obtener todos los modificadores de estadísticas nativas
         List<StatModifier> nativeModifiers =
-                AuraSkillsBukkit.get().getItemManager().getStatModifiersByName(this, modifierType, NATIVE_STATMODIFIER);
+                AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
 
         StatModifier highestModifier = null;
         double highestValue = Double.MIN_VALUE;
@@ -223,9 +223,9 @@ public abstract class IdentifiedItem extends ItemStack {
         }
     }
 
-    protected void removeAllModifierStatsByName(String name, boolean lore) {
+    protected void removeAllModifierStatsByName(String name) {
         for (StatModifier modifier : getNativeStatModifiers()) {
-            removeStatModifierByName(modifier.type(), name, lore);
+            removeStatModifierByName(modifier.type(), name);
         }
     }
 
@@ -243,7 +243,7 @@ public abstract class IdentifiedItem extends ItemStack {
         for (CombinedStats combinedStat : CombinedStats.values()) {
             this.setItemMeta(AuraSkillsBukkit.get()
                     .getItemManager()
-                    .removeStatModifier(this, modifierType, combinedStat.getDelegateStat(), NATIVE_STATMODIFIER, false)
+                    .removeStatModifier(this, modifierType, combinedStat.getDelegateStat(), NATIVE_STATMODIFIER)
                     .getItemMeta());
         }
     }
@@ -261,23 +261,23 @@ public abstract class IdentifiedItem extends ItemStack {
             for (Multiplier multiplier : multipliers) {
                 this.setItemMeta(AuraSkillsBukkit.get()
                         .getItemManager()
-                        .removeMultiplier(this, modifierType, multiplier.skill(), XP_MULTIPLIER, true)
+                        .removeMultiplier(this, modifierType, multiplier.skill())
                         .getItemMeta());
                 this.setItemMeta(AuraSkillsBukkit.get()
                         .getItemManager()
-                        .addMultiplier(this, modifierType, multiplier.skill(), XP_MULTIPLIER, multiplier.value(), true)
+                        .removeMultiplierLore(multiplier,this).getItemMeta());
+                this.setItemMeta(AuraSkillsBukkit.get()
+                        .getItemManager()
+                        .addMultiplier(this, modifierType, multiplier.skill(), multiplier.value(),true)
                         .getItemMeta());
             }
         }
     }
 
-
-
-
     public double calculateAverage() {
         // Obtener todos los modificadores de estadísticas nativas
         List<StatModifier> nativeModifiers =
-                AuraSkillsBukkit.get().getItemManager().getStatModifiersByName(this, modifierType, NATIVE_STATMODIFIER);
+                AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
         if (nativeModifiers.isEmpty()) {
             throw new IllegalStateException("No hay estadísticas nativas para calcular el promedio.");
         }
@@ -394,18 +394,24 @@ public abstract class IdentifiedItem extends ItemStack {
         return lines;
     }
 
-    private void handleCustomName() {
+    public void handleCustomName() {
         var meta = this.getItemMeta();
         if (NexoItems.idFromItem(this) != null) {
+            if(meta.hasCustomName()){
+                String plainText = PlainTextComponentSerializer.plainText().serialize(meta.customName());
+                Component component = Component.text(plainText, getRarityColor()).decoration(TextDecoration.ITALIC, false);
+                meta.customName(component);
+            } else {
             String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
             Component component = Component.text(plainText, getRarityColor()).decoration(TextDecoration.ITALIC, false);
             meta.customName(component);
+            }
         } else {
             if (meta.hasCustomName()) {
                 Component component = meta.customName();
                 component =
                         component.color(getRarityColor()).decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE);
-                meta.displayName(component);
+                meta.customName(component);
 
             } else {
                 String itemTranslationKey = this.translationKey();
@@ -421,14 +427,14 @@ public abstract class IdentifiedItem extends ItemStack {
     protected void addNativeStatModifier(Stat stat, double value) {
         this.setItemMeta(AuraSkillsBukkit.get()
                 .getItemManager()
-                .addStatModifier(this, modifierType, stat, NATIVE_STATMODIFIER, value, true)
+                .addStatModifier(this, modifierType, stat, value ,AuraSkillsModifier.Operation.ADD, NATIVE_STATMODIFIER, true)
                 .getItemMeta());
     }
 
     protected void addMonoliticTraitModifier(ItemStack item, Trait trait, double value) {
         this.setItemMeta(AuraSkillsBukkit.get()
                 .getItemManager()
-                .addTraitModifier(item, modifierType, trait, MONOLITIC_TRAITMODIFIER, value, false)
+                .addTraitModifier(item, modifierType, trait, value, AuraSkillsModifier.Operation.ADD ,MONOLITIC_TRAITMODIFIER, false)
                 .getItemMeta());
     }
 
@@ -443,9 +449,9 @@ public abstract class IdentifiedItem extends ItemStack {
         // Generar lore compuesto
         setLore();
 
-        reApplyMultipliers();
-
         appendAttributeLines(attributeLines);
+
+        reApplyMultipliers();
 
         Component message = Component.text("¡El objeto cambió! Rareza: ", MagicObject.getLoreColor());
         player.sendMessage(ItemConfig.REROLL_PREFIX.append(message).append(rarity));
@@ -479,7 +485,7 @@ public abstract class IdentifiedItem extends ItemStack {
         var attributeLines = getAttributeLines();
 
         // Remover la stat actual
-        removeStatModifierByName(lowestModifier.stat(), NATIVE_STATMODIFIER, false);
+        removeStatModifierByName(lowestModifier.stat(), NATIVE_STATMODIFIER);
 
         // Generar nuevo valor base
         int newBaseValue =
@@ -498,9 +504,9 @@ public abstract class IdentifiedItem extends ItemStack {
 
         setLore();
 
-        reApplyMultipliers();
-
         appendAttributeLines(attributeLines);
+
+        reApplyMultipliers();
 
         // Notificar al jugador
 
@@ -528,10 +534,10 @@ public abstract class IdentifiedItem extends ItemStack {
         applyStatsToItem();
         // Actualizar el lore
         setLore();
-        // re aplicar multiplicadores y su lore en el indice correpospondiente
-        reApplyMultipliers();
         // re aplicar lineas de abajo y de arriba
         appendAttributeLines(attributeLines);
+        // re aplicar multiplicadores y su lore en el indice correpospondiente
+        reApplyMultipliers();
         // Notificar al jugador
         Component message = Component.text("¡Se conservó ")
                 .color(RedemptionObject.getLoreColor())
@@ -543,7 +549,7 @@ public abstract class IdentifiedItem extends ItemStack {
     }
 
     public List<StatModifier> getNativeStatModifiers() {
-        return AuraSkillsBukkit.get().getItemManager().getStatModifiersByName(this, modifierType, NATIVE_STATMODIFIER);
+        return AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
     }
 
     public List<Integer> getStatValues() {

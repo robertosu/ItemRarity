@@ -2,16 +2,11 @@ package cl.nightcore.itemrarity.listener;
 
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.util.ItemUtil;
-import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Item;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.PlayerChangedMainHandEvent;
-import org.bukkit.event.player.PlayerItemHeldEvent;
-import org.bukkit.event.server.BroadcastMessageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -36,19 +31,6 @@ public class ItemClickListener implements Listener {
             }
         }
     }
-
-
-    @EventHandler
-    public void onChangeHand(PlayerInventorySlotChangeEvent event){
-        System.out.println(event.getEventName() + "evento llamado");
-    }
-
-
-    @EventHandler
-    public void onChangeWtf(PlayerItemHeldEvent event){
-        System.out.println(event.getEventName() + "evento llamado");
-    }
-
 
     private boolean isLoreUpdated(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
