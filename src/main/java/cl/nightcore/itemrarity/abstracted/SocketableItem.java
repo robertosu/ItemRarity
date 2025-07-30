@@ -39,8 +39,6 @@ import static cl.nightcore.itemrarity.util.ItemUtil.RANDOM;
 import static cl.nightcore.itemrarity.util.ItemUtil.getProvider;
 
 
-
-
 public class SocketableItem extends IdentifiedItem {
 
     protected static final int MAX_POSSIBLE_SOCKETS = 3;
@@ -152,6 +150,10 @@ public class SocketableItem extends IdentifiedItem {
                     Component.text("Este objeto no tiene gemas instaladas.").color(NamedTextColor.GRAY)));
             return false;
         }
+
+        // SOLUCIÓN: Preservar las líneas de atributos ANTES de hacer cambios
+        var attributeLines = getAttributeLines();
+
         // Recolectar las gemas extraídas
         List<GemObject> extractedGems = new ArrayList<>();
 
@@ -178,13 +180,15 @@ public class SocketableItem extends IdentifiedItem {
                 extractedGems.add(extractedGem);
             }
 
-            removeStatModifierByName(stat, GEM_STATMODIFIER);
             // Remover el modificador de la gema
+            removeStatModifierByName(stat, GEM_STATMODIFIER);
         }
 
         removeStoredGemsNBT();
-        //updateLoreWithSockets();
+
+        // SOLUCIÓN: En lugar de solo llamar setLore(), regenerar todo correctamente
         setLore();
+        appendTraitLines(attributeLines);
 
         // Entregar las gemas al jugador
         for (GemObject gem : extractedGems) {
@@ -271,8 +275,6 @@ public class SocketableItem extends IdentifiedItem {
         setItemMeta(meta);
     }
 
-
-
     private int calculateGemValue(int level) {
         return 4 + (level - 1) * level / 2;
     }
@@ -289,8 +291,6 @@ public class SocketableItem extends IdentifiedItem {
         // Si no se encuentra la línea de rareza, insertar al inicio
         return lore.size();
     }
-
-
 
     private boolean gemBreaks(int percentage) {
         double successchance = percentage / 100.0;
@@ -363,11 +363,24 @@ public class SocketableItem extends IdentifiedItem {
                                 AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
                         .color(ItemUtil.getColorOfStat(statToAdd)))
                 .append(Component.text(" +" + baseValue).color(ItemUtil.getColorOfStat(statToAdd)));
-        player.sendMessage(ItemConfig.PLUGIN_PREFIX.append(message));
+        player.sendMessage(ItemConfig.BLESSING_BALL_PREFIX.append(message));
 
         // Actualizar lore
+        setItemMeta(modifiedItem.getItemMeta());
+
+        // Regenerar tdo el lore correctamente:
+        emptyLore();
+
+        reApplyStatsToItem(AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, ItemUtil.getModifierType(this), NATIVE_STATMODIFIER));
+
         setLore();
+
         appendAttributeLines(attributeLines);
+
+        setMonoliticStats(getLevel());
+
+        reApplyMultipliers();
+        //appendAttributeLines(attributeLines);
 
         return true;
     }

@@ -15,9 +15,6 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
-
-import static cl.nightcore.itemrarity.config.ItemConfig.LEVEL_KEY_NS;
 
 public class GemManager {
     private static final int MAX_LEVEL = 6;
@@ -52,7 +49,7 @@ public class GemManager {
         };
     }
 
-    public ItemStack upgradeGem(Player player, ItemStack gem, ItemUpgraderModel itemUpgrader){
+    public ItemStack upgradeGem(Player player, ItemStack gem, ItemUpgraderModel itemUpgrader) {
 
         GemObject gemObject;
 
@@ -69,18 +66,20 @@ public class GemManager {
         if (level < MAX_LEVEL) {
             if (ItemUtil.rollthedice(adjustedPercentage)) {
                 var newlevel = level + 1;
-                player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX.color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
+                player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX
+                        .color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
                         .append(Component.text("Mejora exitosa, tu objeto subió a: ", ItemUpgrader.getLoreColor())
                                 .append(Component.text("Nivel " + newlevel, NamedTextColor.DARK_GRAY))));
 
                 // Reproducir sonido de éxito
                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
 
-                return createGem(1,newlevel, stat.name());
+                return createGem(1, newlevel, stat.name());
             } else {
                 switch (type) {
                     case 1 -> { // Inestable
-                        player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX.color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
+                        player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX
+                                .color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
                                 .append(Component.text("La mejora falló y tu objeto se rompió.", NamedTextColor.RED)));
                         gem.setAmount(0); // Romper el objeto
 
@@ -91,16 +90,19 @@ public class GemManager {
                         if (level > 1) {
                             int newlevel = level - 1;
 
-                            player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX.color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
+                            player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX
+                                    .color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
                                     .append(Component.text("La mejora falló, tu objeto bajó a: ", NamedTextColor.RED)
-                                            .append(Component.text("Nivel " + newlevel, ItemUpgrader.getActiveColor()))));
+                                            .append(Component.text(
+                                                    "Nivel " + newlevel, ItemUpgrader.getActiveColor()))));
 
                             // Reproducir sonido de fallo (puedes usar un sonido diferente si lo deseas)
                             player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_DESTROY, 1.0f, 1.0f);
 
-                            return createGem(1,newlevel, stat.name());
+                            return createGem(1, newlevel, stat.name());
                         } else {
-                            player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX.color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
+                            player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX
+                                    .color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
                                     .append(Component.text("La mejora falló.", NamedTextColor.RED)));
 
                             // Reproducir sonido de fallo
@@ -108,8 +110,10 @@ public class GemManager {
                         }
                     }
                     case 3 -> { // Estable
-                        player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX.color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
-                                .append(Component.text("La mejora falló, pero tu objeto no cambió.", NamedTextColor.YELLOW)));
+                        player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX
+                                .color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
+                                .append(Component.text(
+                                        "La mejora falló, pero tu objeto no cambió.", NamedTextColor.YELLOW)));
 
                         // Reproducir sonido de fallo (puedes usar un sonido diferente si lo deseas)
                         player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_LAND, 1.0f, 1.0f);
@@ -117,14 +121,12 @@ public class GemManager {
                 }
             }
         } else {
-            player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX
-                    .append(Component.text("Tu objeto ya es del nivel máximo. ", ItemUpgrader.getLoreColor())));
+            player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX.append(
+                    Component.text("Tu objeto ya es del nivel máximo. ", ItemUpgrader.getLoreColor())));
 
             // Reproducir sonido de error o advertencia
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1.0f, 1.0f);
-
         }
         return gem;
     }
-
 }

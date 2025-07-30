@@ -6,7 +6,8 @@ import cl.nightcore.itemrarity.item.BlessingObject;
 import cl.nightcore.itemrarity.item.IdentifyScroll;
 import cl.nightcore.itemrarity.item.MagicObject;
 import cl.nightcore.itemrarity.item.RedemptionObject;
-import cl.nightcore.itemrarity.rollquality.*;
+import cl.nightcore.itemrarity.rollquality.MainRollQuality;
+import cl.nightcore.itemrarity.rollquality.StatValueGenerator;
 import cl.nightcore.itemrarity.statprovider.ModifierProvider;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import cl.nightcore.itemrarity.util.RarityCalculator;
@@ -32,7 +33,6 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -239,6 +239,15 @@ public abstract class IdentifiedItem extends ItemStack {
         }
     }
 
+    protected void reApplyStatsToItem(List<StatModifier> stats) {
+        for (int i = stats.size() - 1; i >= 0; i--) {
+            Stat stat = stats.get(i).stat();
+            double value = stats.get(i).value();
+            addNativeStatModifier(stat, value);
+        }
+    }
+
+
     public void removeModifiers() {
         for (CombinedStats combinedStat : CombinedStats.values()) {
             this.setItemMeta(AuraSkillsBukkit.get()
@@ -376,11 +385,14 @@ public abstract class IdentifiedItem extends ItemStack {
         updateLoreWithSockets();
     }
 
-    protected List<Component> getAttributeLines() {
+   /* protected List<Component> getAttributeLines() {
         var lore = this.lore();
         List<Component> lines = new ArrayList<>();
         // Tomamos la línea monolítica del principio
         lines.add(lore.getFirst());
+        lines.add(lore.get(1));
+
+
 
         if (ItemUtil.getModifierType(this).equals(ModifierType.ITEM)) {
             // Tomamos las líneas de atributos del final pero en orden correcto
@@ -391,6 +403,27 @@ public abstract class IdentifiedItem extends ItemStack {
             lines.add(reversed.get(2));     // "En la mano principal:"
             lines.add(reversed.get(3));     // Espaciador
         }
+        return lines;
+    }*/
+
+
+    protected List<Component> getAttributeLines() {
+        var lore = this.lore();
+        List<Component> lines = new ArrayList<>();
+
+        // Líneas monolíticas del principio (primeras 2)
+        lines.add(lore.get(0));  // Primera línea monolítica
+        lines.add(lore.get(1));  // Segunda línea monolítica
+
+        if (ItemUtil.getModifierType(this).equals(ModifierType.ITEM)) {
+            // Obtener las últimas 4 líneas (atributos) en el orden correcto
+            int size = lore.size();
+            lines.add(lore.get(size - 4));  // Espaciador
+            lines.add(lore.get(size - 3));  // "En la mano principal:"
+            lines.add(lore.get(size - 2));  // Daño por ataque
+            lines.add(lore.get(size - 1));  // Velocidad de ataque
+        }
+
         return lines;
     }
 
@@ -457,12 +490,13 @@ public abstract class IdentifiedItem extends ItemStack {
         player.sendMessage(ItemConfig.REROLL_PREFIX.append(message).append(rarity));
     }
 
-    protected void appendAttributeLines(List<Component> attributeLines) {
+/*    protected void appendAttributeLines(List<Component> attributeLines) {
 
         ItemMeta meta = this.getItemMeta();
         @Nullable List<Component> lore = meta.lore();
 
         // Agregar línea monolítica al principio
+        lore.addFirst(attributeLines.get(1));
         lore.addFirst(attributeLines.get(0));
 
         if (ItemUtil.getItemType(this).equals("Weapon")) {
@@ -471,6 +505,60 @@ public abstract class IdentifiedItem extends ItemStack {
             lore.add(attributeLines.get(3));    // "En la mano principal:"
             lore.add(attributeLines.get(2));    // Daño por ataque
             lore.add(attributeLines.get(1));    // Velocidad de ataque
+        }
+
+        meta.lore(lore);
+        this.setItemMeta(meta);
+    }*/
+
+    protected void appendAttributeLines(List<Component> attributeLines) {
+        ItemMeta meta = this.getItemMeta();
+        @Nullable List<Component> lore = meta.lore();
+
+        // Agregar líneas monolíticas al principio
+        lore.addFirst(attributeLines.get(1));  // Segunda línea monolítica
+        lore.addFirst(attributeLines.get(0));  // Primera línea monolítica
+
+        if (ItemUtil.getItemType(this).equals("Weapon")) {
+            // Agregar líneas de atributos al final en el orden correcto
+            lore.add(attributeLines.get(2));  // Espaciador
+            lore.add(attributeLines.get(3));  // "En la mano principal:"
+            lore.add(attributeLines.get(4));  // Daño por ataque
+            lore.add(attributeLines.get(5));  // Velocidad de ataque
+        }
+
+        meta.lore(lore);
+        this.setItemMeta(meta);
+    }
+
+    protected void appendTraitLines(List<Component> attributeLines) {
+        ItemMeta meta = this.getItemMeta();
+        @Nullable List<Component> lore = meta.lore();
+        // Agregar líneas monolíticas al principio
+        lore.addFirst(attributeLines.getFirst());  // Primera línea monolítica
+
+        meta.lore(lore);
+        this.setItemMeta(meta);
+    }
+
+    protected void setSecondSpacer(List<Component> attributeLines) {
+        ItemMeta meta = this.getItemMeta();
+        List<Component> lore = meta.lore();
+
+        if (lore == null) {
+            lore = new ArrayList<>();
+        }
+
+        // Verificar si ya existe un espaciador en la posición 1 (después de la línea monolítica)
+        if (lore.size() > 1) {
+            String secondLine = PlainTextComponentSerializer.plainText().serialize(lore.get(1));
+            // Si la segunda línea NO es el espaciador de 9 espacios, lo agregamos
+            if (!secondLine.equals("         ")) { // 9 espacios
+                lore.add(1, Component.text("         ")); // Insertar espaciador en posición 1
+            }
+        } else if (lore.size() == 1) {
+            // Si solo hay una línea (la monolítica), agregar el espaciador
+            lore.add(Component.text("         ")); // 9 espacios
         }
 
         meta.lore(lore);

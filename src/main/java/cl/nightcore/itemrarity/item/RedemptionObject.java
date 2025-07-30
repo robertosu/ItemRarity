@@ -26,7 +26,7 @@ public class RedemptionObject extends ItemStack {
         ItemMeta meta = this.getItemMeta();
         Objects.requireNonNull(meta);
         // Set persistent data
-        NamespacedKey key = new NamespacedKey(plugin, ItemConfig.REDEEM_OBJECT_KEY);
+        NamespacedKey key = new NamespacedKey(plugin, ItemConfig.REDEMPTION_OBJECT_KEY);
         meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
         // Set display name using Adventure API
         meta.displayName(DISPLAY_NAME);
@@ -58,6 +58,6 @@ public class RedemptionObject extends ItemStack {
     }
 
     public static String getRedeemObjectKey() {
-        return ItemConfig.REDEEM_OBJECT_KEY;
+        return ItemConfig.REDEMPTION_OBJECT_KEY;
     }
 }

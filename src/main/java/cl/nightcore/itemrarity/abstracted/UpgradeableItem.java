@@ -11,6 +11,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -147,19 +148,27 @@ public class UpgradeableItem extends SocketableItem {
             removeTraitModifierByName(this, trait, MONOLITIC_TRAITMODIFIER);
             addMonoliticTraitModifier(this, trait, value);
             var component =
-            Component.text(" +" + getFormattedValue(value,trait) + " ").color(getTraitColor(trait)).decoration(TextDecoration.ITALIC,TextDecoration.State.FALSE)
-                    .append(Component.text(trait.getDisplayName(AURA_LOCALE) + " ")
-                            .color(NamedTextColor.DARK_GRAY).decoration(TextDecoration.ITALIC,TextDecoration.State.FALSE)
-                            .append(Component.text("|").color(NamedTextColor.DARK_GRAY))
-                            .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+                    Component.text(" +" + getFormattedValue(value,trait) + " ").color(getTraitColor(trait)).decoration(TextDecoration.ITALIC,TextDecoration.State.FALSE)
+                            .append(Component.text(trait.getDisplayName(AURA_LOCALE) + " ")
+                                    .color(NamedTextColor.DARK_GRAY).decoration(TextDecoration.ITALIC,TextDecoration.State.FALSE)
+                                    .append(Component.text("|").color(NamedTextColor.DARK_GRAY))
+                                    .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE));
             line = line.append(component);
         }
         var meta = this.getItemMeta();
         var lore = meta.lore();
+        // 9 trait = SPACES
+        // Remove any line that contains exactly 9 spaces
+        lore.removeIf(component -> {
+            return PlainTextComponentSerializer.plainText().serialize(component).equals("         "); // 9 spaces
+        });
+
+        lore.addFirst(Component.text("         ")); // 9 spaces
         lore.addFirst(line);
         meta.lore(lore);
         this.setItemMeta(meta);
     }
+
 
 
     private String getFormattedValue(double value, Trait trait){
@@ -174,7 +183,7 @@ public class UpgradeableItem extends SocketableItem {
         switch(trait.name()){
             case "ATTACK_DAMAGE" -> { return 1.0; }
             case "ATTACK_SPEED" -> { return 0.01; }
-            case "DAMAGE_REDUCTION", "HP" -> { return 1; }
+            case "DAMAGE_REDUCTION", "HP" -> { return 0.5; }
         }
         return 0;
     }

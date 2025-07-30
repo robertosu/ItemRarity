@@ -15,7 +15,7 @@ public class WeaponModifierProvider implements ModifierProvider {
             CombinedStats.CRIT_DAMAGE,
             CombinedStats.DEXTERITY,
             CombinedStats.STRENGTH,
-            //CombinedStats.REGENERATION,
+            // CombinedStats.REGENERATION,
             CombinedStats.TOUGHNESS,
             CombinedStats.EVASION,
             CombinedStats.ACCURACY);

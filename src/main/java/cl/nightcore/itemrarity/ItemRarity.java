@@ -1,14 +1,12 @@
 package cl.nightcore.itemrarity;
 
+import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
 import cl.nightcore.itemrarity.command.*;
 import cl.nightcore.itemrarity.customstats.*;
-import cl.nightcore.itemrarity.listener.AnvilListener;
-import cl.nightcore.itemrarity.listener.CancelUsageInRecipesListener;
-import cl.nightcore.itemrarity.listener.IdentifyScrollListener;
-import cl.nightcore.itemrarity.listener.ItemClickListener;
+import cl.nightcore.itemrarity.listener.*;
 import cl.nightcore.itemrarity.loot.CustomDropsManager;
-import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
-import cl.nightcore.itemrarity.util.ItemRepairManager;
+import cl.nightcore.itemrarity.util.AnvilRepairUtil.ItemRepairManager;
+import cl.nightcore.itemrarity.util.RateLimiter;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.registry.NamespacedRegistry;
 import org.bukkit.command.CommandExecutor;
@@ -16,10 +14,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 public class ItemRarity extends JavaPlugin implements CommandExecutor {
 
@@ -66,16 +63,26 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         Objects.requireNonNull(getCommand("getitemupgrader")).setExecutor(new GetItemUpgraderCommand());
         Objects.requireNonNull(getCommand("getsocketstone")).setExecutor(new GetSocketStoneCommand());
         Objects.requireNonNull(getCommand("testdistr")).setExecutor(new TestCommand());
+        Objects.requireNonNull(getCommand("getxpmultiplier")).setExecutor(new GetExperienceMultiplierCommand());
+        Objects.requireNonNull(getCommand("getstatpotion")).setExecutor(new GetPotionCommand());
 
-        getServer().getPluginManager().registerEvents(new ItemClickListener(), this);
+
+
         getServer().getPluginManager().registerEvents(new IdentifyScrollListener(), this);
         getServer().getPluginManager().registerEvents(new CancelUsageInRecipesListener(), this);
         getServer().getPluginManager().registerEvents(new CustomDropsManager(), this);
+        getServer().getPluginManager().registerEvents(new PlayerDisconnectListener(), this);
+        getServer().getPluginManager().registerEvents(new PotionConsumeListener(),this);
+
         AURA_LOCALE = AuraSkillsApi.get().getMessageManager().getDefaultLanguage();
         AuraSkillsApi auraSkills = AuraSkillsApi.get();
         NamespacedRegistry registry = auraSkills.useRegistry("itemrarity", getDataFolder());
         loadAuraSkillsCustoms(registry, auraSkills);
         loadRepairableItems();
+
+        getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
+            RateLimiter.getInstance().cleanupExpiredCooldowns();
+        }, 6000L, 6000L);
     }
 
     private void loadAuraSkillsCustoms(NamespacedRegistry registry, AuraSkillsApi auraSkills) {
@@ -92,20 +99,31 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
     }
 
     private void loadRepairableItems(){
+        // Crear el ItemRepairManager con referencia al plugin
+        ItemRepairManager repairManager = new ItemRepairManager(this);
 
-        ItemRepairManager repairManager = new ItemRepairManager();
-        Set<String> zafiroItems = new HashSet<>();
-        zafiroItems.add("sapphire_sword");
-        zafiroItems.add("sapphire_chestplate");
-        zafiroItems.add("sapphire_helmet");
-        zafiroItems.add("sapphire_boots");
-        zafiroItems.add("sapphire_leggings");
-        repairManager.registerRepairGroup(zafiroItems, "sapphire");
+        // Cargar configuraciones desde Nexo
+        repairManager.loadFromNexoConfigs();
 
         // Registrar el listener del yunque
-        getServer().getPluginManager().registerEvents(new AnvilListener(repairManager, this), this);
+        getServer().getPluginManager().registerEvents(new AnvilListener(repairManager), this);
 
+        // Opcional: Mostrar estadísticas de carga
+        Map<String, Object> stats = repairManager.getStatistics();
+        getLogger().info("=== Estadísticas de Reparación ===");
+        getLogger().info("Items configurados: " + stats.get("total_items"));
+        getLogger().info("Materiales únicos: " + stats.get("unique_materials"));
 
+        // Log detallado de materiales y su uso (solo si hay pocos materiales)
+        @SuppressWarnings("unchecked")
+        Map<String, Integer> materialUsage = (Map<String, Integer>) stats.get("material_usage");
+        if (materialUsage.size() <= 10) {
+            getLogger().info("Uso de materiales:");
+            for (Map.Entry<String, Integer> entry : materialUsage.entrySet()) {
+                getLogger().info("- " + entry.getKey() + ": " + entry.getValue() + " items");
+            }
+        }
+
+        Objects.requireNonNull(getCommand("reloadrepair")).setExecutor(new ReloadRepairCommand(repairManager));
     }
-
 }

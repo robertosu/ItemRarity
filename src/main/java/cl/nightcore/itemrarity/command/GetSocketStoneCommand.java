@@ -1,7 +1,6 @@
 package cl.nightcore.itemrarity.command;
 
 import cl.nightcore.itemrarity.ItemRarity;
-import cl.nightcore.itemrarity.item.IdentifyScroll;
 import cl.nightcore.itemrarity.item.SocketStone;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

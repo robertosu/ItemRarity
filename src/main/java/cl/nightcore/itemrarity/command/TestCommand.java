@@ -1,7 +1,7 @@
 package cl.nightcore.itemrarity.command;
 
+import cl.nightcore.itemrarity.rollquality.MainRollQuality;
 import cl.nightcore.itemrarity.rollquality.RollQuality;
-import cl.nightcore.itemrarity.rollquality.*;
 import cl.nightcore.itemrarity.test.StatDistributionTester;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

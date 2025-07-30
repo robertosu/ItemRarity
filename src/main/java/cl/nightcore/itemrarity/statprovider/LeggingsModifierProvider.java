@@ -14,7 +14,7 @@ public class LeggingsModifierProvider implements ModifierProvider {
             CombinedStats.CRIT_DAMAGE,
             CombinedStats.HEALTH,
             CombinedStats.LUCK,
-            //CombinedStats.REGENERATION,
+            // CombinedStats.REGENERATION,
             CombinedStats.STRENGTH,
             CombinedStats.TOUGHNESS,
             CombinedStats.DEXTERITY,

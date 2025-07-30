@@ -3,15 +3,26 @@ package cl.nightcore.itemrarity.listener;
 import cl.nightcore.itemrarity.GemManager;
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.abstracted.SocketableItem;
+import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
+import cl.nightcore.itemrarity.abstracted.XpBonusItem;
 import cl.nightcore.itemrarity.config.ItemConfig;
+import cl.nightcore.itemrarity.model.ExperienceMultiplierModel;
 import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.model.GemRemoverModel;
 import cl.nightcore.itemrarity.model.ItemUpgraderModel;
-import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import cl.nightcore.itemrarity.util.PerformanceTimer;
+import cl.nightcore.itemrarity.util.RateLimiter;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.BlocksAttacks;
+import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
+import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.Sound;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,15 +30,48 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCreativeEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.function.BiFunction;
 
 import static cl.nightcore.itemrarity.util.ItemUtil.isGem;
 import static cl.nightcore.itemrarity.util.ItemUtil.isIdentified;
 
+@SuppressWarnings("UnstableApiUsage")
 public class IdentifyScrollListener implements Listener {
 
     PerformanceTimer timer = new PerformanceTimer();
+    private final RateLimiter rateLimiter = RateLimiter.getInstance(); // Nueva instancia
+
+    private static final NamespacedKey LORE_UPDATED_KEY =
+            new NamespacedKey(ItemRarity.PLUGIN, "lore_updated");
+
+    private static final BlocksAttacks SWORD_BLOCK_ATTACKS = BlocksAttacks.blocksAttacks()
+            .blockDelaySeconds(0f)
+            .disableCooldownScale(0f)
+            .addDamageReduction(DamageReduction.damageReduction().factor(0.5f).build())
+            .blockSound(Registry.SOUNDS.getKey(Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR))
+            .itemDamage(ItemDamageFunction.itemDamageFunction().factor(0.01f).build())
+            .build();
+
+    private boolean isLoreUpdated(ItemStack item) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return false;
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        return container.has(LORE_UPDATED_KEY);
+    }
+
+    private void setLoreUpdated(ItemStack item) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            PersistentDataContainer container = meta.getPersistentDataContainer();
+            container.set(LORE_UPDATED_KEY, PersistentDataType.BOOLEAN, true);
+            item.setItemMeta(meta);
+        }
+    }
+
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
@@ -36,49 +80,93 @@ public class IdentifyScrollListener implements Listener {
             return;
         }
 
-        if (event.getSlotType() == InventoryType.SlotType.ARMOR
-                || !event.getInventory().getType().equals(InventoryType.CRAFTING)
-                || event.getSlotType() == InventoryType.SlotType.RESULT) {
-            return;
-        }
-
         ItemStack cursor = event.getCursor();
         ItemStack targetItem = event.getCurrentItem();
 
-        if (isInvalidInteraction(cursor, targetItem)) {
+        if (ItemUtil.isInvalidInteraction(cursor, targetItem)) {
             return;
         }
-        ObjectType objectType = getObjectType(cursor);
 
-        if (objectType == ObjectType.NONE) {
+        if (event.getSlotType() != InventoryType.SlotType.CRAFTING){
             return;
+        }
+
+        ItemUtil.ObjectType objectType = ItemUtil.getObjectType(cursor);
+
+        if (objectType == ItemUtil.ObjectType.NONE) {
+            // Only add the attribute in lore to weapons
+            if (ItemUtil.getItemType(targetItem).equals("Weapon")) {
+                if (!isLoreUpdated(targetItem) || targetItem.containsEnchantment(Enchantment.SHARPNESS)) {
+                    ItemUtil.attributesDisplayInLore(targetItem);
+                    setLoreUpdated(targetItem);
+                    if (targetItem.getType().toString().endsWith("SWORD")) {
+                        if (!targetItem.hasData(DataComponentTypes.BLOCKS_ATTACKS)) {
+                            targetItem.setData(DataComponentTypes.BLOCKS_ATTACKS, SWORD_BLOCK_ATTACKS);
+                        }
+                    }
+                }
+            }
         } else if (!ItemUtil.isIdentifiable(targetItem) && !ItemUtil.isGem(targetItem)) {
             return;
         }
+
+        /*// NUEVA VERIFICACIÓN DE RATE LIMITING Y DETECCIÓN DE SPAM
+        Player player = (Player) event.getWhoClicked();
+        RateLimiter.SpamCheckResult spamCheck = rateLimiter.checkSpamAndCooldown(player, objectType.name());
+
+        if (spamCheck.shouldKick()) {
+            // Kickear al jugador por spam malicioso
+            String kickReason;
+            if (spamCheck.getSpamLevel() == RateLimiter.SpamLevel.CRITICAL) {
+                kickReason = "§cDetectado uso de macro/bot. Spam crítico detectado.";
+                // Log para admins
+                Bukkit.getLogger().warning("SPAM CRÍTICO detectado: " + player.getName() +
+                        " - Posible uso de macro/bot");
+            } else {
+                kickReason = "§cSpam excesivo detectado. Demasiadas advertencias.";
+                // Log para admins
+                Bukkit.getLogger().warning("SPAM ALTO detectado: " + player.getName() +
+                        " - Advertencias: " + rateLimiter.getPlayerWarnings(player));
+            }
+
+            player.kick(Component.text(kickReason));
+            event.setCancelled(true);
+            return;
+        }
+
+        if (!spamCheck.isAllowed()) {
+            if (spamCheck.getSpamLevel() != RateLimiter.SpamLevel.NONE) {
+                // Mensaje de advertencia por spam
+                String warningMessage;
+                int warnings = rateLimiter.getPlayerWarnings(player);
+
+                warningMessage = switch (spamCheck.getSpamLevel()) {
+                    case MODERATE -> String.format("§eAdvertencia: Uso muy rápido detectado. (%d/3)", warnings);
+                    case HIGH -> String.format("§6¡ADVERTENCIA SERIA! Spam detectado. (%d/3)", warnings);
+                    default -> "Uso demasiado rápido.";
+                };
+
+                player.sendMessage(ItemConfig.PLUGIN_PREFIX.append(
+                        Component.text(warningMessage).color(NamedTextColor.GOLD)
+                ));
+            } else {
+                // Mensaje normal de cooldown
+                double remainingSeconds = spamCheck.getRemainingCooldown() / 1000.0;
+                player.sendMessage(ItemConfig.PLUGIN_PREFIX.append(
+                        Component.text(String.format("Debes esperar %.1f segundos antes de usar este item nuevamente.", remainingSeconds))
+                                .color(NamedTextColor.YELLOW)
+                ));
+            }
+
+            event.setCancelled(true);
+            return;
+        }*/
+
         handleInteraction(event, targetItem, cursor, objectType);
     }
 
-    private boolean isInvalidInteraction(ItemStack cursor, ItemStack targetItem) {
-        return cursor == null
-                || cursor.getType().isAir()
-                || targetItem == null
-                || targetItem.getType().isAir();
-    }
 
-    private ObjectType getObjectType(ItemStack item) {
-        if (ItemUtil.isIdentifyScroll(item)) return ObjectType.IDENTIFY_SCROLL;
-        if (ItemUtil.isMagicObject(item)) return ObjectType.MAGIC_OBJECT;
-        if (ItemUtil.isBlessingObject(item)) return ObjectType.BLESSING_OBJECT;
-        if (ItemUtil.isRedemptionObject(item)) return ObjectType.REDEMPTION_OBJECT;
-        if (ItemUtil.isGem(item)) return ObjectType.GEM;
-        if (ItemUtil.isGemRemover(item)) return ObjectType.GEM_REMOVER;
-        if (ItemUtil.isBlessingBall(item)) return ObjectType.BLESSING_BALL;
-        if (ItemUtil.isItemUpgrader(item)) return ObjectType.ITEM_UPGRADER;
-        if (ItemUtil.isSocketStone(item)) return ObjectType.SOCKET_STONE;
-        return ObjectType.NONE;
-    }
-
-    private void handleInteraction(InventoryClickEvent event, ItemStack targetItem, ItemStack cursor, ObjectType type) {
+    private void handleInteraction(InventoryClickEvent event, ItemStack targetItem, ItemStack cursor, ItemUtil.ObjectType type) {
         Player player = (Player) event.getWhoClicked();
 
         switch (type) {
@@ -158,7 +246,35 @@ public class IdentifyScrollListener implements Listener {
                 }
                 handleSocketStone(event, targetItem, cursor, player);
                 break;
+            case XP_MULTIPLIER:
+                if (!isIdentified(targetItem)) {
+                    sendErrorMessage(player, "Tu objeto debe estar identificado.", ItemConfig.XP_MULTIPLIER_PREFIX);
+                    event.setCancelled(true);
+                    return;
+                }
+                handleExperienceMultiplier(event, targetItem, cursor, player);
+                break;
         }
+    }
+
+
+    private void handleExperienceMultiplier(InventoryClickEvent event, ItemStack targetItem, ItemStack cursor, Player player) {
+        ExperienceMultiplierModel multiplierModel = new ExperienceMultiplierModel(cursor);
+        XpBonusItem xpBonusItem = new XpBonusItem(targetItem) {};
+
+        int currentMultiplier = xpBonusItem.getExperienceMultiplier();
+        int newMultiplier = multiplierModel.getMultiplier();
+
+        if (newMultiplier > currentMultiplier) {
+            xpBonusItem.addExperienceMultiplier(newMultiplier, player);
+            event.setCurrentItem(xpBonusItem);
+            consumeItem(event, cursor);
+        } else {
+            player.sendMessage(ItemConfig.XP_MULTIPLIER_PREFIX.append(
+                    Component.text("El objeto ya tiene un multiplicador mayor (" + currentMultiplier + "%).")
+                            .color(NamedTextColor.RED)));
+        }
+        event.setCancelled(true);
     }
 
     private void handleSocketStone(InventoryClickEvent event, ItemStack targetItem, ItemStack cursor, Player player) {
@@ -280,16 +396,4 @@ public class IdentifyScrollListener implements Listener {
         player.sendMessage(prefix.append(Component.text(message).color(NamedTextColor.RED)));
     }
 
-    private enum ObjectType {
-        IDENTIFY_SCROLL,
-        MAGIC_OBJECT,
-        BLESSING_OBJECT,
-        REDEMPTION_OBJECT,
-        GEM,
-        GEM_REMOVER,
-        BLESSING_BALL,
-        ITEM_UPGRADER,
-        SOCKET_STONE,
-        NONE
-    }
 }

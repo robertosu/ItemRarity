@@ -42,5 +42,4 @@ public class NumberUtil {
             return defaultValue;
         }
     }
-
 }

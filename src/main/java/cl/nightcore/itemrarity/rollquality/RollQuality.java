@@ -4,5 +4,4 @@ public interface RollQuality {
     int getMean();
 
     double getSd();
-
 }

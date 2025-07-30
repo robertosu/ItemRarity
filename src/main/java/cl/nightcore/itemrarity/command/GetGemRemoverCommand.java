@@ -31,7 +31,7 @@ public class GetGemRemoverCommand implements CommandExecutor {
         GemRemover gemRemover = new GemRemover(amount, Integer.parseInt(args[1]));
 
         player.getInventory().addItem(gemRemover);
-        player.sendMessage("¡Has obtenido " + amount + " removedor(es) de gema nivel " + args[1] +"!");
+        player.sendMessage("¡Has obtenido " + amount + " removedor(es) de gema nivel " + args[1] + "!");
 
         return true;
     }

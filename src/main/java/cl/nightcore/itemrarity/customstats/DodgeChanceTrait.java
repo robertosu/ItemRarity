@@ -26,7 +26,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class DodgeChanceTrait implements BukkitTraitHandler, Listener {
 
-    private static final NamespacedKey levelKey = new NamespacedKey("mythicprojectiles","level");
+    private static final NamespacedKey levelKey = new NamespacedKey("mythicprojectiles", "level");
 
     private final AuraSkillsApi auraSkills;
 
@@ -45,8 +45,7 @@ public class DodgeChanceTrait implements BukkitTraitHandler, Listener {
     }
 
     @Override
-    public void onReload(Player player, SkillsUser user, Trait trait) {
-    }
+    public void onReload(Player player, SkillsUser user, Trait trait) {}
 
     public int getLevel(Entity entity) {
         return entity.getPersistentDataContainer().getOrDefault(levelKey, PersistentDataType.INTEGER, 0);
@@ -68,19 +67,20 @@ public class DodgeChanceTrait implements BukkitTraitHandler, Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onAttack(EntityDamageByEntityEvent event) {
-        if (!AuraSkillsBukkit.get().getLocationManager().isPluginDisabled(event.getEntity().getLocation(),null)) {
+        if (!AuraSkillsBukkit.get()
+                .getLocationManager()
+                .isPluginDisabled(event.getEntity().getLocation(), null)) {
             Entity defender = event.getEntity();
             Entity damager = event.getDamager();
 
-            if(defender == damager){
+            if (defender == damager) {
                 return;
             }
-            if(damager instanceof Projectile projectile){
-                if (projectile.getShooter() == defender){
+            if (damager instanceof Projectile projectile) {
+                if (projectile.getShooter() == defender) {
                     return;
                 }
             }
-
 
             // Variables para almacenar los valores de dodge y accuracy
             double defenderDodge = 0;
@@ -105,8 +105,7 @@ public class DodgeChanceTrait implements BukkitTraitHandler, Listener {
                 }
                 case Player player -> attackerPlayer = player;
                 case LivingEntity attackerMob -> attackerAccuracy = getMobStats(attackerMob) / 100.0;
-                default -> {
-                }
+                default -> {}
             }
             // Si el atacante es un jugador, usar sus stats de AuraSkills
             if (attackerPlayer != null) {
@@ -125,8 +124,10 @@ public class DodgeChanceTrait implements BukkitTraitHandler, Listener {
 
                 if (defender instanceof Player defenderPlayer) {
                     // Si el defensor es un jugador, mostrar efectos completos
-                    //defenderPlayer.getWorld().playSound(defenderPlayer.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 2.0F);
-                    defenderPlayer.sendActionBar(Component.text("¡Esquivaste el ataque!").color(NamedTextColor.GREEN));
+                    // defenderPlayer.getWorld().playSound(defenderPlayer.getLocation(),
+                    // Sound.ENTITY_PLAYER_ATTACK_SWEEP, 1.0F, 2.0F);
+                    defenderPlayer.sendActionBar(
+                            Component.text("¡Esquivaste el ataque!").color(NamedTextColor.GREEN));
                 }
 
                 // Si hay un jugador atacante, enviarle mensaje de fallo sin importar si el defensor es mob o jugador
@@ -139,7 +140,7 @@ public class DodgeChanceTrait implements BukkitTraitHandler, Listener {
     }
 
     private double calculateFinalDodgeChance(double dodgeProbability, double accuracyProbability) {
-        //return Math.max(0, dodgeProbability * (1 - accuracyProbability));
+        // return Math.max(0, dodgeProbability * (1 - accuracyProbability));
         return Math.max(0, dodgeProbability - accuracyProbability);
     }
 }

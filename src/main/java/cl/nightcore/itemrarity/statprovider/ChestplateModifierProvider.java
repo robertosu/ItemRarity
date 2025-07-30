@@ -14,7 +14,7 @@ public class ChestplateModifierProvider implements ModifierProvider {
             CombinedStats.CRIT_DAMAGE,
             CombinedStats.HEALTH,
             CombinedStats.LUCK,
-            //CombinedStats.REGENERATION,
+            // CombinedStats.REGENERATION,
             CombinedStats.DEXTERITY,
             CombinedStats.STRENGTH,
             CombinedStats.TOUGHNESS,

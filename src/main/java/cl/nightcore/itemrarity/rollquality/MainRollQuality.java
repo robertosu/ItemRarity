@@ -11,6 +11,13 @@ public class MainRollQuality implements RollQuality {
         return INSTANCE;
     }
 
-    @Override public int getMean() { return 19; }
-    @Override public double getSd() { return 6.67; }
+    @Override
+    public int getMean() {
+        return 19;
+    }
+
+    @Override
+    public double getSd() {
+        return 6.67;
+    }
 }

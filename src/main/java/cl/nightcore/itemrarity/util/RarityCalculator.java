@@ -1,7 +1,7 @@
 package cl.nightcore.itemrarity.util;
 
-import cl.nightcore.itemrarity.rollquality.RollQuality;
 import cl.nightcore.itemrarity.config.ItemConfig;
+import cl.nightcore.itemrarity.rollquality.RollQuality;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;

@@ -16,7 +16,6 @@ public class StatValueGenerator {
         } else {
             return generateValueUsingRandomDistribution();
         }
-
     }
 
     private static int generateValueUsingNormalDistribution() {
@@ -28,7 +27,7 @@ public class StatValueGenerator {
 
     private static int generateValueUsingRandomDistribution() {
         // Generar un índice aleatorio entre 0 y el máximo permitido
-        int randomIndex = RANDOM.nextInt( POSSIBLE_VALUES.length);
+        int randomIndex = RANDOM.nextInt(POSSIBLE_VALUES.length);
         // Retornar el valor correspondiente del array de valores posibles
         return POSSIBLE_VALUES[randomIndex];
     }

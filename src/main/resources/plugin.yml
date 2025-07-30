@@ -1,5 +1,5 @@
 name: ItemRarity
-version: 0.2.2
+version: 0.2.3
 main: cl.nightcore.itemrarity.ItemRarity
 api-version: 1.20
 depend: [ AuraSkills ]
@@ -35,3 +35,12 @@ commands:
   testdistr:
     description: Testea las probabilidades.
     usage: /testdistr <rollqualityNumber> <testCount>
+  getxpmultiplier:
+    description: Obtienes multiplicadores de xp.
+    usage: /getxpmultiplier <porcentaje> [cantidad]
+  getstatpotion:
+    description: Obtienes pociones de stat temporales.
+    usage: /getpotion <stat> [cantidad] [valor] [duración]
+  reloadrepair:
+    description: Recarga las configuraciones de reparación desde Nexo
+    permission: itemrarity.admin
