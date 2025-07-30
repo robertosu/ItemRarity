@@ -19,6 +19,7 @@ import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Sound;
@@ -110,7 +111,7 @@ public class IdentifyScrollListener implements Listener {
             return;
         }
 
-        /*// NUEVA VERIFICACIÓN DE RATE LIMITING Y DETECCIÓN DE SPAM
+        // NUEVA VERIFICACIÓN DE RATE LIMITING Y DETECCIÓN DE SPAM
         Player player = (Player) event.getWhoClicked();
         RateLimiter.SpamCheckResult spamCheck = rateLimiter.checkSpamAndCooldown(player, objectType.name());
 
@@ -160,7 +161,7 @@ public class IdentifyScrollListener implements Listener {
 
             event.setCancelled(true);
             return;
-        }*/
+        }
 
         handleInteraction(event, targetItem, cursor, objectType);
     }
