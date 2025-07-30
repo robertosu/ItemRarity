@@ -1,34 +1,35 @@
-package cl.nightcore.itemrarity.type;
+package cl.nightcore.itemrarity.abstracted;
 
-import cl.nightcore.itemrarity.abstracted.SocketableItem;
+import cl.nightcore.itemrarity.config.CombinedTraits;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.item.ItemUpgrader;
 import cl.nightcore.itemrarity.model.ItemUpgraderModel;
+import cl.nightcore.itemrarity.util.ItemUtil;
+import dev.aurelium.auraskills.api.AuraSkillsBukkit;
+import dev.aurelium.auraskills.api.trait.Trait;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.util.Collection;
-import java.util.concurrent.ThreadLocalRandom;
-
+import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
 import static cl.nightcore.itemrarity.config.ItemConfig.LEVEL_KEY_NS;
 
-@SuppressWarnings("UnstableApiUsage")
-public class RolledAbstract extends SocketableItem {
+public class UpgradeableItem extends SocketableItem {
     private static final int MAX_LEVEL = 9;
     private static final NamespacedKey DAMAGE_MODIFIER_KEY = new NamespacedKey(PLUGIN, "level_damage");
 
-    public RolledAbstract(ItemStack item) {
+
+    public UpgradeableItem(ItemStack item) {
         super(item);
     }
 
@@ -36,6 +37,7 @@ public class RolledAbstract extends SocketableItem {
     public boolean incrementLevel(Player player, ItemUpgraderModel itemUpgrader) {
         ItemMeta meta = this.getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
+
         int level = container.get(LEVEL_KEY_NS, PersistentDataType.INTEGER);
         int type = itemUpgrader.getType();
         int percentage = itemUpgrader.getPercentage();
@@ -45,15 +47,16 @@ public class RolledAbstract extends SocketableItem {
         if (adjustedPercentage < 0) adjustedPercentage = 0; // Asegurar que no sea negativo
 
         if (level < MAX_LEVEL) {
-            if (rollthedice(adjustedPercentage)) {
+            if (ItemUtil.rollthedice(adjustedPercentage)) {
                 int newlevel = level + 1;
-                container.set(LEVEL_KEY_NS, PersistentDataType.INTEGER, newlevel);
+                this.setNewLevel(newlevel);
+                this.setLore();
+                this.setMonoliticStats(newlevel);
+                this.reApplyMultipliers();
                 player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX.color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
                         .append(Component.text("Mejora exitosa, tu objeto subió a: ", ItemUpgrader.getLoreColor())
                                 .append(Component.text("Nivel " + newlevel, NamedTextColor.DARK_GRAY))));
-                this.setItemMeta(meta);
-                this.modifyDamage(0.2*level);
-                this.setLore();
+
                 // Reproducir sonido de éxito
                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
             } else {
@@ -73,9 +76,10 @@ public class RolledAbstract extends SocketableItem {
                             player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX.color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
                                     .append(Component.text("La mejora falló, tu objeto bajó a: ", NamedTextColor.RED)
                                             .append(Component.text("Nivel " + newlevel, ItemUpgrader.getActiveColor()))));
-                            this.setItemMeta(meta);
-                            this.modifyDamage(0.2*newlevel);
+                            this.setNewLevel(newlevel);
                             this.setLore();
+                            this.setMonoliticStats(newlevel);
+                            this.reApplyMultipliers();
 
                             // Reproducir sonido de fallo (puedes usar un sonido diferente si lo deseas)
                             player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_DESTROY, 1.0f, 1.0f);
@@ -107,48 +111,81 @@ public class RolledAbstract extends SocketableItem {
         }
     }
 
-    private void modifyDamage(double amount) {
-        if (!this.hasItemMeta()) {
-            return; // Si el ItemStack no tiene meta, no hacemos nada.
+    private void setNewLevel(int newlevel) {
+        ItemMeta meta;
+        PersistentDataContainer container;
+        meta = this.getItemMeta();
+        container = meta.getPersistentDataContainer();
+        container.set(LEVEL_KEY_NS, PersistentDataType.INTEGER, newlevel);
+        this.setItemMeta(meta);
+    }
+
+    private TextColor getTraitColor(Trait trait) {
+        // Primero convertimos el CombinedTrait a su equivalente en Traits si es necesario
+        Trait originalTrait = (trait instanceof CombinedTraits) ?
+                ((CombinedTraits) trait).getDelegateTrait() : trait;
+
+        var stats = AuraSkillsBukkit.get().getItemManager().getLinkedStats(originalTrait);
+        if (stats.stream().findAny().isPresent()) {
+            return ItemUtil.getColorOfStat(stats.stream().findAny().get());
         }
+        return NamedTextColor.WHITE;
+    }
 
-        ItemMeta meta = this.getItemMeta();
 
+    @Override
+    protected void setMonoliticStats(int level) {
 
-        // Obtener los modificadores existentes (puede ser null si no hay modificadores)
-        Collection<AttributeModifier> modifiers = meta.getAttributeModifiers(Attribute.ATTACK_DAMAGE);
+        var line = Component.text("|")
+                .color(NamedTextColor.DARK_GRAY)
+                .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE);
 
-        // Buscar el modificador existente (si existe)
-        AttributeModifier existingModifier = null;
-        if (modifiers != null) {
-            existingModifier = modifiers.stream()
-                    .filter(modifier -> DAMAGE_MODIFIER_KEY.equals(modifier.getKey()))
-                    .findFirst()
-                    .orElse(null);
+        var monoliticTraits = this.statProvider.getMonoliticTraits();
+
+        for (Trait trait : monoliticTraits) {
+            var added = determineValueIncreasePerLevelForTrait(trait);
+            var value = level * added + added;
+            removeTraitModifierByName(this, trait, MONOLITIC_TRAITMODIFIER);
+            addMonoliticTraitModifier(this, trait, value);
+            var component =
+                    Component.text(" +" + getFormattedValue(value,trait) + " ").color(getTraitColor(trait)).decoration(TextDecoration.ITALIC,TextDecoration.State.FALSE)
+                            .append(Component.text(trait.getDisplayName(AURA_LOCALE) + " ")
+                                    .color(NamedTextColor.DARK_GRAY).decoration(TextDecoration.ITALIC,TextDecoration.State.FALSE)
+                                    .append(Component.text("|").color(NamedTextColor.DARK_GRAY))
+                                    .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+            line = line.append(component);
         }
+        var meta = this.getItemMeta();
+        var lore = meta.lore();
+        // 9 trait = SPACES
+        // Remove any line that contains exactly 9 spaces
+        lore.removeIf(component -> {
+            return PlainTextComponentSerializer.plainText().serialize(component).equals("         "); // 9 spaces
+        });
 
-        if (existingModifier != null) {
-            meta.removeAttributeModifier(Attribute.ATTACK_DAMAGE, existingModifier);
-        }
-
-        // Crear un nuevo modificador con el valor actualizado
-        AttributeModifier damageModifier = new AttributeModifier(
-                DAMAGE_MODIFIER_KEY, // Usamos la misma clave
-                amount, // Nuevo valor de daño
-                AttributeModifier.Operation.ADD_NUMBER,
-                EquipmentSlotGroup.HAND// Operación (sumar)
-        );
-
-        // Agregar el modificador al ItemMeta
-        meta.addAttributeModifier(Attribute.ATTACK_DAMAGE, damageModifier);
-
-        // Establecer el ItemMeta modificado en el ItemStack
+        lore.addFirst(Component.text("         ")); // 9 spaces
+        lore.addFirst(line);
+        meta.lore(lore);
         this.setItemMeta(meta);
     }
 
 
-    private boolean rollthedice(double percentage){
-        double chance = percentage / 100.0;
-        return chance > ThreadLocalRandom.current().nextDouble();
+
+    private String getFormattedValue(double value, Trait trait){
+
+        Trait originalTrait = (trait instanceof CombinedTraits) ?
+                ((CombinedTraits) trait).getDelegateTrait() : trait;
+
+        return AuraSkillsBukkit.get().getItemManager().getFormattedTraitValue(value, originalTrait);
     }
+
+    private double determineValueIncreasePerLevelForTrait(Trait trait){
+        switch(trait.name()){
+            case "ATTACK_DAMAGE" -> { return 1.0; }
+            case "ATTACK_SPEED" -> { return 0.01; }
+            case "DAMAGE_REDUCTION", "HP" -> { return 0.5; }
+        }
+        return 0;
+    }
+
 }

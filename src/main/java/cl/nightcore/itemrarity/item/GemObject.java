@@ -2,7 +2,6 @@ package cl.nightcore.itemrarity.item;
 
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.util.ItemUtil;
-import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.stat.Stat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -16,6 +15,8 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 
 public class GemObject extends ItemStack {
     private static final String GEM_STAT_KEY = "gem_stat";
@@ -38,7 +39,6 @@ public class GemObject extends ItemStack {
         setupCustomName();
         setupGemLore();
         setGemNBT();
-
     }
 
     private void setGemNBT() {
@@ -48,36 +48,42 @@ public class GemObject extends ItemStack {
         NamespacedKey lvlkey = new NamespacedKey(ItemRarity.PLUGIN, GEM_LEVEL_KEY);
         container.set(lvlkey, PersistentDataType.INTEGER, level);
         meta.setCustomModelData(customModelData);
+        meta.setMaxStackSize(1);
         setItemMeta(meta);
-
     }
-
 
     private void setupGemLore() {
         List<Component> lore = new ArrayList<>();
 
-        lore.add(Component.text("Insertala en tu objeto para agregar ").color(NamedTextColor.GRAY)
-                .append(gemName)
+        lore.add(Component.empty());
+        lore.add(Component.text("Al incrustar: ")
+                .color(NamedTextColor.GRAY)
+                .append(Component.text(String.format("+%d %s", value, stat.getDisplayName(AURA_LOCALE)))
+                        .color(ItemUtil.getColorOfStat(stat))
+                        .decoration(TextDecoration.ITALIC, false))
                 .decoration(TextDecoration.ITALIC, false));
-
-        lore.add(Component.text(String.format("+%d %s", value,
-                        stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage())))
-                .color(ItemUtil.getColorOfStat(stat))
-                .decoration(TextDecoration.ITALIC, false));
-
+        lore.add(Component.empty());
+        lore.add(Component.text("Mejorable con Forja").color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC,true));
         meta.lore(lore);
         setItemMeta(meta);
     }
-    private void setupCustomName(){
-        meta.customName(Component.text("Gema de "+ stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()) + " +" + this.level).color(ItemUtil.getColorOfStat(stat)).decoration(TextDecoration.ITALIC,false));
+
+    private void setupCustomName() {
+        var levelComponent = Component.text(" [+" + this.level + "]")
+                .color(NamedTextColor.DARK_GRAY)
+                .decoration(TextDecoration.ITALIC, false);
+        meta.customName(Component.text("Gema de " + stat.getDisplayName(AURA_LOCALE))
+                .color(ItemUtil.getColorOfStat(stat))
+                .decoration(TextDecoration.ITALIC, false)
+                .append(levelComponent));
         setItemMeta(meta);
     }
 
-    public static TextColor getPrimaryColor(){
+    public static TextColor getPrimaryColor() {
         return PRIMARY_COLOR;
     }
+
     public Stat getStat() {
         return stat;
     }
-
 }

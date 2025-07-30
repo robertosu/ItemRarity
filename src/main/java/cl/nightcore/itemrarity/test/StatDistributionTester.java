@@ -1,7 +1,7 @@
 package cl.nightcore.itemrarity.test;
 
-import cl.nightcore.itemrarity.abstracted.RollQuality;
-import cl.nightcore.itemrarity.classes.StatValueGenerator;
+import cl.nightcore.itemrarity.rollquality.RollQuality;
+import cl.nightcore.itemrarity.rollquality.StatValueGenerator;
 import cl.nightcore.itemrarity.util.RarityCalculator;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -33,13 +33,13 @@ public class StatDistributionTester {
         for (int i = 0; i < simulationCount; i++) {
             // Generar 2 stats con distribución normal
             List<Integer> stats = new ArrayList<>();
-            stats.add(StatValueGenerator.generateValueForStat(rollQuality, true));
-            stats.add(StatValueGenerator.generateValueForStat(rollQuality, true));
+            stats.add(StatValueGenerator.generateValueForStat(true));
+            stats.add(StatValueGenerator.generateValueForStat(true));
             
             // Generar 3 stats con distribución uniforme
-            stats.add(StatValueGenerator.generateValueForStat(rollQuality, false));
-            stats.add(StatValueGenerator.generateValueForStat(rollQuality, false));
-            stats.add(StatValueGenerator.generateValueForStat(rollQuality, false));
+            stats.add(StatValueGenerator.generateValueForStat(false));
+            stats.add(StatValueGenerator.generateValueForStat(false));
+            stats.add(StatValueGenerator.generateValueForStat(false));
             
             // Calcular promedio
             double average = stats.stream().mapToInt(Integer::intValue).average().orElse(0.0);
@@ -61,8 +61,6 @@ public class StatDistributionTester {
         System.out.println("Configuración:");
         System.out.println("Mean: " + rollQuality.getMean());
         System.out.println("SD: " + rollQuality.getSd());
-        System.out.println("MinValue: " + rollQuality.getMinStatValue());
-        System.out.println("Bound: " + rollQuality.getBound());
         
         System.out.println("\nEstadísticas de los promedios:");
         System.out.printf("Min: %.2f\n", stats.getMin());

@@ -1,10 +1,12 @@
 package cl.nightcore.itemrarity.customstats;
 
+import cl.nightcore.itemrarity.ItemRarity;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.bukkit.BukkitTraitHandler;
 import dev.aurelium.auraskills.api.trait.Trait;
 import dev.aurelium.auraskills.api.user.SkillsUser;
 import dev.aurelium.auraskills.api.util.NumberUtil;
+import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.attribute.AttributeModifier.Operation;
@@ -15,12 +17,12 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 import java.util.Locale;
-import java.util.UUID;
 
 public class AttackSpeedTraitHandler implements BukkitTraitHandler, Listener {
 
     private final AuraSkillsApi auraSkills;
-    private static final UUID ATTRIBUTE_ID = UUID.fromString("7d1423dd-91db-467a-8eb8-1886e30ca0b2");
+
+    private static final NamespacedKey TRAIT_ATTACK_SPEED_NS = new NamespacedKey(ItemRarity.PLUGIN,"trait_attack_speed");
 
     public AttackSpeedTraitHandler(AuraSkillsApi auraSkills) {
         this.auraSkills = auraSkills;
@@ -50,7 +52,7 @@ public class AttackSpeedTraitHandler implements BukkitTraitHandler, Listener {
 
     private boolean isSkillsModifier(AttributeModifier modifier) {
         // Verificar si el modificador es del trait (por ejemplo, por nombre o UUID)
-        return modifier.getName().equals("attackSpeedTrait") || modifier.getUniqueId().equals(ATTRIBUTE_ID);
+        return modifier.getKey().equals(TRAIT_ATTACK_SPEED_NS);
     }
 
     @Override
@@ -78,24 +80,25 @@ public class AttackSpeedTraitHandler implements BukkitTraitHandler, Listener {
 
         // Remove existing modifiers
         for (AttributeModifier am : attribute.getModifiers()) {
-            if (am.getUniqueId().equals(ATTRIBUTE_ID)) {
-                //System.out.println("[DEBUG] Removing existing modifier: " + am.getAmount()); // Debug
+            if (am.getKey().equals(TRAIT_ATTACK_SPEED_NS)) {
+                // System.out.println("[DEBUG] Removing existing modifier: " + am.getAmount()); // Debug
                 attribute.removeModifier(am);
             }
         }
 
         // Apply new modifier only if it's not zero
         if (modifier != 0) {
-            attribute.addModifier(new AttributeModifier(ATTRIBUTE_ID, "attackSpeedTrait", modifier, Operation.ADD_NUMBER));
-            //System.out.println("[DEBUG] Added new modifier: " + modifier); // Debug
+            attribute.addModifier(
+                    new AttributeModifier(TRAIT_ATTACK_SPEED_NS, modifier, Operation.ADD_NUMBER));
+            // System.out.println("[DEBUG] Added new modifier: " + modifier); // Debug
         }
 
         // Debug: Mostrar el valor final del atributo
-        //System.out.println("[DEBUG] Final Attack Speed: " + attribute.getValue());
+        // System.out.println("[DEBUG] Final Attack Speed: " + attribute.getValue());
     }
 
     @Override
     public String getMenuDisplay(double value, Trait trait, Locale locale) {
-        return /*"+" + */NumberUtil.format1(value);
+        return /*"+" + */ NumberUtil.format2(value);
     }
 }

@@ -1,23 +1,26 @@
 package cl.nightcore.itemrarity.abstracted;
 
 import cl.nightcore.itemrarity.GemManager;
-import cl.nightcore.itemrarity.classes.StatValueGenerator;
 import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.item.GemObject;
+import cl.nightcore.itemrarity.item.SocketStone;
 import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.model.GemRemoverModel;
+import cl.nightcore.itemrarity.rollquality.StatValueGenerator;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.AuraSkillsBukkit;
 import dev.aurelium.auraskills.api.stat.Stat;
 import dev.aurelium.auraskills.api.stat.StatModifier;
+import dev.aurelium.auraskills.api.util.AuraSkillsModifier;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -30,16 +33,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
-import static cl.nightcore.itemrarity.util.ItemUtil.getStatProvider;
 import static cl.nightcore.itemrarity.util.ItemUtil.RANDOM;
+import static cl.nightcore.itemrarity.util.ItemUtil.getProvider;
+
 
 public class SocketableItem extends IdentifiedItem {
 
     protected static final int MAX_POSSIBLE_SOCKETS = 3;
-    public static final String GEM_BOOST_PREFIX = "gem_boost_";
-    public static final String BASE_STAT_VALUE_PREFIX = "base_stat_";
-
 
     private static final String MAX_SOCKETS_KEY = "item_max_sockets";
     private static final String AVAILABLE_SOCKETS_KEY = "item_available_sockets";
@@ -49,90 +51,166 @@ public class SocketableItem extends IdentifiedItem {
     private static final NamespacedKey AVAILABLE_SOCKETS_KEY_NS = new NamespacedKey(PLUGIN, AVAILABLE_SOCKETS_KEY);
     private static final GemManager gemManager = new GemManager();
 
-    private static final Component GEMS_HEADER = Component.text("Gemas:")
-            .color(NamedTextColor.GRAY)
-            .decoration(TextDecoration.ITALIC, false);
+    private static final Component GEMS_HEADER =
+            Component.text("Gemas:").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false);
 
-    private static final Component EMPTY_SOCKET = Component.text(" ✧ Vacío")
-            .color(NamedTextColor.GRAY)
-            .decoration(TextDecoration.ITALIC, false);
-
-
+    private static final Component EMPTY_SOCKET =
+            Component.text(" ⛶ Vacío").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false);
 
     public SocketableItem(ItemStack item) {
         super(item);
     }
 
     public void initializeSocketData() {
+
         ItemMeta meta = getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
         int sockets = RANDOM.nextInt(MAX_POSSIBLE_SOCKETS) + 1;
 
-        container.set(MAX_SOCKETS_KEY_NS,
-                PersistentDataType.INTEGER, sockets);
-        container.set(AVAILABLE_SOCKETS_KEY_NS,
-                PersistentDataType.INTEGER, sockets);
+        container.set(MAX_SOCKETS_KEY_NS, PersistentDataType.INTEGER, sockets);
+        container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, sockets);
 
         setItemMeta(meta);
         updateLoreWithSockets();
     }
 
-    public boolean installGem(GemModel gem, Player player) {
+
+
+
+    public int installGem(GemModel gem, Player player) {
         // Verificar si hay espacios disponibles para gemas
         if (!hasAvailableSockets()) {
-            player.sendMessage(ItemConfig.GEMSTONE_PREFIX
-                    .append(Component.text("Este objeto no tiene espacios disponibles para gemas.")
+            player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(
+                    Component.text("Este objeto no tiene espacios disponibles para gemas.")
                             .color(NamedTextColor.RED)));
-            return false;
+            return 1;
         }
 
         // Verificar si ya hay una gema del mismo tipo
         if (hasGemWithStat(gem.getStat())) {
-            player.sendMessage(ItemConfig.GEMSTONE_PREFIX
-                    .append(Component.text("El objeto ya tiene una gema de este tipo.")
-                            .color(NamedTextColor.RED)));
-            return false;
+            player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(
+                    Component.text("El objeto ya tiene una gema de este tipo.").color(NamedTextColor.RED)));
+            return 1;
         }
 
         // Verificar si la gema es compatible con las stats posibles para un item
-        if (!gem.isCompatible(ItemUtil.getStatProvider(this))) {
+        if (!gem.isCompatible(ItemUtil.getProvider(this))) {
             sendCompatibleGemsForItemType(player);
-            return false;
+            return 1;
+        }
+
+        // Verificar si la gema se rompe durante la instalación (40% de probabilidad de fallo)
+        if (gemBreaks(60)) {
+            player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1.0f, 0.4f);
+
+            player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(
+                    Component.text("¡La gema se rompió durante la instalación!")
+                            .color(NamedTextColor.RED)));
+            return 2;
         }
 
         // Si todas las verificaciones pasan, proceder a instalar la gema
         Stat stat = gem.getStat();
 
-        // Aplicar la gema primero
-        addGemStat(stat, gem.getValue());
+        // Aplicar la gema usando el nuevo método de la API
+        ItemStack modifiedItem = AuraSkillsBukkit.get()
+                .getItemManager()
+                .addStatModifier(this, modifierType, stat, gem.getValue() , AuraSkillsModifier.Operation.ADD,"gemstone",false);
 
-        // Luego actualizar los datos del socket con el ItemMeta más reciente
+        setItemMeta(modifiedItem.getItemMeta());
+
+        // Actualizar los datos del socket con el ItemMeta más reciente
         ItemMeta meta = getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
 
         // Store gem data
         String gemKey = GEM_KEY_PREFIX + stat.name();
         String gemLevel = String.format("%d", gem.getLevel());
-        container.set(new NamespacedKey(PLUGIN, gemKey),
-                PersistentDataType.STRING, gemLevel);
+        container.set(new NamespacedKey(PLUGIN, gemKey), PersistentDataType.STRING, gemLevel);
 
         // Update available sockets
         int availableSockets = getAvailableSockets();
-        container.set(AVAILABLE_SOCKETS_KEY_NS,
-                PersistentDataType.INTEGER, availableSockets - 1);
+        container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, availableSockets - 1);
 
         setItemMeta(meta);
         updateLoreWithSockets();
 
-        player.sendMessage(ItemConfig.GEMSTONE_PREFIX
-                .append(Component.text("¡Gema instalada con éxito!")
-                        .color(NamedTextColor.GREEN)));
+        player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1.0f, 2.0f);
+        player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(
+                Component.text("¡Gema instalada con éxito!").color(NamedTextColor.GREEN)));
 
+        return 0;
+    }
+
+    public boolean extractAllGems(Player player, GemRemoverModel gemRemover) {
+        Map<Stat, Integer> installedGems = getInstalledGems();
+
+        if (installedGems.isEmpty()) {
+            player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(
+                    Component.text("Este objeto no tiene gemas instaladas.").color(NamedTextColor.GRAY)));
+            return false;
+        }
+
+        // SOLUCIÓN: Preservar las líneas de atributos ANTES de hacer cambios
+        var attributeLines = getAttributeLines();
+
+        // Recolectar las gemas extraídas
+        List<GemObject> extractedGems = new ArrayList<>();
+
+        // Procesar cada gema instalada
+        for (Map.Entry<Stat, Integer> entry : installedGems.entrySet()) {
+            Stat stat = entry.getKey();
+            int gemLevel = entry.getValue();
+
+            // Verificar si la gema se rompe
+            if (gemBreaks(gemRemover.getPercentage())) {
+                player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1.0f, 0.4f);
+                player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(Component.text("La gema de ")
+                        .color(NamedTextColor.RED)
+                        .append(Component.text(stat.getDisplayName(AURA_LOCALE)).color(ItemUtil.getColorOfStat(stat)))
+                        .append(Component.text(" se rompió durante la extracción."))));
+            } else {
+                // Crear una instancia de la gema extraída
+                player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1.0f, 2.0f);
+                player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(Component.text("La gema de ")
+                        .color(NamedTextColor.GREEN)
+                        .append(Component.text(stat.getDisplayName(AURA_LOCALE)).color(ItemUtil.getColorOfStat(stat)))
+                        .append(Component.text(" se extrajo correctamente."))));
+                GemObject extractedGem = gemManager.createGem(1, gemLevel, stat.name());
+                extractedGems.add(extractedGem);
+            }
+
+            // Remover el modificador de la gema
+            removeStatModifierByName(stat, GEM_STATMODIFIER);
+        }
+
+        removeStoredGemsNBT();
+
+        // SOLUCIÓN: En lugar de solo llamar setLore(), regenerar todo correctamente
+        setLore();
+        appendTraitLines(attributeLines);
+
+        // Entregar las gemas al jugador
+        for (GemObject gem : extractedGems) {
+            HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(gem);
+            if (!leftover.isEmpty()) {
+                player.getWorld().dropItemNaturally(player.getLocation(), gem);
+            }
+        }
         return true;
     }
 
+    private void removeStoredGemsNBT() {
+        ItemMeta meta = getItemMeta();
+        PersistentDataContainer container = meta.getPersistentDataContainer();
 
+        for (Stat stat : CombinedStats.values()) {
+            container.remove(new NamespacedKey(PLUGIN, GEM_KEY_PREFIX + stat.name()));
+        }
 
+        container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, getMaxSockets());
+        setItemMeta(meta);
+    }
 
     public Map<Stat, Integer> getInstalledGems() {
         Map<Stat, Integer> gems = new HashMap<>();
@@ -140,8 +218,7 @@ public class SocketableItem extends IdentifiedItem {
 
         for (Stat stat : CombinedStats.values()) {
             String key = GEM_KEY_PREFIX + stat.name();
-            String value = container.get(new NamespacedKey(PLUGIN, key),
-                    PersistentDataType.STRING);
+            String value = container.get(new NamespacedKey(PLUGIN, key), PersistentDataType.STRING);
             if (value != null) {
                 gems.put(stat, Integer.parseInt(value));
             }
@@ -150,14 +227,14 @@ public class SocketableItem extends IdentifiedItem {
     }
 
     @Override
-    public void updateLoreWithSockets() {
+    protected void updateLoreWithSockets() {
         ItemMeta meta = getItemMeta();
 
         List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
         if (lore == null) lore = new ArrayList<>();
 
         // Remove existing socket information
-        lore.removeIf(line -> line.toString().contains("✧")
+        lore.removeIf(line -> line.toString().contains("⛶")
                 || line.toString().contains("\uD83D\uDC8E")
                 || line.toString().contains("Gemas:"));
 
@@ -169,14 +246,14 @@ public class SocketableItem extends IdentifiedItem {
         Map<Stat, Integer> installedGems = getInstalledGems();
         for (Map.Entry<Stat, Integer> entry : installedGems.entrySet()) {
             Stat stat = entry.getKey();
-            int value = calculateGemValue(entry.getValue()); //calcular valor de la gema basado en su nivel.
+            int value = calculateGemValue(entry.getValue()); // calcular valor de la gema basado en su nivel.
 
             // Color del stat
             TextColor statColor = ItemUtil.getColorOfStat(stat);
 
             // Construcción del texto con colores aplicados explícitamente, otherwise ExcellentEnchants bugea el lore
             Component gemLine = Component.text(" \uD83D\uDC8E ", statColor) // Color explícito para el símbolo
-                    .append(Component.text(stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
+                    .append(Component.text(stat.getDisplayName(AURA_LOCALE))
                             .color(statColor)) // Color explícito para el nombre de la stat
                     .append(Component.text(String.format(" +%d", value))
                             .color(statColor)) // Color explícito para el valor
@@ -215,353 +292,107 @@ public class SocketableItem extends IdentifiedItem {
         return lore.size();
     }
 
+    private boolean gemBreaks(int percentage) {
+        double successchance = percentage / 100.0;
+        return successchance < ThreadLocalRandom.current().nextDouble();
+    }
 
-    public boolean extractAllGems(Player player, GemRemoverModel gemRemover) {
-        Map<Stat, Integer> installedGems = getInstalledGems();
-
-        if (installedGems.isEmpty()) {
-            player.sendMessage(
-                    ItemConfig.GEMSTONE_PREFIX
-                            .append(Component.text("Este objeto no tiene gemas instaladas.")
-                                    .color(NamedTextColor.GRAY))
-            );
+    public boolean addRandomMissingStat(Player player) {
+        // Verificar máximo de stats permitidas
+        if (this.getMaxBonuses() != 6) {
+            this.setMaxBonuses(6);
+        }else{
+            player.sendMessage(ItemConfig.BLESSING_BALL_PREFIX.append(
+                    Component.text("El ítem ya tiene el máximo de estadísticas permitidas (6).")
+                            .color(NamedTextColor.RED)));
             return false;
         }
 
-        // Recolectar las gemas extraídas
-        List<GemObject> extractedGems = new ArrayList<>();
+        // Obtener stats nativas actuales
+        List<StatModifier> nativeStats = AuraSkillsBukkit.get()
+                .getItemManager()
+                .getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
 
-        // Procesar cada gema instalada
-        for (Map.Entry<Stat, Integer> entry : installedGems.entrySet()) {
-            Stat stat = entry.getKey();
-            int gemLevel = entry.getValue();
-
-            // Verificar si la gema se rompe
-            if (gemBreaks(gemRemover.getPercentage())) {
-                player.sendMessage(ItemConfig.GEMSTONE_PREFIX
-                        .append(Component.text("La gema de ")
-                                .color(NamedTextColor.RED)
-                                .append(Component.text(stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
-                                        .color(ItemUtil.getColorOfStat(stat)))
-                                .append(Component.text(" se rompió durante la extracción."))));
-            } else {
-                // Crear una instancia de la gema extraída
-                GemObject extractedGem = gemManager.createGem(1, gemLevel, stat.name());
-                extractedGems.add(extractedGem);
-            }
-
-            // Obtener el valor aportado por la gema usando su nivel y fórmula
-            int gemValue = 4 + (gemLevel - 1) * gemLevel / 2;
-
-            // Remover el modificador actual (esto se hace siempre, independientemente de si la gema se rompe o no)
-            StatModifier currentModifier = getStatModifiers().stream()
-                    .filter(modifier -> {
-                        try {
-                            // Comparar directamente los nombres de las stats
-                            return CombinedStats.valueOf(modifier.type().name()).equals(CombinedStats.valueOf(stat.name()));
-                        } catch (IllegalArgumentException e) {
-                            // Si la stat no existe en CombinedStats, ignorarla
-                            return false;
-                        }
-                    })
-                    .findFirst()
-                    .orElse(null);
-
-            if (currentModifier != null) {
-                removeSpecificModifier(stat);
-                removeSpecificStatLoreLine(stat);
-                // Calcular el nuevo valor base sin el boost de gema
-                double baseValue = currentModifier.value() - gemValue;
-                // Solo reaplicar el modificador si el valor base es mayor a 0
-                if (baseValue > 0) {
-                    addModifier(stat, (int) baseValue, true);
-                }
-            }
+        // Verificar límite de stats
+        if (nativeStats.size() >= 6) {
+            player.sendMessage(ItemConfig.BLESSING_BALL_PREFIX.append(
+                    Component.text("El ítem ya tiene el máximo de estadísticas permitidas (6).")
+                            .color(NamedTextColor.RED)));
+            return false;
         }
 
-        ItemMeta meta = getItemMeta();
-        PersistentDataContainer container = meta.getPersistentDataContainer();
+        var attributeLines = getAttributeLines();
 
-        for (Stat stat : CombinedStats.values()) {
-            container.remove(new NamespacedKey(PLUGIN, GEM_KEY_PREFIX + stat.name()));
-            container.remove(new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + stat.name()));
-            container.remove(new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + stat.name()));
+        // Obtener stats disponibles y actuales
+        List<Stat> availableStats = getProvider(this).getAvailableStats();
+        List<String> currentNativeStats = nativeStats.stream()
+                .map(modifier -> modifier.type().name())
+                .toList();
+
+
+        // Encontrar stats faltantes
+        List<Stat> missingStats = availableStats.stream()
+                .filter(stat -> !currentNativeStats.contains(stat.name()))
+                .toList();
+
+
+        if (missingStats.isEmpty()) {
+            player.sendMessage(
+                    ItemConfig.BLESSING_BALL_PREFIX.append(Component.text("No hay estadísticas faltantes para agregar.")
+                            .color(NamedTextColor.RED)));
+            return false;
         }
 
-        container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, getMaxSockets());
-        setItemMeta(meta);
-        // Actualizar el lore después de todos los cambios
-        updateLoreWithSockets();
-        setLore();
-
-        // Entregar las gemas al jugador
-        for (GemObject gem : extractedGems) {
-            HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(gem);
-            if (!leftover.isEmpty()) {
-                player.getWorld().dropItemNaturally(player.getLocation(), gem);
-            }
-        }
-
-        // Notificar al jugador
-        player.sendMessage(
-                ItemConfig.GEMSTONE_PREFIX
-                        .append(Component.text("Has extraído las gemas del objeto."))
-                        .color(NamedTextColor.GRAY)
+        // Agregar stat aleatoria
+        Stat statToAdd = missingStats.get(RANDOM.nextInt(missingStats.size()));
+        int baseValue = StatValueGenerator.generateValueForStat(
+                statProvider.isThisStatGauss(statToAdd)
         );
 
-        return true;
-    }
+        // Aplicar modificador
+        ItemStack modifiedItem = AuraSkillsBukkit.get()
+                .getItemManager()
+                .addStatModifier(this, modifierType, statToAdd, baseValue, AuraSkillsModifier.Operation.ADD, NATIVE_STATMODIFIER, true);
 
-    private boolean gemBreaks(int percentage) {
-        double chance = percentage / 100.0;
-        return chance > ThreadLocalRandom.current().nextDouble();
-    }
+        modifiedItem.getType().getBlockTranslationKey();
+        setItemMeta(modifiedItem.getItemMeta());
 
+        // Notificar al jugador del éxito
+        Component message = Component.text("Se ha agregado la estadística: ", NamedTextColor.GREEN)
+                .append(Component.text(statToAdd.getDisplayName(
+                                AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
+                        .color(ItemUtil.getColorOfStat(statToAdd)))
+                .append(Component.text(" +" + baseValue).color(ItemUtil.getColorOfStat(statToAdd)));
+        player.sendMessage(ItemConfig.BLESSING_BALL_PREFIX.append(message));
 
+        // Actualizar lore
+        setItemMeta(modifiedItem.getItemMeta());
 
-    protected void addGemStat(Stat stat, int gemValue) {
-        ItemMeta meta = getItemMeta();
-        PersistentDataContainer container = meta.getPersistentDataContainer();
+        // Regenerar tdo el lore correctamente:
+        emptyLore();
 
-        // Obtener los modificadores actuales antes de cualquier cambio
-        StatModifier existingMod = getStatModifiers().stream()
-                .filter(mod -> {
-                    try {
-                        // Comparar directamente los nombres de las stats
-                        return CombinedStats.valueOf(mod.type().name()).equals(CombinedStats.valueOf(stat.name()));
-                    } catch (IllegalArgumentException e) {
-                        // Si la stat no existe en CombinedStats, ignorarla
-                        return false;
-                    }
-                })
-                .findFirst()
-                .orElse(null);
-
-        if (existingMod == null) {
-            System.out.println("No se encontró StatModifier para la estadística: " + stat.name());
-        }
-
-        // Guardar el valor base del arma si existe y aún no está guardado
-        if (existingMod != null
-                && !container.has(
-                new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + stat.name()), PersistentDataType.INTEGER)) {
-            container.set(
-                    new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + stat.name()), PersistentDataType.INTEGER, (int)
-                            existingMod.value());
-        }
-
-        // Guardar o actualizar el valor de la gema
-        container.set(new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + stat.name()), PersistentDataType.INTEGER, gemValue);
-
-        setItemMeta(meta);
-
-        // Limpiar los modificadores existentes
-        removeSpecificModifier(stat);
-        removeSpecificStatLoreLine(stat);
-
-        // Obtener el valor base guardado (si existe)
-        int baseValue = container.getOrDefault(
-                new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + stat.name()), PersistentDataType.INTEGER, 0);
-
-        // Aplicar el nuevo valor combinado
-        if (baseValue > 0) {
-            ItemStack modifiedItem = AuraSkillsBukkit.get()
-                    .getItemManager()
-                    .addStatModifier(this, modifierType, stat, baseValue + gemValue, false);
-            setItemMeta(modifiedItem.getItemMeta());
-            addStatBreakdownToLore(stat, baseValue, gemValue);
-        } else {
-            addModifier(stat, gemValue, false);
-        }
+        reApplyStatsToItem(AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, ItemUtil.getModifierType(this), NATIVE_STATMODIFIER));
 
         setLore();
-    }
 
+        appendAttributeLines(attributeLines);
 
-    public boolean addRandomMissingStat(Player player) {
+        setMonoliticStats(getLevel());
 
-        if (this.getMaxBonuses() != 6) {
-            try {
-                // Verificar si ya se han alcanzado 6 stats (excluyendo las stats que son solo por gema)
-                int nativeStatsCount = getNativeStatsCount();
-                if (nativeStatsCount >= 6) {
-                    player.sendMessage(ItemConfig.PLUGIN_PREFIX
-                            .append(Component.text("El ítem ya tiene el máximo de estadísticas permitidas (6).")
-                                    .color(NamedTextColor.RED)));
-                    System.out.println("[ItemRarity] No se agregó una nueva stat: el ítem ya tiene 6 stats nativas.");
-                    return false;
-                }
-                this.setMaxBonuses(6);
-                // Obtener todas las stats disponibles
-                List<Stat> availableStats = getStatProvider(this).getAvailableStats();
-                System.out.println("[ItemRarity] Stats disponibles: " + availableStats);
+        reApplyMultipliers();
+        //appendAttributeLines(attributeLines);
 
-                // Obtener las stats actuales en el ítem (normalizadas)
-                List<String> currentStatsNormalized = getStatModifiers().stream()
-                        .map(modifier -> modifier.type().name()) // Usar el nombre de la stat
-                        .toList();
-                System.out.println("[ItemRarity] Stats actuales en el ítem (normalizadas): " + currentStatsNormalized);
-
-                // Filtrar las stats que no están presentes en el ítem (o que solo están presentes por una gema)
-                List<Stat> missingStats = new ArrayList<>();
-                PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
-
-                for (Stat stat : availableStats) {
-                    // Normalizar el nombre de la stat
-                    String statName = stat.name();
-
-                    // Verificar si la stat ya está presente en el ítem (excluyendo las stats de gemas)
-                    boolean isStatPresent = currentStatsNormalized.contains(statName);
-
-                    // Verificar si la stat tiene un valor base almacenado en el NBT
-                    boolean hasBaseValue = container.has(new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + statName), PersistentDataType.INTEGER);
-
-                    // Verificar si la stat está presente solo por una gema
-                    boolean isStatFromGem = container.has(new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + statName), PersistentDataType.INTEGER);
-
-                    // Logging detallado para cada stat
-                    System.out.println("[ItemRarity] Verificando stat: " + statName +
-                            ", isStatPresent: " + isStatPresent +
-                            ", hasBaseValue: " + hasBaseValue +
-                            ", isStatFromGem: " + isStatFromGem);
-
-                    // Si la stat no está presente en absoluto, o si está presente solo por una gema (sin valor base), es candidata para ser agregada
-                    if (!isStatPresent || (isStatFromGem && !hasBaseValue)) {
-                        missingStats.add(stat);
-                        System.out.println("[ItemRarity] Stat añadida a missingStats: " + statName);
-                    }
-                }
-
-                System.out.println("[ItemRarity] Stats faltantes: " + missingStats);
-
-                // Si no hay stats faltantes, notificar al jugador
-                if (missingStats.isEmpty()) {
-                    player.sendMessage(ItemConfig.PLUGIN_PREFIX
-                            .append(Component.text("No hay estadísticas faltantes para agregar.")
-                                    .color(NamedTextColor.RED)));
-                    System.out.println("[ItemRarity] No se agregó una nueva stat: no hay stats faltantes.");
-                    return false;
-                }
-
-                // Elegir una stat aleatoria de las faltantes
-
-                Stat statToAdd = missingStats.get(RANDOM.nextInt(missingStats.size()));
-                System.out.println("[ItemRarity] Stat seleccionada para agregar: " + statToAdd.name());
-
-                // Verificar si la stat está presente solo por una gema
-                boolean isStatFromGem = container.has(new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + statToAdd.name()), PersistentDataType.INTEGER);
-
-                if (isStatFromGem) {
-                    // Si la stat está presente solo por una gema, obtener el boost de la gema
-                    int gemBoost = container.getOrDefault(new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + statToAdd.name()), PersistentDataType.INTEGER, 0);
-                    System.out.println("[ItemRarity] Stat presente solo por gema. Boost de gema: " + gemBoost);
-
-                    // Generar un valor base para la stat
-                    int baseValue = StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(statToAdd));
-                    System.out.println("[ItemRarity] Valor base generado: " + baseValue);
-
-                    // Guardar el valor base en NBT
-                    ItemMeta meta = getItemMeta();
-                    container = meta.getPersistentDataContainer();
-                    container.set(new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + statToAdd.name()), PersistentDataType.INTEGER, baseValue);
-                    setItemMeta(meta);
-
-                    // Aplicar el valor total (base + boost de gema)
-                    addModifier(statToAdd, baseValue + gemBoost, false);
-                    addStatBreakdownToLore(statToAdd, baseValue, gemBoost);
-
-                    // Notificar al jugador
-                    Component message = Component.text("Se ha agregado la estadística: ", NamedTextColor.GREEN)
-                            .append(Component.text(statToAdd.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
-                                    .color(ItemUtil.getColorOfStat(statToAdd)))
-                            .append(Component.text(" +" + baseValue)
-                                    .color(ItemUtil.getColorOfStat(statToAdd)));
-                    player.sendMessage(ItemConfig.PLUGIN_PREFIX.append(message));
-                } else {
-                    // Si la stat no está presente en absoluto, agregarla con un valor base
-                    int baseValue = StatValueGenerator.generateValueForStat(getRollQuality(), statProvider.isThisStatGauss(statToAdd));
-                    System.out.println("[ItemRarity] Valor base generado: " + baseValue);
-
-                    // Guardar el valor base en NBT
-                    ItemMeta meta = getItemMeta();
-                    container = meta.getPersistentDataContainer();
-                    container.set(new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + statToAdd.name()), PersistentDataType.INTEGER, baseValue);
-                    setItemMeta(meta);
-
-                    // Aplicar el valor base
-                    addModifier(statToAdd, baseValue, true);
-
-                    // Notificar al jugador
-                    Component message = Component.text("Se ha agregado la estadística: ", NamedTextColor.GREEN)
-                            .append(Component.text(statToAdd.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
-                                    .color(ItemUtil.getColorOfStat(statToAdd)))
-                            .append(Component.text(" +" + baseValue)
-                                    .color(ItemUtil.getColorOfStat(statToAdd)));
-                    player.sendMessage(ItemConfig.BLESSING_BALL_PREFIX.append(message));
-                }
-
-                // Actualizar el lore del ítem
-                setLore();
-                updateLoreWithSockets();
-                System.out.println("[ItemRarity] Stat agregada exitosamente: " + statToAdd.name());
-            } catch (Exception e) {
-                // Manejar cualquier excepción inesperada
-                System.err.println("[ItemRarity] Error al agregar una stat aleatoria al ítem:");
-
-                player.sendMessage(ItemConfig.BLESSING_BALL_PREFIX
-                        .append(Component.text("Ocurrió un error al agregar la estadística. Por favor, contacta a un administrador.")
-                                .color(NamedTextColor.RED)));
-                throw e;
-            }
-        }
         return true;
-    }
-    private int getNativeStatsCount() {
-        int count = 0;
-        PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
-
-        for (StatModifier modifier : getStatModifiers()) {
-            String statName = modifier.type().name();
-            // Obtener el valor base de la stat
-            int baseValue = container.getOrDefault(new NamespacedKey(PLUGIN, BASE_STAT_VALUE_PREFIX + statName), PersistentDataType.INTEGER, 0);
-
-            // Obtener el boost de gema de la stat
-            int gemBoost = container.getOrDefault(new NamespacedKey(PLUGIN, GEM_BOOST_PREFIX + statName), PersistentDataType.INTEGER, 0);
-
-            // Calcular el valor base real (restando el gemBoost al StatModifier)
-            double statModifierValue = modifier.value();
-            double actualBaseValue = statModifierValue - gemBoost;
-
-            // Determinar si la stat es nativa
-            boolean isNative = actualBaseValue > 0; // Es nativa si tiene un valor base real
-
-            // Logging detallado
-            System.out.println("[ItemRarity] Verificando stat: " + statName +
-                    ", statModifierValue: " + statModifierValue +
-                    ", baseValue: " + baseValue +
-                    ", gemBoost: " + gemBoost +
-                    ", actualBaseValue: " + actualBaseValue +
-                    ", isNative: " + isNative);
-
-            // Si la stat es nativa, incrementar el contador
-            if (isNative) {
-                count++;
-            }
-        }
-
-        System.out.println("[ItemRarity] Número de stats nativas: " + count);
-        return count;
     }
 
     private void sendCompatibleGemsForItemType(Player player) {
         List<Component> availableStatsComponents = new ArrayList<>();
         // Construir la lista de componentes
-        ItemUtil.getStatProvider(this)
+        ItemUtil.getProvider(this)
                 .getAvailableStats()
-                .forEach(stat -> availableStatsComponents.add(
-                        Component.text(stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
-                                .color(ItemUtil.getColorOfStat(stat))
-                ));
+                .forEach(stat -> availableStatsComponents.add(Component.text(stat.getDisplayName(
+                                AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
+                        .color(ItemUtil.getColorOfStat(stat))));
         // Mostrar gemas compatibles
         Component baseMessage = Component.text("El tipo de objeto no es compatible con la gema, intenta con: ")
                 .color(NamedTextColor.RED);
@@ -574,26 +405,54 @@ public class SocketableItem extends IdentifiedItem {
         player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(baseMessage));
     }
 
+    public boolean addSocket(Player player){
+        int maxSockets = getMaxSockets();
+        int availableSockets = getAvailableSockets();
+        if(maxSockets < MAX_POSSIBLE_SOCKETS){
+            ItemMeta meta = getItemMeta();
+            PersistentDataContainer container = meta.getPersistentDataContainer();
+            container.set(MAX_SOCKETS_KEY_NS, PersistentDataType.INTEGER, maxSockets + 1);
+            container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, availableSockets + 1);
+            setItemMeta(meta);
+            updateLoreWithSockets();
+            player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1.0f, 0.4f);
+            player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(
+                    Component.text("Se añadió una ranura de gema a tu objeto.")
+                            .color(SocketStone.getLoreColor())));
+            return true;
+        }
+        player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(
+                Component.text("El ítem ya tiene el máximo de ranuras de gemas permitidas (3).")
+                        .color(NamedTextColor.RED)));
+        return false;
+    }
+
+
+
     public boolean hasGemWithStat(Stat stat) {
-        return getItemMeta().getPersistentDataContainer()
-                .has(new NamespacedKey(PLUGIN, GEM_KEY_PREFIX + stat.name()),
-                        PersistentDataType.STRING);
+        return getItemMeta()
+                .getPersistentDataContainer()
+                .has(new NamespacedKey(PLUGIN, GEM_KEY_PREFIX + stat.name()), PersistentDataType.STRING);
     }
 
     public int getMaxSockets() {
-        return getItemMeta().getPersistentDataContainer()
-                .getOrDefault(MAX_SOCKETS_KEY_NS,
-                        PersistentDataType.INTEGER, 0);
+        return getItemMeta()
+                .getPersistentDataContainer()
+                .getOrDefault(MAX_SOCKETS_KEY_NS, PersistentDataType.INTEGER, 0);
     }
 
     public int getAvailableSockets() {
-        return getItemMeta().getPersistentDataContainer()
-                .getOrDefault(AVAILABLE_SOCKETS_KEY_NS,
-                        PersistentDataType.INTEGER, 0);
+        return getItemMeta()
+                .getPersistentDataContainer()
+                .getOrDefault(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, 0);
     }
 
     public boolean hasAvailableSockets() {
         return getAvailableSockets() > 0;
     }
 
+    @Override
+    protected void setMonoliticStats(int level){
+
+    }
 }

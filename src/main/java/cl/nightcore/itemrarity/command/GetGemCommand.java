@@ -64,7 +64,9 @@ public class GetGemCommand implements CommandExecutor {
         GemObject strengthGem = gemManager.createGem(amount, level, args[0].toUpperCase());
         player.getInventory().addItem(strengthGem);
 
-        player.sendMessage("¡Has recibido " + amount + " gema(s) de " + stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()) + " de nivel " + level + "!");
+        player.sendMessage("¡Has recibido " + amount + " gema(s) de "
+                + stat.getDisplayName(AuraSkillsApi.get().getMessageManager().getDefaultLanguage()) + " de nivel "
+                + level + "!");
         return true;
     }
 }

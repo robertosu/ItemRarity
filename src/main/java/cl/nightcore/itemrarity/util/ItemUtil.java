@@ -6,13 +6,13 @@ import cl.nightcore.itemrarity.item.*;
 import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.statprovider.*;
 import com.nexomc.nexo.api.NexoItems;
-import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.item.ModifierType;
 import dev.aurelium.auraskills.api.stat.Stat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
@@ -26,78 +26,88 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
+
+import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 
 public class ItemUtil {
 
     public static final Random RANDOM = new Random();
     public static final DecimalFormat DF = new DecimalFormat("0.#");
+    private static final MyTypedKey[] TYPED_KEYS = {
+            // Más comunes primero
+            new MyTypedKey(ItemConfig.IDENTIFY_SCROLL_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.IDENTIFY_SCROLL),
+            new MyTypedKey(GemModel.getGemStatKeyNs(), PersistentDataType.STRING, ObjectType.GEM),
+            new MyTypedKey(ItemConfig.MAGIC_OBJECT_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.MAGIC_OBJECT),
+            new MyTypedKey(ItemUpgrader.getItemUpgraderKeyNs(), PersistentDataType.INTEGER, ObjectType.ITEM_UPGRADER),
+            new MyTypedKey(ItemConfig.BLESSING_OBJECT_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.BLESSING_OBJECT),
+            new MyTypedKey(ItemConfig.REDEMPTION_OBJECT_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.REDEMPTION_OBJECT),
+            new MyTypedKey(GemRemover.getGemRemoverKeyNs(), PersistentDataType.INTEGER, ObjectType.GEM_REMOVER),
+            new MyTypedKey(ItemConfig.BLESSING_BALL_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.BLESSING_BALL),
+            new MyTypedKey(SocketStone.getSocketGemKeyNs(), PersistentDataType.BOOLEAN, ObjectType.SOCKET_STONE),
+            new MyTypedKey(ExperienceMultiplier.XP_MULTIPLIER_KEY_NS, PersistentDataType.INTEGER, ObjectType.XP_MULTIPLIER)
+    };
     public static Component reset = Component.text().content("").color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false).build();
 
     public static boolean isNotEmpty(ItemStack item) {
-        return item != null && !item.getType().isAir();
+        return !item.getType().isAir();
     }
 
     public static boolean isIdentified(ItemStack item) {
-        return checkBooleanTag(item, ItemConfig.SCROLLED_IDENTIFIER_KEY);
+        return checkBooleanTag(item, ItemConfig.SCROLLED_IDENTIFIER_KEY_NS);
     }
 
     public static boolean isIdentifyScroll(ItemStack item) {
-        return checkBooleanTag(item, IdentifyScroll.getIdentifyScrollKey());
-    }
-
-    public static boolean isRedemptionObject(ItemStack item) {
-        return checkBooleanTag(item, RedemptionObject.getRedeemObjectKey());
+        return checkBooleanTag(item, ItemConfig.IDENTIFY_SCROLL_KEY_NS);
     }
 
     public static boolean isMagicObject(ItemStack item) {
-        return checkBooleanTag(item, MagicObject.getMagicObjectKey());
+        return checkBooleanTag(item, ItemConfig.MAGIC_OBJECT_KEY_NS);
     }
 
     public static boolean isBlessingObject(ItemStack item) {
-        return checkBooleanTag(item, BlessingObject.getBlessingObjectKey());
+        return checkBooleanTag(item, ItemConfig.BLESSING_OBJECT_KEY_NS);
     }
+
+    public static boolean isRedemptionObject(ItemStack item) {
+        return checkBooleanTag(item, ItemConfig.REDEMPTION_OBJECT_KEY_NS);
+    }
+
     public static boolean isBlessingBall(ItemStack item) {
-        return checkBooleanTag(item, ItemConfig.BLESSING_BALL_KEY);
+        return checkBooleanTag(item, ItemConfig.BLESSING_BALL_KEY_NS);
     }
 
-    private static boolean checkBooleanTag(ItemStack item, String key) {
-        if (item == null || item.getType().isAir() || ItemRarity.PLUGIN == null) {
-            return false;
-        }
-        NamespacedKey namespacedKey = new NamespacedKey(ItemRarity.PLUGIN, key);
-        return item.getItemMeta() != null
-                && item.getItemMeta().getPersistentDataContainer().has(namespacedKey, PersistentDataType.BOOLEAN)
-                && item.getItemMeta().getPersistentDataContainer().get(namespacedKey, PersistentDataType.BOOLEAN)
-                        == Boolean.TRUE;
+    private static boolean checkBooleanTag(ItemStack item, NamespacedKey key) {
+        return item.getItemMeta().getPersistentDataContainer().has(key, PersistentDataType.BOOLEAN);
     }
 
-    public static StatProvider getStatProvider(ItemStack item){
+
+    public static ModifierProvider getProvider(ItemStack item){
         Material material = item.getType();
         // Verificar si es armadura
         if (material.name().endsWith("_HELMET")){
-            return new HelmetStatProvider();
+            return new HelmetModifierProvider();
         }
         else if (material.name().endsWith("_CHESTPLATE")){
-            return new ChestplateStatProvider();
+            return new ChestplateModifierProvider();
         }
         else if (material.name().endsWith("_LEGGINGS")){
-            return new LeggingsStatProvider();
+            return new LeggingsModifierProvider();
         }
         else if (material.name().endsWith("_BOOTS")){
-            return new BootsStatProvider();
+            return new BootsModifierProvider();
         }
         else if (material.name().endsWith("_SWORD")
                 || material.name().endsWith("_AXE")
                 || material == Material.TRIDENT
                 || material == Material.BOW
                 || material == Material.CROSSBOW) {
-            return new WeaponStatProvider();
+            return new WeaponModifierProvider();
         } else {
             // Si no es armadura ni arma, retornar vacío.
             throw new IllegalArgumentException("Llamada ilegal de metodo");
         }
     }
-
 
     public static String getItemType(ItemStack item) {
         Material material = item.getType();
@@ -111,26 +121,35 @@ public class ItemUtil {
         // Verificar si es arma
         else if (material.name().endsWith("_SWORD")
                 || material.name().endsWith("_AXE")
-                || material == Material.TRIDENT
-                || material == Material.BOW
-                || material == Material.CROSSBOW) {
+                || material.name().endsWith("MACE")
+                || material == Material.TRIDENT){
             return "Weapon";
-        } else {
+        }
+        else if(material == Material.BOW || material == Material.CROSSBOW){
+            return "OtherWeapon";
+        }
+        else {
             // Si no es armadura ni arma, retornar vacío.
             return "Unknown";
         }
     }
 
     public static boolean isIdentifiable(ItemStack item) {
-        return getItemType(item).equals("Weapon") || getItemType(item).equals("Armor");
+        return getItemType(item).equals("Weapon") || getItemType(item).equals("Armor") || getItemType(item).equals("OtherWeapon");
     }
 
     public static ModifierType getModifierType(ItemStack item) {
         return switch (getItemType(item)) {
-            case "Weapon" -> ModifierType.ITEM;
+            case "Weapon","OtherWeapon" -> ModifierType.ITEM;
             case "Armor" -> ModifierType.ARMOR;
             default -> null;
         };
+    }
+
+    public static boolean isExperienceMultiplier(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return false;
+        return item.getItemMeta().getPersistentDataContainer()
+                .has(ExperienceMultiplier.XP_MULTIPLIER_KEY_NS, PersistentDataType.INTEGER);
     }
 
     public static boolean isGem(ItemStack item) {
@@ -146,6 +165,11 @@ public class ItemUtil {
         return container.has(ItemUpgrader.getItemUpgraderKeyNs(), PersistentDataType.INTEGER);
     }
 
+    public static boolean isSocketStone(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return false;
+        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
+        return container.has(SocketStone.getSocketGemKeyNs(), PersistentDataType.BOOLEAN);
+    }
 
     public static boolean isGemRemover(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
@@ -153,18 +177,11 @@ public class ItemUtil {
         return container.has(GemRemover.getGemRemoverKeyNs(), PersistentDataType.INTEGER);
     }
 
-
     public static TextColor getColorOfStat(Stat stat) {
-        return TextColor.fromHexString(
-                stat.getColor(AuraSkillsApi.get().getMessageManager().getDefaultLanguage())
-                        .replaceAll("[<>]", ""));
+        return TextColor.fromHexString(stat.getColor(AURA_LOCALE).replaceAll("[<>]", ""));
     }
 
-
     public static double calculateTotalDamage(ItemStack item, double baseDamage) {
-
-        //double baseDamage = getBaseDamage(item);
-
 
         double sharpnessDamage = calculateSharpnessDamage(item);
 
@@ -193,7 +210,6 @@ public class ItemUtil {
         if (NexoItems.idFromItem(item) != null) {
             if (meta.getAttributeModifiers(Attribute.ATTACK_SPEED) != null) {
                 for (AttributeModifier modifier : Objects.requireNonNull(meta.getAttributeModifiers(Attribute.ATTACK_SPEED))) {
-                    // DEBUG ATTACK SPEED System.out.println(modifier.getAmount());
                     baseSpeed = modifier.getAmount() + 4;
                     return baseSpeed;
                 }
@@ -207,14 +223,13 @@ public class ItemUtil {
         return baseSpeed;
     }
 
-
     public static void attributesDisplayInLore(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
+        if (!ItemUtil.getItemType(item).equals("Weapon")) return;
 
         //set the default modifiers so minecraft don't mess with the green vanilla attributes
         if(meta.getAttributeModifiers() == null){
-
             //System.out.println("Set the default modifiers");
             var defaultModifiers = item.getType().getDefaultAttributeModifiers();
             meta.setAttributeModifiers(defaultModifiers);
@@ -238,21 +253,63 @@ public class ItemUtil {
         // Recuperar o inicializar la lore como componentes
         List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
         if (lore == null) lore = new ArrayList<>();
+        // Filtrar líneas existentes que contengan atributos sin quitar la primera
 
-        // Filtrar líneas existentes que contengan atributos
-        lore.removeIf(line -> line.toString().contains("Daño p") || line.toString().contains("Velocidad d") || line.toString().contains("En la mano") || line.toString().contains("          "));
+        lore.removeIf(line ->  !line.toString().contains("|") && (line.toString().contains("Daño p") || line.toString().contains("Velocidad d") || line.toString().contains("En la mano") || PlainTextComponentSerializer.plainText().serialize(line).equals("          ")));
         // Añadir nuevas líneas
         lore.add(Component.text("          "));
         lore.add(Component.text("En la mano principal:", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
         lore.add(Component.text(" " + DF.format(totalDamage) + " ", NamedTextColor.BLUE).append(Component.text("Daño por ataque", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text(" " + attackSpeedDisplay + " ", NamedTextColor.BLUE).append(Component.text("Velocidad de ataque", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));
-
-        // Aplicar la nueva lore
+        lore.add(Component.text(" " + attackSpeedDisplay + " ", NamedTextColor.BLUE).append(Component.text("Velocidad de ataque", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));// Aplicar la nueva lore
         meta.lore(lore);
-
         // Ocultar atributos por defecto
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-
         item.setItemMeta(meta);
+    }
+
+    public static boolean rollthedice(double percentage){
+        double chance = percentage / 100.0;
+        return chance > ThreadLocalRandom.current().nextDouble();
+    }
+
+    public static ObjectType getObjectType(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return ObjectType.NONE;
+        }
+
+        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
+
+        // Single loop, ordenado por frecuencia
+        for (MyTypedKey typedKey : TYPED_KEYS) {
+            if (container.has(typedKey.key, typedKey.dataType)) {
+                return typedKey.objectType;
+            }
+        }
+
+        return ObjectType.NONE;
+    }
+
+    public static boolean isInvalidInteraction(ItemStack cursor, ItemStack targetItem) {
+        return cursor == null
+                || cursor.getType().isAir()
+                || targetItem == null
+                || targetItem.getType().isAir();
+    }
+
+    public enum ObjectType {
+        IDENTIFY_SCROLL,
+        MAGIC_OBJECT,
+        BLESSING_OBJECT,
+        REDEMPTION_OBJECT,
+        GEM,
+        GEM_REMOVER,
+        BLESSING_BALL,
+        ITEM_UPGRADER,
+        SOCKET_STONE,
+        XP_MULTIPLIER,
+        NONE
+    }
+
+    private record MyTypedKey(NamespacedKey key, PersistentDataType<?,?> dataType, ObjectType objectType) {
     }
 }

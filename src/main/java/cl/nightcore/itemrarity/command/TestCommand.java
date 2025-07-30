@@ -1,7 +1,7 @@
 package cl.nightcore.itemrarity.command;
 
-import cl.nightcore.itemrarity.abstracted.RollQuality;
-import cl.nightcore.itemrarity.classes.*;
+import cl.nightcore.itemrarity.rollquality.MainRollQuality;
+import cl.nightcore.itemrarity.rollquality.RollQuality;
 import cl.nightcore.itemrarity.test.StatDistributionTester;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -19,36 +19,9 @@ public class TestCommand implements CommandExecutor {
     }
 
     private RollQuality getRollQuality(int level) {
-        switch (level) {
-            case 1 -> {
-                return _1RollQuality.getInstance();
-            }
-            case 2 -> {
-                return _2RollQuality.getInstance();
-            }
-            case 3 -> {
-                return _3RollQuality.getInstance();
-            }
-            case 4 -> {
-                return _4RollQuality.getInstance();
-            }
-            case 5 -> {
-                return _5RollQuality.getInstance();
-            }
-            case 6 -> {
-                return _6RollQuality.getInstance();
-            }
-            case 7 -> {
-                return _7RollQuality.getInstance();
-            }
-            case 8 -> {
-                return _8RollQuality.getInstance();
-            }
-            case 9 -> {
-                return _9RollQuality.getInstance();
-            }
-
-            default -> throw new IllegalArgumentException();
+        if (level == 1) {
+            return MainRollQuality.getInstance();
         }
+        throw new IllegalArgumentException();
     }
 }

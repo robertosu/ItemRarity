@@ -46,5 +46,4 @@ public class HitChanceTrait implements BukkitTraitHandler, Listener {
             return "+" + NumberUtil.format1(value);
         }
     }
-
 }
