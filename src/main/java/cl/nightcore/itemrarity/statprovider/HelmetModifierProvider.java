@@ -9,6 +9,14 @@ import java.util.Arrays;
 import java.util.List;
 
 public class HelmetModifierProvider implements ModifierProvider {
+
+    private HelmetModifierProvider singleton = new HelmetModifierProvider();
+
+    public HelmetModifierProvider(){
+
+    }
+
+
     private static final List<Stat> HELMET_STATS = Arrays.asList(
             CombinedStats.CRIT_CHANCE,
             CombinedStats.CRIT_DAMAGE,

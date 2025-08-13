@@ -31,6 +31,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCreativeEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.SmithingInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -81,16 +82,17 @@ public class IdentifyScrollListener implements Listener {
             return;
         }
 
+        if (event.getInventory() instanceof SmithingInventory){
+            return;
+        }
+
         ItemStack cursor = event.getCursor();
         ItemStack targetItem = event.getCurrentItem();
 
-        if (ItemUtil.isInvalidInteraction(cursor, targetItem)) {
+        if (ItemUtil.isInvalidInteraction(targetItem)) {
             return;
         }
 
-        if (event.getSlotType() != InventoryType.SlotType.CRAFTING){
-            return;
-        }
 
         ItemUtil.ObjectType objectType = ItemUtil.getObjectType(cursor);
 
@@ -107,59 +109,10 @@ public class IdentifyScrollListener implements Listener {
                     }
                 }
             }
-        } else if (!ItemUtil.isIdentifiable(targetItem) && !ItemUtil.isGem(targetItem)) {
             return;
         }
 
-        // NUEVA VERIFICACIÓN DE RATE LIMITING Y DETECCIÓN DE SPAM
-        Player player = (Player) event.getWhoClicked();
-        RateLimiter.SpamCheckResult spamCheck = rateLimiter.checkSpamAndCooldown(player, objectType.name());
-
-        if (spamCheck.shouldKick()) {
-            // Kickear al jugador por spam malicioso
-            String kickReason;
-            if (spamCheck.getSpamLevel() == RateLimiter.SpamLevel.CRITICAL) {
-                kickReason = "§cDetectado uso de macro/bot. Spam crítico detectado.";
-                // Log para admins
-                Bukkit.getLogger().warning("SPAM CRÍTICO detectado: " + player.getName() +
-                        " - Posible uso de macro/bot");
-            } else {
-                kickReason = "§cSpam excesivo detectado. Demasiadas advertencias.";
-                // Log para admins
-                Bukkit.getLogger().warning("SPAM ALTO detectado: " + player.getName() +
-                        " - Advertencias: " + rateLimiter.getPlayerWarnings(player));
-            }
-
-            player.kick(Component.text(kickReason));
-            event.setCancelled(true);
-            return;
-        }
-
-        if (!spamCheck.isAllowed()) {
-            if (spamCheck.getSpamLevel() != RateLimiter.SpamLevel.NONE) {
-                // Mensaje de advertencia por spam
-                String warningMessage;
-                int warnings = rateLimiter.getPlayerWarnings(player);
-
-                warningMessage = switch (spamCheck.getSpamLevel()) {
-                    case MODERATE -> String.format("§eAdvertencia: Uso muy rápido detectado. (%d/3)", warnings);
-                    case HIGH -> String.format("§6¡ADVERTENCIA SERIA! Spam detectado. (%d/3)", warnings);
-                    default -> "Uso demasiado rápido.";
-                };
-
-                player.sendMessage(ItemConfig.PLUGIN_PREFIX.append(
-                        Component.text(warningMessage).color(NamedTextColor.GOLD)
-                ));
-            } else {
-                // Mensaje normal de cooldown
-                double remainingSeconds = spamCheck.getRemainingCooldown() / 1000.0;
-                player.sendMessage(ItemConfig.PLUGIN_PREFIX.append(
-                        Component.text(String.format("Debes esperar %.1f segundos antes de usar este item nuevamente.", remainingSeconds))
-                                .color(NamedTextColor.YELLOW)
-                ));
-            }
-
-            event.setCancelled(true);
+        if (event.getSlotType() != InventoryType.SlotType.CRAFTING){
             return;
         }
 

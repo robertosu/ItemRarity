@@ -1,4 +1,4 @@
-package cl.nightcore.itemrarity.item;
+package cl.nightcore.itemrarity.item.gem;
 
 import cl.nightcore.itemrarity.config.ItemConfig;
 import net.kyori.adventure.text.Component;

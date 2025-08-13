@@ -1,4 +1,4 @@
-package cl.nightcore.itemrarity.item;
+package cl.nightcore.itemrarity.item.gem;
 
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.util.ItemUtil;

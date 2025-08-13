@@ -3,6 +3,8 @@ package cl.nightcore.itemrarity.util;
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.item.*;
+import cl.nightcore.itemrarity.item.gem.GemRemover;
+import cl.nightcore.itemrarity.item.gem.SocketStone;
 import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.statprovider.*;
 import com.nexomc.nexo.api.NexoItems;
@@ -31,6 +33,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 
 public class ItemUtil {
+
+
 
     public static final Random RANDOM = new Random();
     public static final DecimalFormat DF = new DecimalFormat("0.#");
@@ -82,30 +86,28 @@ public class ItemUtil {
     }
 
 
+
+
     public static ModifierProvider getProvider(ItemStack item){
         Material material = item.getType();
         // Verificar si es armadura
         if (material.name().endsWith("_HELMET")){
-            return new HelmetModifierProvider();
+            return ItemRarity.PLUGIN.getStatProviderManager().helmet();
         }
         else if (material.name().endsWith("_CHESTPLATE")){
-            return new ChestplateModifierProvider();
+            return ItemRarity.PLUGIN.getStatProviderManager().chestplate();
         }
         else if (material.name().endsWith("_LEGGINGS")){
-            return new LeggingsModifierProvider();
+            return ItemRarity.PLUGIN.getStatProviderManager().leggings();
         }
         else if (material.name().endsWith("_BOOTS")){
-            return new BootsModifierProvider();
+            return ItemRarity.PLUGIN.getStatProviderManager().boots();
         }
-        else if (material.name().endsWith("_SWORD")
-                || material.name().endsWith("_AXE")
-                || material == Material.TRIDENT
-                || material == Material.BOW
-                || material == Material.CROSSBOW) {
-            return new WeaponModifierProvider();
+        else if (ItemUtil.getItemTypeEnum(item).equals(ItemType.Weapon) || ItemUtil.getItemTypeEnum(item).equals(ItemType.OtherWeapon) ) {
+            return ItemRarity.PLUGIN.getStatProviderManager().weapon();
         } else {
             // Si no es armadura ni arma, retornar vacío.
-            throw new IllegalArgumentException("Llamada ilegal de metodo");
+            throw new IllegalArgumentException("Llamada ilegal de metodo, Modifier provider no encontrado para este tipo");
         }
     }
 
@@ -134,9 +136,41 @@ public class ItemUtil {
         }
     }
 
+    public static ItemType getItemTypeEnum(ItemStack item) {
+        Material material = item.getType();
+        // Verificar si es armadura
+        if (material.name().endsWith("_HELMET")
+                || material.name().endsWith("_CHESTPLATE")
+                || material.name().endsWith("_LEGGINGS")
+                || material.name().endsWith("_BOOTS")) {
+            return ItemType.Armor;
+        }
+        // Verificar si es arma
+        else if (material.name().endsWith("_SWORD")
+                || material.name().endsWith("_AXE")
+                || material.name().endsWith("MACE")
+                || material == Material.TRIDENT){
+            return ItemType.Weapon;
+        }
+        else if(material == Material.BOW || material == Material.CROSSBOW){
+            return ItemType.OtherWeapon;
+        }
+        else {
+            // Si no es armadura ni arma, retornar vacío.
+            return ItemType.Unknown;
+        }
+    }
+
+
+    private  enum ItemType {
+        Armor,Weapon,OtherWeapon,Unknown;
+    }
+
     public static boolean isIdentifiable(ItemStack item) {
         return getItemType(item).equals("Weapon") || getItemType(item).equals("Armor") || getItemType(item).equals("OtherWeapon");
     }
+
+
 
     public static ModifierType getModifierType(ItemStack item) {
         return switch (getItemType(item)) {
@@ -226,8 +260,6 @@ public class ItemUtil {
     public static void attributesDisplayInLore(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
-        if (!ItemUtil.getItemType(item).equals("Weapon")) return;
-
         //set the default modifiers so minecraft don't mess with the green vanilla attributes
         if(meta.getAttributeModifiers() == null){
             //System.out.println("Set the default modifiers");
@@ -252,15 +284,14 @@ public class ItemUtil {
 
         // Recuperar o inicializar la lore como componentes
         List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
-        if (lore == null) lore = new ArrayList<>();
         // Filtrar líneas existentes que contengan atributos sin quitar la primera
 
         lore.removeIf(line ->  !line.toString().contains("|") && (line.toString().contains("Daño p") || line.toString().contains("Velocidad d") || line.toString().contains("En la mano") || PlainTextComponentSerializer.plainText().serialize(line).equals("          ")));
         // Añadir nuevas líneas
         lore.add(Component.text("          "));
         lore.add(Component.text("En la mano principal:", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text(" " + DF.format(totalDamage) + " ", NamedTextColor.BLUE).append(Component.text("Daño por ataque", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text(" " + attackSpeedDisplay + " ", NamedTextColor.BLUE).append(Component.text("Velocidad de ataque", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false));// Aplicar la nueva lore
+        lore.add(Component.text(" " + DF.format(totalDamage) + " Daño por ataque", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text(" " + attackSpeedDisplay + " Velocidad de ataque", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false));// Aplicar la nueva lore
         meta.lore(lore);
         // Ocultar atributos por defecto
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
@@ -289,11 +320,8 @@ public class ItemUtil {
         return ObjectType.NONE;
     }
 
-    public static boolean isInvalidInteraction(ItemStack cursor, ItemStack targetItem) {
-        return cursor == null
-                || cursor.getType().isAir()
-                || targetItem == null
-                || targetItem.getType().isAir();
+    public static boolean isInvalidInteraction(ItemStack targetItem) {
+        return targetItem == null || targetItem.getType().isAir();
     }
 
     public enum ObjectType {

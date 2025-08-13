@@ -5,6 +5,7 @@ import cl.nightcore.itemrarity.command.*;
 import cl.nightcore.itemrarity.customstats.*;
 import cl.nightcore.itemrarity.listener.*;
 import cl.nightcore.itemrarity.loot.CustomDropsManager;
+import cl.nightcore.itemrarity.statprovider.StatProviderManager;
 import cl.nightcore.itemrarity.util.AnvilRepairUtil.ItemRepairManager;
 import cl.nightcore.itemrarity.util.RateLimiter;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
@@ -22,6 +23,12 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
 
     public static ItemRarity PLUGIN;
     public static Locale AURA_LOCALE;
+    private final StatProviderManager statProviderManager = new StatProviderManager();
+
+    public StatProviderManager getStatProviderManager(){
+        return statProviderManager;
+    }
+
 
     public static UpgradeableItem identifyItem(Player player, ItemStack item) {
         UpgradeableItem weapon = new UpgradeableItem(item);
@@ -65,20 +72,21 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         Objects.requireNonNull(getCommand("testdistr")).setExecutor(new TestCommand());
         Objects.requireNonNull(getCommand("getxpmultiplier")).setExecutor(new GetExperienceMultiplierCommand());
         Objects.requireNonNull(getCommand("getstatpotion")).setExecutor(new GetPotionCommand());
-
-
+        Objects.requireNonNull(getCommand("blockdata")).setExecutor(new NexoHelpCommand());
 
         getServer().getPluginManager().registerEvents(new IdentifyScrollListener(), this);
         getServer().getPluginManager().registerEvents(new CancelUsageInRecipesListener(), this);
         getServer().getPluginManager().registerEvents(new CustomDropsManager(), this);
         getServer().getPluginManager().registerEvents(new PlayerDisconnectListener(), this);
         getServer().getPluginManager().registerEvents(new PotionConsumeListener(),this);
+        getServer().getPluginManager().registerEvents(new NexoSmithingListener(), this);
 
         AURA_LOCALE = AuraSkillsApi.get().getMessageManager().getDefaultLanguage();
         AuraSkillsApi auraSkills = AuraSkillsApi.get();
         NamespacedRegistry registry = auraSkills.useRegistry("itemrarity", getDataFolder());
         loadAuraSkillsCustoms(registry, auraSkills);
         loadRepairableItems();
+        //initializeSmithingSystem();
 
         getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
             RateLimiter.getInstance().cleanupExpiredCooldowns();
@@ -87,11 +95,11 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
 
     private void loadAuraSkillsCustoms(NamespacedRegistry registry, AuraSkillsApi auraSkills) {
         registry.registerTrait(CustomTraits.DODGE_CHANCE);
-        registry.registerStat(CustomStats.DEXTERITY);
         registry.registerTrait(CustomTraits.ATTACK_SPEED);
         registry.registerTrait(CustomTraits.HIT_CHANCE);
         registry.registerStat(CustomStats.EVASION);
         registry.registerStat(CustomStats.ACCURACY);
+        registry.registerStat(CustomStats.DEXTERITY);
         auraSkills.getHandlers().registerTraitHandler(new DodgeChanceTrait(auraSkills));
         auraSkills.getHandlers().registerTraitHandler(new HitChanceTrait(auraSkills));
         auraSkills.getHandlers().registerTraitHandler(new AttackSpeedTraitHandler(auraSkills));

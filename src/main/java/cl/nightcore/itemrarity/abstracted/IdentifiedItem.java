@@ -437,7 +437,8 @@ public abstract class IdentifiedItem extends ItemStack {
             } else {
             String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
             Component component = Component.text(plainText, getRarityColor()).decoration(TextDecoration.ITALIC, false);
-            meta.customName(component);
+            meta.customName(null);
+            meta.itemName(component);
             }
         } else {
             if (meta.hasCustomName()) {

@@ -1,13 +1,12 @@
 package cl.nightcore.itemrarity.config;
 
 import cl.nightcore.itemrarity.item.*;
-import com.nexomc.nexo.mechanics.breakable.N;
+import cl.nightcore.itemrarity.item.gem.GemObject;
+import cl.nightcore.itemrarity.item.gem.GemRemover;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.NamespacedKey;
-
-import javax.naming.Name;
 
 import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
 

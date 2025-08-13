@@ -2,7 +2,7 @@ package cl.nightcore.itemrarity;
 
 import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.config.ItemConfig;
-import cl.nightcore.itemrarity.item.GemObject;
+import cl.nightcore.itemrarity.item.gem.GemObject;
 import cl.nightcore.itemrarity.item.ItemUpgrader;
 import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.model.ItemUpgraderModel;

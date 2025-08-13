@@ -1,5 +1,5 @@
 name: ItemRarity
-version: 0.2.3
+version: 0.2.5
 main: cl.nightcore.itemrarity.ItemRarity
 api-version: 1.20
 depend: [ AuraSkills ]
@@ -44,3 +44,6 @@ commands:
   reloadrepair:
     description: Recarga las configuraciones de reparación desde Nexo
     permission: itemrarity.admin
+  blockdata:
+    description: Ve el blockdata de un bloque custom nexo
+    permission: itemrarity.blockdata

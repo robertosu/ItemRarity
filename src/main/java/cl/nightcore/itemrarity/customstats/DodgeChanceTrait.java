@@ -1,5 +1,6 @@
 package cl.nightcore.itemrarity.customstats;
 
+import cl.nightcore.itemrarity.util.MobUtil;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.AuraSkillsBukkit;
 import dev.aurelium.auraskills.api.bukkit.BukkitTraitHandler;
@@ -26,7 +27,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class DodgeChanceTrait implements BukkitTraitHandler, Listener {
 
-    private static final NamespacedKey levelKey = new NamespacedKey("mythicprojectiles", "level");
 
     private final AuraSkillsApi auraSkills;
 
@@ -47,10 +47,6 @@ public class DodgeChanceTrait implements BukkitTraitHandler, Listener {
     @Override
     public void onReload(Player player, SkillsUser user, Trait trait) {}
 
-    public int getLevel(Entity entity) {
-        return entity.getPersistentDataContainer().getOrDefault(levelKey, PersistentDataType.INTEGER, 0);
-    }
-
     @Override
     public String getMenuDisplay(double value, Trait trait, Locale locale) {
         if (CustomTraits.DODGE_CHANCE.optionBoolean("use_percent")) {
@@ -60,10 +56,6 @@ public class DodgeChanceTrait implements BukkitTraitHandler, Listener {
         }
     }
 
-    private double getMobStats(LivingEntity entity) {
-        int level = getLevel(entity);
-        return level == 0 ? 0 : (double) level / 2;
-    }
 
     @EventHandler(ignoreCancelled = true)
     public void onAttack(EntityDamageByEntityEvent event) {
@@ -90,21 +82,21 @@ public class DodgeChanceTrait implements BukkitTraitHandler, Listener {
                 SkillsUser defenderUser = auraSkills.getUser(defenderPlayer.getUniqueId());
                 defenderDodge = defenderUser.getEffectiveTraitLevel(CustomTraits.DODGE_CHANCE) / 100.0;
             } else if (defender instanceof LivingEntity defenderMob) {
-                defenderDodge = getMobStats(defenderMob) / 100.0;
+                defenderDodge = MobUtil.getMobTraits(defenderMob) / 100.0;
             }
             // Procesar estadísticas del atacante y obtener el Player si es un jugador
             Player attackerPlayer = null;
             switch (damager) {
                 case Projectile projectile -> {
-                    ProjectileSource source = projectile.getShooter();
-                    if (source instanceof Player) {
-                        attackerPlayer = (Player) source;
-                    } else if (source instanceof LivingEntity attackerMob) {
-                        attackerAccuracy = getMobStats(attackerMob) / 100.0;
+                    ProjectileSource shooter = projectile.getShooter();
+                    if (shooter instanceof Player) {
+                        attackerPlayer = (Player) shooter;
+                    } else if (shooter instanceof LivingEntity attackerMob) {
+                        attackerAccuracy = MobUtil.getMobTraits(attackerMob) / 100.0;
                     }
                 }
                 case Player player -> attackerPlayer = player;
-                case LivingEntity attackerMob -> attackerAccuracy = getMobStats(attackerMob) / 100.0;
+                case LivingEntity attackerMob -> attackerAccuracy = MobUtil.getMobTraits(attackerMob) / 100.0;
                 default -> {}
             }
             // Si el atacante es un jugador, usar sus stats de AuraSkills
@@ -116,7 +108,7 @@ public class DodgeChanceTrait implements BukkitTraitHandler, Listener {
             // Calcular probabilidad final de esquiva
             double finalDodgeChance = calculateFinalDodgeChance(defenderDodge, attackerAccuracy);
 
-            if (ThreadLocalRandom.current().nextDouble() < finalDodgeChance) {
+            if (finalDodgeChance > ThreadLocalRandom.current().nextDouble()) {
                 event.setCancelled(true);
                 // Mostrar partículas siempre que haya una esquiva
                 defender.getWorld().spawnParticle(Particle.SMALL_GUST, defender.getLocation(), 10, 0.5, 0.5, 0.5, 0.1);
