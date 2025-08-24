@@ -30,19 +30,18 @@ import java.util.concurrent.TimeUnit;
 
 public class StatPotion extends ItemStack {
 
+    public static final NamespacedKey POTION_STAT = new NamespacedKey(ItemRarity.PLUGIN, "potion_stat");
+    public static final NamespacedKey POTION_VALUE = new NamespacedKey(ItemRarity.PLUGIN, "potion_value");
+    public static final NamespacedKey POTION_DURATION = new NamespacedKey(ItemRarity.PLUGIN, "potion_duration");
+    public static final NamespacedKey IS_STAT_POTION = new NamespacedKey(ItemRarity.PLUGIN, "is_stat_potion");
     private static final String POTION_MODIFIER_NAME = "potion_effect";
     private static final int DEFAULT_DURATION_SECONDS = 300; // 5 minutos
-
     private final CombinedStats stat;
     private final double value;
     private final int durationSeconds;
     private final Component displayName;
     private final TextColor potionColor;
     private final int customModelData;
-    public static final NamespacedKey POTION_STAT = new NamespacedKey(ItemRarity.PLUGIN, "potion_stat");
-    public static final NamespacedKey POTION_VALUE = new NamespacedKey(ItemRarity.PLUGIN, "potion_value");
-    public static final NamespacedKey POTION_DURATION = new NamespacedKey(ItemRarity.PLUGIN, "potion_duration");
-    public static final NamespacedKey IS_STAT_POTION = new NamespacedKey(ItemRarity.PLUGIN, "is_stat_potion");
 
     public StatPotion(CombinedStats stat, double value, int durationSeconds, Component displayName, TextColor potionColor) {
         super(Material.PAPER);
@@ -63,6 +62,46 @@ public class StatPotion extends ItemStack {
                 durationSeconds,
                 Component.text("Elixir de " + stat.getDisplayName(ItemRarity.AURA_LOCALE)),
                 ItemUtil.getColorOfStat(stat));
+    }
+
+    // Métodos para verificar si un item es una poción de stats
+    public static boolean isStatPotion(ItemStack item) {
+        if (item == null || item.getType() != Material.PAPER) {
+            return false;
+        }
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) {
+            return false;
+        }
+
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+        return container.has(IS_STAT_POTION, PersistentDataType.BOOLEAN);
+    }
+
+    public static StatPotionData getPotionData(ItemStack item) {
+        if (!isStatPotion(item)) {
+            return null;
+        }
+
+        ItemMeta meta = item.getItemMeta();
+        PersistentDataContainer container = meta.getPersistentDataContainer();
+
+        String statName = container.get(POTION_STAT, PersistentDataType.STRING);
+        Double value = container.get(POTION_VALUE, PersistentDataType.DOUBLE);
+        Integer duration = container.get(POTION_DURATION, PersistentDataType.INTEGER);
+
+
+        if (statName == null || value == null || duration == null) {
+            return null;
+        }
+
+        try {
+            CombinedStats stat = CombinedStats.valueOf(statName);
+            return new StatPotionData(stat, value, duration);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     @SuppressWarnings("UnstableApiUsage")
@@ -124,6 +163,21 @@ public class StatPotion extends ItemStack {
             case CRIT_DAMAGE -> {
                 return 7104;
             }
+            case EVASION -> {
+                return 7105;
+            }
+            case ACCURACY -> {
+                return 7106;
+            }
+            case LUCK -> {
+                return 7107;
+            }
+            case WISDOM -> {
+                return 7108;
+            }
+            case CRIT_CHANCE -> {
+                return 7109;
+            }
         }
         return 0;
     }
@@ -172,52 +226,6 @@ public class StatPotion extends ItemStack {
         player.sendMessage(ItemConfig.STATPOTION_PREFIX.append(message));
     }
 
-    // Métodos para verificar si un item es una poción de stats
-    public static boolean isStatPotion(ItemStack item) {
-        if (item == null || item.getType() != Material.PAPER) {
-            return false;
-        }
-
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) {
-            return false;
-        }
-
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-        return container.has(IS_STAT_POTION, PersistentDataType.BOOLEAN);
-    }
-
-    public static StatPotionData getPotionData(ItemStack item) {
-        if (!isStatPotion(item)) {
-            return null;
-        }
-
-        ItemMeta meta = item.getItemMeta();
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-
-        String statName = container.get(POTION_STAT, PersistentDataType.STRING);
-        Double value = container.get(POTION_VALUE, PersistentDataType.DOUBLE);
-        Integer duration = container.get(POTION_DURATION, PersistentDataType.INTEGER);
-
-
-        if (statName == null || value == null || duration == null) {
-            return null;
-        }
-
-        try {
-            CombinedStats stat = CombinedStats.valueOf(statName);
-            return new StatPotionData(stat, value, duration);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
-
-
-
-    // Clase helper para datos de la poción
-    public record StatPotionData(CombinedStats stat, double value, int duration) {
-    }
-
     // Getters
     public CombinedStats getStat() {
         return stat;
@@ -237,5 +245,9 @@ public class StatPotion extends ItemStack {
 
     public TextColor getPotionColor() {
         return potionColor;
+    }
+
+    // Clase helper para datos de la poción
+    public record StatPotionData(CombinedStats stat, double value, int duration) {
     }
 }

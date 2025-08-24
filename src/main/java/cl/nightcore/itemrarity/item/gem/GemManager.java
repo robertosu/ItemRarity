@@ -1,8 +1,8 @@
-package cl.nightcore.itemrarity;
+package cl.nightcore.itemrarity.item.gem;
 
+import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.config.ItemConfig;
-import cl.nightcore.itemrarity.item.gem.GemObject;
 import cl.nightcore.itemrarity.item.ItemUpgrader;
 import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.model.ItemUpgraderModel;
@@ -25,9 +25,7 @@ public class GemManager {
         return new GemObject(
                 gemItem,
                 CombinedStats.valueOf(stat),
-                Component.text(CombinedStats.valueOf(stat)
-                                .getDisplayName(
-                                        AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))
+                Component.text(CombinedStats.valueOf(stat).getDisplayName(ItemRarity.AURA_LOCALE))
                         .color(ItemUtil.getColorOfStat(CombinedStats.valueOf(stat))),
                 level,
                 getCustomModelData(stat));

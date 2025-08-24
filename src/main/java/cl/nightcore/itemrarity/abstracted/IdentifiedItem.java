@@ -2,13 +2,14 @@ package cl.nightcore.itemrarity.abstracted;
 
 import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.config.ItemConfig;
-import cl.nightcore.itemrarity.item.BlessingObject;
-import cl.nightcore.itemrarity.item.IdentifyScroll;
-import cl.nightcore.itemrarity.item.MagicObject;
-import cl.nightcore.itemrarity.item.RedemptionObject;
+import cl.nightcore.itemrarity.item.roller.BlessingObject;
+import cl.nightcore.itemrarity.item.roller.IdentifyScroll;
+import cl.nightcore.itemrarity.item.roller.MagicObject;
+import cl.nightcore.itemrarity.item.roller.RedemptionObject;
 import cl.nightcore.itemrarity.rollquality.MainRollQuality;
 import cl.nightcore.itemrarity.rollquality.StatValueGenerator;
 import cl.nightcore.itemrarity.statprovider.ModifierProvider;
+import cl.nightcore.itemrarity.util.ItemType;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import cl.nightcore.itemrarity.util.RarityCalculator;
 import com.nexomc.nexo.api.NexoItems;
@@ -30,6 +31,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -40,41 +42,40 @@ import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 
 public abstract class IdentifiedItem extends ItemStack {
 
-    private final List<Stat> addedStats;
-    private final List<Integer> statValues;
     protected static final String NATIVE_STATMODIFIER = "native";
     protected static final String MONOLITIC_TRAITMODIFIER = "monolitic";
     protected static final String GEM_STATMODIFIER = "gema";
-
     protected final ModifierType modifierType;
+    protected final ItemType itemType;
     protected final ModifierProvider statProvider;
+    private final List<Stat> addedStats;
+    private final List<Integer> statValues;
+
+    public  Component getRarityComponent() {
+        return rarity;
+    }
+
     protected Component rarity;
-    protected boolean identified;
 
     public IdentifiedItem(ItemStack item) {
         super(item);
-        this.statProvider = ItemUtil.getProvider(item);
-        this.modifierType = ItemUtil.getModifierType(item);
+        this.itemType = ItemUtil.getItemType(item);
+        this.statProvider = ItemUtil.getProvider(this.itemType);
+        this.modifierType = ItemUtil.getModifierType(this.itemType);
         this.addedStats = new ArrayList<>();
         this.statValues = new ArrayList<>();
     }
 
-    public void identify(Player player) {
-        this.identified = false;
-        setIdentifiedAndLevelNBT(1);
-        setMaxBonuses(5);
-        generateStats();
-        applyStatsToItem();
-        setLore();
-        if (ItemUtil.getItemType(this).equals("Weapon")) {
+    public void identify() {
+        this.setIdentifiedAndLevelNBT(1);
+        this.setMaxBonuses(5);
+        this.generateStats();
+        this.applyStatsToItem();
+        this.setLore();
+        if (itemType.getCategory().equals(ItemType.Category.WEAPON)) {
             ItemUtil.attributesDisplayInLore(this);
         }
-        setMonoliticStats(1);
-
-
-        Component message = Component.text("¡Identificaste el arma! Calidad: ", IdentifyScroll.getLoreColor())
-                .append(rarity);
-        player.sendMessage(ItemConfig.PLUGIN_PREFIX.append(message));
+        this.setMonoliticStats(1);
     }
 
     protected void generateStats() {
@@ -144,19 +145,6 @@ public abstract class IdentifiedItem extends ItemStack {
         return lowestModifier;
     }
 
-/*    protected void removeSpecificModifierLoreLine(StatModifier lowesModifier) {
-        ItemMeta meta = this.getItemMeta();
-        @Nullable List<Component> lore = meta.lore();
-        if (lore != null) {
-            String statDisplayName = lowesModifier.stat().getDisplayName(AURA_LOCALE);
-            String modifierValue = String.valueOf((int) Math.round(lowesModifier.value()));
-            lore.removeIf(line ->
-                    line.toString().contains(statDisplayName) && line.toString().contains(modifierValue));
-            meta.lore(lore);
-            this.setItemMeta(meta);
-        }
-    }*/
-
     public StatModifier getHighestStatModifier() {
         // Obtener todos los modificadores de estadísticas nativas
         List<StatModifier> nativeModifiers =
@@ -181,7 +169,6 @@ public abstract class IdentifiedItem extends ItemStack {
                 CombinedStats.valueOf(excludedStat.getId().getKey().toUpperCase());
 
         int statsCount = getMaxBonuses();
-        ModifierProvider statProvider = ItemUtil.getProvider(this);
         List<Stat> availableStats = statProvider.getAvailableStats();
 
         addedStats.clear();
@@ -258,10 +245,10 @@ public abstract class IdentifiedItem extends ItemStack {
     }
 
     protected void emptyLore() {
-        ItemMeta meta = getItemMeta();
+        ItemMeta meta = this.getItemMeta();
         List<Component> emptylore = new ArrayList<>();
         meta.lore(emptylore);
-        setItemMeta(meta);
+        this.setItemMeta(meta);
     }
 
     protected void reApplyMultipliers() {
@@ -348,7 +335,7 @@ public abstract class IdentifiedItem extends ItemStack {
             lore = new ArrayList<>();
         }
         // Eliminar líneas de rareza existentes
-        lore.removeIf(line -> line.toString().contains("●") || line.toString().contains("|"));
+        lore.removeIf(line -> line.toString().contains("●") || line.toString().contains("|") || line.toString().equals("                    "));
 
         // Encontrar el índice después de la última línea que comienza con "+"
         int lastStatIndex = -1;
@@ -359,7 +346,7 @@ public abstract class IdentifiedItem extends ItemStack {
             }
         }
 
-        Component ilvl = Component.text("● Nivel " + getLevel() + " ● ")
+        Component ilvl = Component.text("● Refinado: [+" + this.getLevel() + "] ● ")
                 .color(NamedTextColor.DARK_GRAY)
                 .decorate(TextDecoration.ITALIC);
 
@@ -373,39 +360,19 @@ public abstract class IdentifiedItem extends ItemStack {
         // Insertar en la posición correcta
         int insertIndex = lastStatIndex != -1 ? lastStatIndex + 1 : 0;
         if (insertIndex < lore.size()) {
+            lore.add(insertIndex,Component.text("                    "));
             lore.add(insertIndex, rarityLine);
         } else {
+            lore.add(Component.text("                    "));
             lore.add(rarityLine);
         }
         meta.lore(lore);
-        this.setItemMeta(meta);
+       // this.setItemMeta(meta);
 
-        handleCustomName();
+        handleCustomName(meta);
 
         updateLoreWithSockets();
     }
-
-   /* protected List<Component> getAttributeLines() {
-        var lore = this.lore();
-        List<Component> lines = new ArrayList<>();
-        // Tomamos la línea monolítica del principio
-        lines.add(lore.getFirst());
-        lines.add(lore.get(1));
-
-
-
-        if (ItemUtil.getModifierType(this).equals(ModifierType.ITEM)) {
-            // Tomamos las líneas de atributos del final pero en orden correcto
-            List<Component> reversed = new ArrayList<>(lore);
-            Collections.reverse(reversed);
-            lines.add(reversed.get(0));     // Velocidad de ataque
-            lines.add(reversed.get(1));     // Daño por ataque
-            lines.add(reversed.get(2));     // "En la mano principal:"
-            lines.add(reversed.get(3));     // Espaciador
-        }
-        return lines;
-    }*/
-
 
     protected List<Component> getAttributeLines() {
         var lore = this.lore();
@@ -415,7 +382,8 @@ public abstract class IdentifiedItem extends ItemStack {
         lines.add(lore.get(0));  // Primera línea monolítica
         lines.add(lore.get(1));  // Segunda línea monolítica
 
-        if (ItemUtil.getModifierType(this).equals(ModifierType.ITEM)) {
+
+        if (modifierType.equals(ModifierType.ITEM)) {
             // Obtener las últimas 4 líneas (atributos) en el orden correcto
             int size = lore.size();
             lines.add(lore.get(size - 4));  // Espaciador
@@ -427,8 +395,7 @@ public abstract class IdentifiedItem extends ItemStack {
         return lines;
     }
 
-    public void handleCustomName() {
-        var meta = this.getItemMeta();
+    public void handleCustomName(ItemMeta meta) {
         if (NexoItems.idFromItem(this) != null) {
             if(meta.hasCustomName()){
                 String plainText = PlainTextComponentSerializer.plainText().serialize(meta.customName());
@@ -450,12 +417,11 @@ public abstract class IdentifiedItem extends ItemStack {
             } else {
                 String itemTranslationKey = this.translationKey();
                 TranslatableComponent translatedName =
-                        Component.translatable(itemTranslationKey).color(getRarityColor());
-                Component newName = ItemUtil.reset.append(translatedName);
-                meta.itemName(newName);
+                        Component.translatable(itemTranslationKey).color(getRarityColor()).decoration(TextDecoration.ITALIC,false);
+                meta.itemName(translatedName);
             }
         }
-        setItemMeta(meta);
+        this.setItemMeta(meta);
     }
 
     protected void addNativeStatModifier(Stat stat, double value) {
@@ -472,7 +438,7 @@ public abstract class IdentifiedItem extends ItemStack {
                 .getItemMeta());
     }
 
-    public void rerollStatsEnhanced(Player player) {
+    public void rerollStatsEnhanced() {
         var attributeLines = getAttributeLines();
         emptyLore();
         removeModifiers();
@@ -483,44 +449,25 @@ public abstract class IdentifiedItem extends ItemStack {
         // Generar lore compuesto
         setLore();
 
-        appendAttributeLines(attributeLines);
+        appendAttributeLines(attributeLines, true);
 
         reApplyMultipliers();
 
-        Component message = Component.text("¡El objeto cambió! Rareza: ", MagicObject.getLoreColor());
-        player.sendMessage(ItemConfig.REROLL_PREFIX.append(message).append(rarity));
+
     }
 
-/*    protected void appendAttributeLines(List<Component> attributeLines) {
-
-        ItemMeta meta = this.getItemMeta();
-        @Nullable List<Component> lore = meta.lore();
-
-        // Agregar línea monolítica al principio
-        lore.addFirst(attributeLines.get(1));
-        lore.addFirst(attributeLines.get(0));
-
-        if (ItemUtil.getItemType(this).equals("Weapon")) {
-            // Agregar líneas de atributos al final en orden correcto, en caso de ser arma que tiene este lore
-            lore.add(attributeLines.get(4));    // Espaciador
-            lore.add(attributeLines.get(3));    // "En la mano principal:"
-            lore.add(attributeLines.get(2));    // Daño por ataque
-            lore.add(attributeLines.get(1));    // Velocidad de ataque
-        }
-
-        meta.lore(lore);
-        this.setItemMeta(meta);
-    }*/
-
-    protected void appendAttributeLines(List<Component> attributeLines) {
+    protected void appendAttributeLines(List<Component> attributeLines, boolean appendMonoliticLines) {
         ItemMeta meta = this.getItemMeta();
         @Nullable List<Component> lore = meta.lore();
 
         // Agregar líneas monolíticas al principio
-        lore.addFirst(attributeLines.get(1));  // Segunda línea monolítica
-        lore.addFirst(attributeLines.get(0));  // Primera línea monolítica
+        if (appendMonoliticLines) {
+            lore.addFirst(attributeLines.get(0));  // Segunda línea monolítica
+            lore.addFirst(attributeLines.get(1));  // Primera línea monolítica
+            lore.addFirst(attributeLines.get(0));  // Segunda línea monolítica
+        }
 
-        if (ItemUtil.getItemType(this).equals("Weapon")) {
+        if (itemType.isMainWeapon()) {
             // Agregar líneas de atributos al final en el orden correcto
             lore.add(attributeLines.get(2));  // Espaciador
             lore.add(attributeLines.get(3));  // "En la mano principal:"
@@ -542,50 +489,19 @@ public abstract class IdentifiedItem extends ItemStack {
         this.setItemMeta(meta);
     }
 
-    protected void setSecondSpacer(List<Component> attributeLines) {
-        ItemMeta meta = this.getItemMeta();
-        List<Component> lore = meta.lore();
-
-        if (lore == null) {
-            lore = new ArrayList<>();
-        }
-
-        // Verificar si ya existe un espaciador en la posición 1 (después de la línea monolítica)
-        if (lore.size() > 1) {
-            String secondLine = PlainTextComponentSerializer.plainText().serialize(lore.get(1));
-            // Si la segunda línea NO es el espaciador de 9 espacios, lo agregamos
-            if (!secondLine.equals("         ")) { // 9 espacios
-                lore.add(1, Component.text("         ")); // Insertar espaciador en posición 1
-            }
-        } else if (lore.size() == 1) {
-            // Si solo hay una línea (la monolítica), agregar el espaciador
-            lore.add(Component.text("         ")); // 9 espacios
-        }
-
-        meta.lore(lore);
-        this.setItemMeta(meta);
-    }
 
     public void rerollLowestStat(Player player) {
         // Obtener la stat más baja
         StatModifier lowestModifier = getLowestModifier();
         Stat stat = lowestModifier.stat();
-
         var attributeLines = getAttributeLines();
-
-        // Remover la stat actual
-        removeStatModifierByName(lowestModifier.stat(), NATIVE_STATMODIFIER);
-
-        // Generar nuevo valor base
-        int newBaseValue =
-                StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
-
-        // Aplicar el nuevo valor base como una stat nativa
-        addNativeStatModifier(stat, newBaseValue);
-
-        emptyLore();
-
         var statModifiers = getNativeStatModifiers();
+        emptyLore();
+        // Generar nuevo valor base
+        int newValue = StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
+        statModifiers.remove(lowestModifier);
+        removeModifiers();
+        statModifiers.addFirst(new StatModifier(NATIVE_STATMODIFIER, stat, newValue, AuraSkillsModifier.Operation.ADD));
 
         for (StatModifier modifier : statModifiers){
             addNativeStatModifier(modifier.stat(),modifier.value());
@@ -593,7 +509,7 @@ public abstract class IdentifiedItem extends ItemStack {
 
         setLore();
 
-        appendAttributeLines(attributeLines);
+        appendAttributeLines(attributeLines, true);
 
         reApplyMultipliers();
 
@@ -602,7 +518,7 @@ public abstract class IdentifiedItem extends ItemStack {
         Component message = Component.text("Nuevo bonus: ", BlessingObject.getLoreColor())
                 .append(Component.text(stat.getDisplayName(AURA_LOCALE)).color(ItemUtil.getColorOfStat(stat)))
                 .append(Component.text(" +")
-                        .append(Component.text(newBaseValue))
+                        .append(Component.text(newValue))
                         .color(ItemUtil.getColorOfStat(stat)));
         player.sendMessage(ItemConfig.BLESSING_PREFIX.append(message));
     }
@@ -624,15 +540,14 @@ public abstract class IdentifiedItem extends ItemStack {
         // Actualizar el lore
         setLore();
         // re aplicar lineas de abajo y de arriba
-        appendAttributeLines(attributeLines);
+        appendAttributeLines(attributeLines, true);
         // re aplicar multiplicadores y su lore en el indice correpospondiente
         reApplyMultipliers();
         // Notificar al jugador
         Component message = Component.text("¡Se conservó ")
                 .color(RedemptionObject.getLoreColor())
                 .append(Component.text(stat.getDisplayName(AURA_LOCALE))
-                        .color(TextColor.fromHexString(
-                                stat.getColor(AURA_LOCALE).replaceAll("[<>]", ""))))
+                        .color(ItemUtil.getColorOfStat(stat)))
                 .append(Component.text(" Rareza: ").append(rarity));
         player.sendMessage(ItemConfig.REDEMPTION_PREFIX.append(message));
     }

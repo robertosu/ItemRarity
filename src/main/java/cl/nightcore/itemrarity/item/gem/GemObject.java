@@ -41,6 +41,10 @@ public class GemObject extends ItemStack {
         setGemNBT();
     }
 
+    public static TextColor getPrimaryColor() {
+        return PRIMARY_COLOR;
+    }
+
     private void setGemNBT() {
         PersistentDataContainer container = meta.getPersistentDataContainer();
         NamespacedKey key = new NamespacedKey(ItemRarity.PLUGIN, GEM_STAT_KEY);
@@ -77,10 +81,6 @@ public class GemObject extends ItemStack {
                 .decoration(TextDecoration.ITALIC, false)
                 .append(levelComponent));
         setItemMeta(meta);
-    }
-
-    public static TextColor getPrimaryColor() {
-        return PRIMARY_COLOR;
     }
 
     public Stat getStat() {

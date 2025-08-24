@@ -2,7 +2,6 @@ package cl.nightcore.itemrarity.util;
 
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.persistence.PersistentDataType;
 
 public class MobUtil {

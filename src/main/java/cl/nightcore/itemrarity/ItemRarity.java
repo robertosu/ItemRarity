@@ -2,16 +2,22 @@ package cl.nightcore.itemrarity;
 
 import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
 import cl.nightcore.itemrarity.command.*;
+import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.customstats.*;
+import cl.nightcore.itemrarity.item.roller.IdentifyScroll;
+import cl.nightcore.itemrarity.item.roller.MagicObject;
 import cl.nightcore.itemrarity.listener.*;
 import cl.nightcore.itemrarity.loot.CustomDropsManager;
+import cl.nightcore.itemrarity.loot.PartyManager;
 import cl.nightcore.itemrarity.statprovider.StatProviderManager;
 import cl.nightcore.itemrarity.util.AnvilRepairUtil.ItemRepairManager;
-import cl.nightcore.itemrarity.util.RateLimiter;
+import cl.nightcore.itemrarity.util.AsyncRateLimiter;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.registry.NamespacedRegistry;
+import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -19,34 +25,43 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-public class ItemRarity extends JavaPlugin implements CommandExecutor {
+public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener {
 
     public static ItemRarity PLUGIN;
     public static Locale AURA_LOCALE;
+
     private final StatProviderManager statProviderManager = new StatProviderManager();
-
-    public StatProviderManager getStatProviderManager(){
-        return statProviderManager;
-    }
-
 
     public static UpgradeableItem identifyItem(Player player, ItemStack item) {
         UpgradeableItem weapon = new UpgradeableItem(item);
-        weapon.identify(player);
+        weapon.identify();
         weapon.initializeSocketData();
-        return weapon;
+        UpgradeableItem weapon2 = new UpgradeableItem(weapon);
+        weapon2.rerollStatsEnhanced();
+
+        Component message = Component.text("¡Identificaste el arma! Calidad: ", IdentifyScroll.getLoreColor())
+                .append(weapon2.getRarityComponent());
+        player.sendMessage(ItemConfig.PLUGIN_PREFIX.append(message));
+
+
+        return weapon2;
     }
 
     public static UpgradeableItem rollStats(Player player, ItemStack item) {
         UpgradeableItem upgradeableItem;
         upgradeableItem = new UpgradeableItem(item);
-        upgradeableItem.rerollStatsEnhanced(player);
+        upgradeableItem.rerollStatsEnhanced();
+
+        Component message = Component.text("¡El objeto cambió! Rareza: ", MagicObject.getLoreColor());
+        player.sendMessage(ItemConfig.REROLL_PREFIX.append(message).append(upgradeableItem.getRarityComponent()));
+
         return upgradeableItem;
     }
 
     public static UpgradeableItem rerollLowestStat(Player player, ItemStack item) {
         UpgradeableItem moddedweapon = new UpgradeableItem(item);
         moddedweapon.rerollLowestStat(player);
+
         return moddedweapon;
     }
 
@@ -56,10 +71,14 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         return moddedweapon;
     }
 
+    public StatProviderManager getStatProviderManager(){
+        return statProviderManager;
+    }
 
     @Override
     public void onEnable() {
         PLUGIN = this;
+        AURA_LOCALE = AuraSkillsApi.get().getMessageManager().getDefaultLanguage();
         Objects.requireNonNull(getCommand("getscroll")).setExecutor(new GetScrollCommand());
         Objects.requireNonNull(getCommand("getmagic")).setExecutor(new GetMagicCommand());
         Objects.requireNonNull(getCommand("getblessing")).setExecutor(new GetBlessingCommand());
@@ -73,24 +92,28 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor {
         Objects.requireNonNull(getCommand("getxpmultiplier")).setExecutor(new GetExperienceMultiplierCommand());
         Objects.requireNonNull(getCommand("getstatpotion")).setExecutor(new GetPotionCommand());
         Objects.requireNonNull(getCommand("blockdata")).setExecutor(new NexoHelpCommand());
+        Objects.requireNonNull(getCommand("party")).setExecutor(new PartyCommands());
 
         getServer().getPluginManager().registerEvents(new IdentifyScrollListener(), this);
         getServer().getPluginManager().registerEvents(new CancelUsageInRecipesListener(), this);
-        getServer().getPluginManager().registerEvents(new CustomDropsManager(), this);
-        getServer().getPluginManager().registerEvents(new PlayerDisconnectListener(), this);
+
         getServer().getPluginManager().registerEvents(new PotionConsumeListener(),this);
         getServer().getPluginManager().registerEvents(new NexoSmithingListener(), this);
+        getServer().getPluginManager().registerEvents(this, this); // Para el PlayerQuitEvent
 
-        AURA_LOCALE = AuraSkillsApi.get().getMessageManager().getDefaultLanguage();
+
+
+        getServer().getPluginManager().registerEvents(new CustomDropsManager(), this);
+        getServer().getPluginManager().registerEvents(new UnifiedExperienceManager(), this);
+        getServer().getPluginManager().registerEvents(new PartyManager(), this);
+
         AuraSkillsApi auraSkills = AuraSkillsApi.get();
         NamespacedRegistry registry = auraSkills.useRegistry("itemrarity", getDataFolder());
         loadAuraSkillsCustoms(registry, auraSkills);
         loadRepairableItems();
         //initializeSmithingSystem();
 
-        getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
-            RateLimiter.getInstance().cleanupExpiredCooldowns();
-        }, 6000L, 6000L);
+        AsyncRateLimiter rateLimiter = AsyncRateLimiter.getInstance(this);
     }
 
     private void loadAuraSkillsCustoms(NamespacedRegistry registry, AuraSkillsApi auraSkills) {

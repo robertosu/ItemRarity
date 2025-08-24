@@ -11,7 +11,7 @@ public class CancelUsageInRecipesListener implements Listener {
     public void onItemCraft(PrepareItemCraftEvent event) {
         ItemStack[] matrix = event.getInventory().getMatrix();
         for (ItemStack item : matrix) {
-            if (!ItemUtil.getObjectType(item).equals(ItemUtil.ObjectType.NONE)){
+            if (!ItemUtil.getObjectType(item).equals(ItemUtil.ObjectType.NONE)) {
                 event.getInventory().setResult(null);
                 return;
             }

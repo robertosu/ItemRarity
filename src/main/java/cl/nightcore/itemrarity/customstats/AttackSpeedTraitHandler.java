@@ -20,9 +20,8 @@ import java.util.Locale;
 
 public class AttackSpeedTraitHandler implements BukkitTraitHandler, Listener {
 
-    private final AuraSkillsApi auraSkills;
-
     private static final NamespacedKey TRAIT_ATTACK_SPEED_NS = new NamespacedKey(ItemRarity.PLUGIN,"trait_attack_speed");
+    private final AuraSkillsApi auraSkills;
 
     public AttackSpeedTraitHandler(AuraSkillsApi auraSkills) {
         this.auraSkills = auraSkills;

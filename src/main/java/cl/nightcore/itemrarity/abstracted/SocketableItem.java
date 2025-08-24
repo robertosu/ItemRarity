@@ -1,6 +1,6 @@
 package cl.nightcore.itemrarity.abstracted;
 
-import cl.nightcore.itemrarity.GemManager;
+import cl.nightcore.itemrarity.item.gem.GemManager;
 import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.item.gem.GemObject;
@@ -36,7 +36,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
 import static cl.nightcore.itemrarity.util.ItemUtil.RANDOM;
-import static cl.nightcore.itemrarity.util.ItemUtil.getProvider;
 
 
 public class SocketableItem extends IdentifiedItem {
@@ -50,6 +49,8 @@ public class SocketableItem extends IdentifiedItem {
     private static final NamespacedKey MAX_SOCKETS_KEY_NS = new NamespacedKey(PLUGIN, MAX_SOCKETS_KEY);
     private static final NamespacedKey AVAILABLE_SOCKETS_KEY_NS = new NamespacedKey(PLUGIN, AVAILABLE_SOCKETS_KEY);
     private static final GemManager gemManager = new GemManager();
+
+    private  static final Component GEMS_SPACER = Component.text("      "); // 6 soaces
 
     private static final Component GEMS_HEADER =
             Component.text("Gemas:").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false);
@@ -94,7 +95,7 @@ public class SocketableItem extends IdentifiedItem {
         }
 
         // Verificar si la gema es compatible con las stats posibles para un item
-        if (!gem.isCompatible(ItemUtil.getProvider(this))) {
+        if (!gem.isCompatible(statProvider)) {
             sendCompatibleGemsForItemType(player);
             return 1;
         }
@@ -236,10 +237,11 @@ public class SocketableItem extends IdentifiedItem {
         // Remove existing socket information
         lore.removeIf(line -> line.toString().contains("⛶")
                 || line.toString().contains("\uD83D\uDC8E")
-                || line.toString().contains("Gemas:"));
+                || line.toString().contains("Gemas:") || line.equals(GEMS_SPACER));
 
         // Add socket header
         List<Component> socketInfo = new ArrayList<>();
+        socketInfo.add(GEMS_SPACER);
         socketInfo.add(GEMS_HEADER);
 
         // Add installed gems
@@ -324,7 +326,7 @@ public class SocketableItem extends IdentifiedItem {
         var attributeLines = getAttributeLines();
 
         // Obtener stats disponibles y actuales
-        List<Stat> availableStats = getProvider(this).getAvailableStats();
+        List<Stat> availableStats = statProvider.getAvailableStats();
         List<String> currentNativeStats = nativeStats.stream()
                 .map(modifier -> modifier.type().name())
                 .toList();
@@ -371,11 +373,11 @@ public class SocketableItem extends IdentifiedItem {
         // Regenerar tdo el lore correctamente:
         emptyLore();
 
-        reApplyStatsToItem(AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, ItemUtil.getModifierType(this), NATIVE_STATMODIFIER));
+        reApplyStatsToItem(AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER));
 
         setLore();
 
-        appendAttributeLines(attributeLines);
+        appendAttributeLines(attributeLines,true);
 
         setMonoliticStats(getLevel());
 
@@ -388,7 +390,7 @@ public class SocketableItem extends IdentifiedItem {
     private void sendCompatibleGemsForItemType(Player player) {
         List<Component> availableStatsComponents = new ArrayList<>();
         // Construir la lista de componentes
-        ItemUtil.getProvider(this)
+        statProvider
                 .getAvailableStats()
                 .forEach(stat -> availableStatsComponents.add(Component.text(stat.getDisplayName(
                                 AuraSkillsApi.get().getMessageManager().getDefaultLanguage()))

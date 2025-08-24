@@ -61,82 +61,6 @@ public class ItemUpgrader extends ItemStack {
         this.setItemMeta(meta);
     }
 
-    public TextColor getPrimaryColor(int type){
-        switch (type){
-            case 1-> {return UNSTABLE_COLOR;}
-            case 2 ->{return ACTIVE_COLOR;}
-            case 3 ->{return STABLE_COLOR;}
-            default -> {return null;}
-        }
-    }
-
-    public int getCustomModelData(){
-        if(type==1){
-            switch (level) {
-                case 1 -> { return 6007; }
-                case 2 -> { return 6009; }
-                // Add more cases for other numbers
-                default -> { return 0;}
-
-            }
-        }else if(type==2){
-            switch (level) {
-                case 1 -> { return 6011; }
-                case 2 -> { return 6013; }
-                // Add more cases for other numbers
-                default -> { return 0;}
-
-            }
-        }else if(type==3){
-            switch (level) {
-                case 1 -> { return 6015; }
-                case 2 -> { return 6017; }
-                // Add more cases for other numbers
-                default -> { return 0;}
-            }
-        }
-        return 0;
-    }
-
-
-
-    public Component getDisplayName(){
-         switch (type){
-            case 1->{return Component.text("Forja Inestable " + suffix)
-                    .color(primaryColor)
-                    .decoration(TextDecoration.ITALIC, false);
-            }
-            case 2 ->{return Component.text("Forja Activa " + suffix)
-                    .color(primaryColor)
-                    .decoration(TextDecoration.ITALIC, false);
-            }
-            case 3 ->{return Component.text("Forja Estable " + suffix)
-                     .color(primaryColor)
-                     .decoration(TextDecoration.ITALIC, false);
-            }
-            default ->{
-                return null;
-            }
-         }
-    }
-
-    public List<Component>getLore(int type, int level){
-        switch (type){
-            case 1->{
-                return loreUnstable();
-            }
-            case 2->{
-                return loreActive();
-            }
-            case 3->{
-                return loreStable();
-            }
-            default -> {
-                return null;
-            }
-        }
-    }
-
     private static List<Component> loreStable(){
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Arrastra esta runa al objeto que deseas mejorar")
@@ -182,15 +106,6 @@ public class ItemUpgrader extends ItemStack {
         return lore;
     }
 
-    public String getSuffix(int level) {
-        switch (level) {
-            case 1 -> { return ""; }
-            case 2 -> { return "de nivel superior"; }
-            // Add more cases for other numbers
-            default -> { return "ERROR ERROR"; }
-        }
-    }
-
     public static TextColor getActiveColor() {
         return ACTIVE_COLOR;
     }
@@ -205,5 +120,88 @@ public class ItemUpgrader extends ItemStack {
 
     public static NamespacedKey getItemUpgraderKeyNs() {
         return ItemConfig.ITEM_UPGRADER_KEY_NS;
+    }
+
+    public TextColor getPrimaryColor(int type){
+        switch (type){
+            case 1-> {return UNSTABLE_COLOR;}
+            case 2 ->{return ACTIVE_COLOR;}
+            case 3 ->{return STABLE_COLOR;}
+            default -> {return null;}
+        }
+    }
+
+    public int getCustomModelData(){
+        if(type==1){
+            switch (level) {
+                case 1 -> { return 6007; }
+                case 2 -> { return 6009; }
+                // Add more cases for other numbers
+                default -> { return 0;}
+
+            }
+        }else if(type==2){
+            switch (level) {
+                case 1 -> { return 6011; }
+                case 2 -> { return 6013; }
+                // Add more cases for other numbers
+                default -> { return 0;}
+
+            }
+        }else if(type==3){
+            switch (level) {
+                case 1 -> { return 6015; }
+                case 2 -> { return 6017; }
+                // Add more cases for other numbers
+                default -> { return 0;}
+            }
+        }
+        return 0;
+    }
+
+    public Component getDisplayName(){
+         switch (type){
+            case 1->{return Component.text("Forja Inestable " + suffix)
+                    .color(primaryColor)
+                    .decoration(TextDecoration.ITALIC, false);
+            }
+            case 2 ->{return Component.text("Forja Activa " + suffix)
+                    .color(primaryColor)
+                    .decoration(TextDecoration.ITALIC, false);
+            }
+            case 3 ->{return Component.text("Forja Estable " + suffix)
+                     .color(primaryColor)
+                     .decoration(TextDecoration.ITALIC, false);
+            }
+            default ->{
+                return null;
+            }
+         }
+    }
+
+    public List<Component>getLore(int type, int level){
+        switch (type){
+            case 1->{
+                return loreUnstable();
+            }
+            case 2->{
+                return loreActive();
+            }
+            case 3->{
+                return loreStable();
+            }
+            default -> {
+                return null;
+            }
+        }
+    }
+
+    public String getSuffix(int level) {
+        switch (level) {
+            case 1 -> { return ""; }
+            case 2 -> { return "de nivel superior"; }
+            // Add more cases for other numbers
+            default -> { return "ERROR ERROR"; }
+        }
     }
 }

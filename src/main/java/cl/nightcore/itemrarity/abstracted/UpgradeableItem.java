@@ -49,9 +49,11 @@ public class UpgradeableItem extends SocketableItem {
         if (level < MAX_LEVEL) {
             if (ItemUtil.rollthedice(adjustedPercentage)) {
                 int newlevel = level + 1;
+                var attributeLines = this.getAttributeLines();
                 this.setNewLevel(newlevel);
-                this.setLore();
+                //this.appendAttributeLines(attributeLines,false);
                 this.setMonoliticStats(newlevel);
+                this.setLore();
                 this.reApplyMultipliers();
                 player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX.color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
                         .append(Component.text("Mejora exitosa, tu objeto subió a: ", ItemUpgrader.getLoreColor())
@@ -163,8 +165,13 @@ public class UpgradeableItem extends SocketableItem {
             return PlainTextComponentSerializer.plainText().serialize(component).equals("         "); // 9 spaces
         });
 
+        lore.removeIf(component -> {
+            return PlainTextComponentSerializer.plainText().serialize(component).contains("| "); // 9 spaces
+        });
+
         lore.addFirst(Component.text("         ")); // 9 spaces
         lore.addFirst(line);
+        lore.addFirst(Component.text("         ")); // 9 spaces
         meta.lore(lore);
         this.setItemMeta(meta);
     }

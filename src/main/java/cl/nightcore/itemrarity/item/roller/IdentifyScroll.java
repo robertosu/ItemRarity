@@ -1,4 +1,4 @@
-package cl.nightcore.itemrarity.item;
+package cl.nightcore.itemrarity.item.roller;
 
 
 import cl.nightcore.itemrarity.config.ItemConfig;

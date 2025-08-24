@@ -1,6 +1,6 @@
 package cl.nightcore.itemrarity.command;
 
-import cl.nightcore.itemrarity.GemManager;
+import cl.nightcore.itemrarity.item.gem.GemManager;
 import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.item.gem.GemObject;
 import dev.aurelium.auraskills.api.AuraSkillsApi;

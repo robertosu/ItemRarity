@@ -19,11 +19,9 @@ public class AnvilListener implements Listener {
         this.repairManager = repairManager;
     }
 
-
     @EventHandler()
     public void onNexoReload(NexoItemsLoadedEvent event) {
         repairManager.reloadConfigs();
-
     }
 
     @EventHandler()
@@ -31,7 +29,9 @@ public class AnvilListener implements Listener {
 
         // Ambos son items custom - validar con nuestro sistema
         if (event.getInventory().getSecondItem() != null || event.getInventory().getSecondItem() != null) {
-            if (!repairManager.isValidRepair(NexoItems.idFromItem(event.getInventory().getFirstItem()), NexoItems.idFromItem(event.getInventory().getSecondItem()))) {
+            if (!repairManager.isValidRepair(
+                    NexoItems.idFromItem(event.getInventory().getFirstItem()),
+                    NexoItems.idFromItem(event.getInventory().getSecondItem()))) {
                 // Combinación no permitida - cancelar
                 event.setResult(null);
             }

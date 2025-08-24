@@ -2,11 +2,12 @@ package cl.nightcore.itemrarity.util;
 
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.config.ItemConfig;
-import cl.nightcore.itemrarity.item.*;
+import cl.nightcore.itemrarity.item.ExperienceMultiplier;
+import cl.nightcore.itemrarity.item.ItemUpgrader;
 import cl.nightcore.itemrarity.item.gem.GemRemover;
 import cl.nightcore.itemrarity.item.gem.SocketStone;
 import cl.nightcore.itemrarity.model.GemModel;
-import cl.nightcore.itemrarity.statprovider.*;
+import cl.nightcore.itemrarity.statprovider.ModifierProvider;
 import com.nexomc.nexo.api.NexoItems;
 import dev.aurelium.auraskills.api.item.ModifierType;
 import dev.aurelium.auraskills.api.stat.Stat;
@@ -34,8 +35,6 @@ import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 
 public class ItemUtil {
 
-
-
     public static final Random RANDOM = new Random();
     public static final DecimalFormat DF = new DecimalFormat("0.#");
     private static final MyTypedKey[] TYPED_KEYS = {
@@ -51,59 +50,38 @@ public class ItemUtil {
             new MyTypedKey(SocketStone.getSocketGemKeyNs(), PersistentDataType.BOOLEAN, ObjectType.SOCKET_STONE),
             new MyTypedKey(ExperienceMultiplier.XP_MULTIPLIER_KEY_NS, PersistentDataType.INTEGER, ObjectType.XP_MULTIPLIER)
     };
-    public static Component reset = Component.text().content("").color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false).build();
+    //public static Component reset = Component.text().content("").color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false).build();
 
-    public static boolean isNotEmpty(ItemStack item) {
-        return !item.getType().isAir();
-    }
 
     public static boolean isIdentified(ItemStack item) {
         return checkBooleanTag(item, ItemConfig.SCROLLED_IDENTIFIER_KEY_NS);
-    }
-
-    public static boolean isIdentifyScroll(ItemStack item) {
-        return checkBooleanTag(item, ItemConfig.IDENTIFY_SCROLL_KEY_NS);
-    }
-
-    public static boolean isMagicObject(ItemStack item) {
-        return checkBooleanTag(item, ItemConfig.MAGIC_OBJECT_KEY_NS);
-    }
-
-    public static boolean isBlessingObject(ItemStack item) {
-        return checkBooleanTag(item, ItemConfig.BLESSING_OBJECT_KEY_NS);
-    }
-
-    public static boolean isRedemptionObject(ItemStack item) {
-        return checkBooleanTag(item, ItemConfig.REDEMPTION_OBJECT_KEY_NS);
-    }
-
-    public static boolean isBlessingBall(ItemStack item) {
-        return checkBooleanTag(item, ItemConfig.BLESSING_BALL_KEY_NS);
     }
 
     private static boolean checkBooleanTag(ItemStack item, NamespacedKey key) {
         return item.getItemMeta().getPersistentDataContainer().has(key, PersistentDataType.BOOLEAN);
     }
 
+    public static ModifierProvider getProvider(ItemType itemType){
+        switch (itemType){
+            case AXE,SWORD,BOW,CROSSBOW,MACE -> {
+                return ItemRarity.PLUGIN.getStatProviderManager().weapon();
+            }
+        }
 
-
-
-    public static ModifierProvider getProvider(ItemStack item){
-        Material material = item.getType();
         // Verificar si es armadura
-        if (material.name().endsWith("_HELMET")){
+        if (itemType.equals(ItemType.HELMET)){
             return ItemRarity.PLUGIN.getStatProviderManager().helmet();
         }
-        else if (material.name().endsWith("_CHESTPLATE")){
+        else if (itemType.equals(ItemType.CHESTPLATE)){
             return ItemRarity.PLUGIN.getStatProviderManager().chestplate();
         }
-        else if (material.name().endsWith("_LEGGINGS")){
+        else if (itemType.equals(ItemType.LEGGINGS)){
             return ItemRarity.PLUGIN.getStatProviderManager().leggings();
         }
-        else if (material.name().endsWith("_BOOTS")){
+        else if (itemType.equals(ItemType.BOOTS)){
             return ItemRarity.PLUGIN.getStatProviderManager().boots();
         }
-        else if (ItemUtil.getItemTypeEnum(item).equals(ItemType.Weapon) || ItemUtil.getItemTypeEnum(item).equals(ItemType.OtherWeapon) ) {
+        else if (itemType.isMainWeapon() || itemType.isRangedWeapon()) {
             return ItemRarity.PLUGIN.getStatProviderManager().weapon();
         } else {
             // Si no es armadura ni arma, retornar vacío.
@@ -111,80 +89,50 @@ public class ItemUtil {
         }
     }
 
-    public static String getItemType(ItemStack item) {
+    public static ItemType getItemType(ItemStack item) {
         Material material = item.getType();
-        // Verificar si es armadura
-        if (material.name().endsWith("_HELMET")
-                || material.name().endsWith("_CHESTPLATE")
-                || material.name().endsWith("_LEGGINGS")
-                || material.name().endsWith("_BOOTS")) {
-            return "Armor";
+        String materialName = material.name();
+
+        // Armaduras
+        if (materialName.endsWith("_HELMET")) {
+            return ItemType.HELMET;
+        } else if (materialName.endsWith("_CHESTPLATE")) {
+            return ItemType.CHESTPLATE;
+        } else if (materialName.endsWith("_LEGGINGS")) {
+            return ItemType.LEGGINGS;
+        } else if (materialName.endsWith("_BOOTS")) {
+            return ItemType.BOOTS;
         }
-        // Verificar si es arma
-        else if (material.name().endsWith("_SWORD")
-                || material.name().endsWith("_AXE")
-                || material.name().endsWith("MACE")
-                || material == Material.TRIDENT){
-            return "Weapon";
+        // Armas principales
+        else if (materialName.endsWith("_SWORD")) {
+            return ItemType.SWORD;
+        } else if (materialName.endsWith("_AXE")) {
+            return ItemType.AXE;
+        } else if (materialName.endsWith("MACE")) {
+            return ItemType.MACE;
+        } else if (material == Material.TRIDENT) {
+            return ItemType.TRIDENT;
         }
-        else if(material == Material.BOW || material == Material.CROSSBOW){
-            return "OtherWeapon";
+        // Armas a distancia
+        else if (material == Material.BOW) {
+            return ItemType.BOW;
+        } else if (material == Material.CROSSBOW) {
+            return ItemType.CROSSBOW;
         }
         else {
-            // Si no es armadura ni arma, retornar vacío.
-            return "Unknown";
-        }
-    }
-
-    public static ItemType getItemTypeEnum(ItemStack item) {
-        Material material = item.getType();
-        // Verificar si es armadura
-        if (material.name().endsWith("_HELMET")
-                || material.name().endsWith("_CHESTPLATE")
-                || material.name().endsWith("_LEGGINGS")
-                || material.name().endsWith("_BOOTS")) {
-            return ItemType.Armor;
-        }
-        // Verificar si es arma
-        else if (material.name().endsWith("_SWORD")
-                || material.name().endsWith("_AXE")
-                || material.name().endsWith("MACE")
-                || material == Material.TRIDENT){
-            return ItemType.Weapon;
-        }
-        else if(material == Material.BOW || material == Material.CROSSBOW){
-            return ItemType.OtherWeapon;
-        }
-        else {
-            // Si no es armadura ni arma, retornar vacío.
-            return ItemType.Unknown;
+            return ItemType.UNKNOWN;
         }
     }
 
 
-    private  enum ItemType {
-        Armor,Weapon,OtherWeapon,Unknown;
-    }
-
-    public static boolean isIdentifiable(ItemStack item) {
-        return getItemType(item).equals("Weapon") || getItemType(item).equals("Armor") || getItemType(item).equals("OtherWeapon");
-    }
-
-
-
-    public static ModifierType getModifierType(ItemStack item) {
-        return switch (getItemType(item)) {
-            case "Weapon","OtherWeapon" -> ModifierType.ITEM;
-            case "Armor" -> ModifierType.ARMOR;
+    public static ModifierType getModifierType(ItemType itemType) {
+        return switch (itemType.getCategory()) {
+            case ItemType.Category.WEAPON, ItemType.Category.RANGED_WEAPON -> ModifierType.ITEM;
+            case ItemType.Category.ARMOR -> ModifierType.ARMOR;
             default -> null;
         };
     }
 
-    public static boolean isExperienceMultiplier(ItemStack item) {
-        if (item == null || !item.hasItemMeta()) return false;
-        return item.getItemMeta().getPersistentDataContainer()
-                .has(ExperienceMultiplier.XP_MULTIPLIER_KEY_NS, PersistentDataType.INTEGER);
-    }
 
     public static boolean isGem(ItemStack item) {
         if (item == null || !item.hasItemMeta()) return false;
@@ -193,23 +141,6 @@ public class ItemUtil {
 
     }
 
-    public static boolean isItemUpgrader(ItemStack item) {
-        if (item == null || !item.hasItemMeta()) return false;
-        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        return container.has(ItemUpgrader.getItemUpgraderKeyNs(), PersistentDataType.INTEGER);
-    }
-
-    public static boolean isSocketStone(ItemStack item) {
-        if (item == null || !item.hasItemMeta()) return false;
-        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        return container.has(SocketStone.getSocketGemKeyNs(), PersistentDataType.BOOLEAN);
-    }
-
-    public static boolean isGemRemover(ItemStack item) {
-        if (item == null || !item.hasItemMeta()) return false;
-        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        return container.has(GemRemover.getGemRemoverKeyNs(), PersistentDataType.INTEGER);
-    }
 
     public static TextColor getColorOfStat(Stat stat) {
         return TextColor.fromHexString(stat.getColor(AURA_LOCALE).replaceAll("[<>]", ""));

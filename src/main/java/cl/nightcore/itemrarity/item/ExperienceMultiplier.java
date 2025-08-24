@@ -18,10 +18,8 @@ import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
 public class ExperienceMultiplier extends ItemStack {
 
     public static final NamespacedKey XP_MULTIPLIER_KEY_NS = new NamespacedKey(PLUGIN, "xp_multiplier");
-    private static final TextColor PRIMARY_COLOR = TextColor.fromHexString("#25ff69");
     public static final TextColor LORE_COLOR = TextColor.fromHexString("#8bfaff");
-
-
+    private static final TextColor PRIMARY_COLOR = TextColor.fromHexString("#25ff69");
     private final int multiplier;
 
     public ExperienceMultiplier(int amount, int multiplier) {

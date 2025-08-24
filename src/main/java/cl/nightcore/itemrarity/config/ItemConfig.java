@@ -1,6 +1,9 @@
 package cl.nightcore.itemrarity.config;
 
-import cl.nightcore.itemrarity.item.*;
+import cl.nightcore.itemrarity.item.BlessingBall;
+import cl.nightcore.itemrarity.item.roller.BlessingObject;
+import cl.nightcore.itemrarity.item.roller.MagicObject;
+import cl.nightcore.itemrarity.item.roller.RedemptionObject;
 import cl.nightcore.itemrarity.item.gem.GemObject;
 import cl.nightcore.itemrarity.item.gem.GemRemover;
 import net.kyori.adventure.text.Component;

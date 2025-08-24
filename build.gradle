@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'cl.nightcore'
-version = '0.2.4'
+version = '0.2.5'
 
 sourceCompatibility = '21'
 targetCompatibility = '21'
@@ -67,6 +67,7 @@ dependencies {
     compileOnly 'dev.aurelium:auraskills-api-bukkit:2.3.6'
     compileOnly 'dev.aurelium:auraskills-api:2.3.6'
     compileOnly 'me.clip:placeholderapi:2.11.6'
+    compileOnly 'cl.nightcore:MythicProjectiles:1.1'
 
 }
 

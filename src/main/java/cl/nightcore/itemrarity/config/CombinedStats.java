@@ -26,14 +26,14 @@ public enum CombinedStats implements Stat {
     EVASION(CustomStats.EVASION),
     ACCURACY(CustomStats.ACCURACY);
 
-    public Stat getDelegateStat() {
-        return delegateStat;
-    }
-
     private final Stat delegateStat;
 
     CombinedStats(Stat delegateStat) {
         this.delegateStat = delegateStat;
+    }
+
+    public Stat getDelegateStat() {
+        return delegateStat;
     }
 
     @Override

@@ -47,3 +47,5 @@ commands:
   blockdata:
     description: Ve el blockdata de un bloque custom nexo
     permission: itemrarity.blockdata
+  party:
+    description: Maneja las partys

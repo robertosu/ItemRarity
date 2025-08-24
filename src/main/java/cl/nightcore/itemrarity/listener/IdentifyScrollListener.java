@@ -1,6 +1,6 @@
 package cl.nightcore.itemrarity.listener;
 
-import cl.nightcore.itemrarity.GemManager;
+import cl.nightcore.itemrarity.item.gem.GemManager;
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.abstracted.SocketableItem;
 import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
@@ -12,14 +12,12 @@ import cl.nightcore.itemrarity.model.GemRemoverModel;
 import cl.nightcore.itemrarity.model.ItemUpgraderModel;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import cl.nightcore.itemrarity.util.PerformanceTimer;
-import cl.nightcore.itemrarity.util.RateLimiter;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.BlocksAttacks;
 import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
 import io.papermc.paper.datacomponent.item.blocksattacks.ItemDamageFunction;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Sound;
@@ -44,12 +42,8 @@ import static cl.nightcore.itemrarity.util.ItemUtil.isIdentified;
 @SuppressWarnings("UnstableApiUsage")
 public class IdentifyScrollListener implements Listener {
 
-    PerformanceTimer timer = new PerformanceTimer();
-    private final RateLimiter rateLimiter = RateLimiter.getInstance(); // Nueva instancia
-
     private static final NamespacedKey LORE_UPDATED_KEY =
             new NamespacedKey(ItemRarity.PLUGIN, "lore_updated");
-
     private static final BlocksAttacks SWORD_BLOCK_ATTACKS = BlocksAttacks.blocksAttacks()
             .blockDelaySeconds(0f)
             .disableCooldownScale(0f)
@@ -57,6 +51,7 @@ public class IdentifyScrollListener implements Listener {
             .blockSound(Registry.SOUNDS.getKey(Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR))
             .itemDamage(ItemDamageFunction.itemDamageFunction().factor(0.01f).build())
             .build();
+    PerformanceTimer timer = new PerformanceTimer();
 
     private boolean isLoreUpdated(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
@@ -98,7 +93,7 @@ public class IdentifyScrollListener implements Listener {
 
         if (objectType == ItemUtil.ObjectType.NONE) {
             // Only add the attribute in lore to weapons
-            if (ItemUtil.getItemType(targetItem).equals("Weapon")) {
+            if (ItemUtil.getItemType(targetItem).isMainWeapon()) {
                 if (!isLoreUpdated(targetItem) || targetItem.containsEnchantment(Enchantment.SHARPNESS)) {
                     ItemUtil.attributesDisplayInLore(targetItem);
                     setLoreUpdated(targetItem);

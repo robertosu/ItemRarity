@@ -1,7 +1,6 @@
 package cl.nightcore.itemrarity.abstracted;
 
 import cl.nightcore.itemrarity.config.ItemConfig;
-import cl.nightcore.itemrarity.util.ItemUtil;
 import dev.aurelium.auraskills.api.AuraSkillsBukkit;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -22,13 +21,13 @@ public class XpBonusItem extends SocketableItem {
         if (multiplier > currentMultiplier
                 || AuraSkillsBukkit.get()
                         .getItemManager()
-                        .getMultipliers(this, ItemUtil.getModifierType(this))
+                        .getMultipliers(this, modifierType)
                         .isEmpty()) {
             // Aplicar el nuevo multiplicador
 
             setItemMeta(AuraSkillsBukkit.get()
                     .getItemManager()
-                    .addMultiplier(this, ItemUtil.getModifierType(this), null, multiplier, true)
+                    .addMultiplier(this, modifierType, null, multiplier, true)
                     .getItemMeta());
 
             // Actualizar el lore
@@ -49,11 +48,11 @@ public class XpBonusItem extends SocketableItem {
     public int getExperienceMultiplier() {
         if (!AuraSkillsBukkit.get()
                 .getItemManager()
-                .getMultipliers(this, ItemUtil.getModifierType(this))
+                .getMultipliers(this, modifierType)
                 .isEmpty()) {
             return (int) AuraSkillsBukkit.get()
                     .getItemManager()
-                    .getMultipliers(this, ItemUtil.getModifierType(this))
+                    .getMultipliers(this, modifierType)
                     .getFirst()
                     .value();
         } else {
