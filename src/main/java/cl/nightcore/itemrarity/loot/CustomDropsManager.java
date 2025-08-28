@@ -12,6 +12,7 @@ import cl.nightcore.mythicProjectiles.boss.WorldBoss;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -407,7 +408,7 @@ public class CustomDropsManager implements Listener {
         for (ItemStack item : itemsReceivedInInventory) {
             player.sendMessage(Component.text("¡")
                     .append(item.displayName())
-                    .append(Component.text(" x" + item.getAmount() + " Recibido!", TextColor.color(0x39B23))));
+                    .append(Component.text(" x" + item.getAmount() + " Recibido!", TextColor.color(0x82FF70))));
         }
 
         // Si hay items restantes, crear bundle(s) con delay de 3 segundos
@@ -421,7 +422,7 @@ public class CustomDropsManager implements Listener {
 
             // Notificar que los items restantes llegarán en una bolsa
             int totalRemainingItems = remainingItemsForBundle.stream().mapToInt(ItemStack::getAmount).sum();
-            player.sendMessage(Component.text("¡Recibirás una bolsa con " + totalRemainingItems + " items, asegurate de tener espacio!", TextColor.color(0xE1F453)));
+            player.sendMessage(Component.text("⚠ Recibirás un saco con " + totalRemainingItems + " items, asegura tener espacio ⚠", TextColor.color(0xFF4A00)));
         }
     }
 
@@ -515,9 +516,9 @@ public class CustomDropsManager implements Listener {
         // Enviar mensaje único consolidado
         int totalBundles = bundlesAddedToInventory + bundlesDroppedToFloor;
         if (bundlesDroppedToFloor > 0) {
-            player.sendMessage(Component.text("¡Bolsa de loot x" + totalBundles + " Recibido (" + bundlesDroppedToFloor + " en el suelo por inventario lleno)!", NamedTextColor.GOLD));
+            player.sendMessage(Component.text("¡Bolsa de loot x" + totalBundles + " Recibido (" + bundlesDroppedToFloor + " en el suelo por inventario lleno)!", TextColor.color(0x82FF70)));
         } else {
-            player.sendMessage(Component.text("¡Bolsa de loot x" + totalBundles + " Recibido!", NamedTextColor.GREEN));
+            player.sendMessage(Component.text("¡Bolsa de loot x" + totalBundles + " Recibido!", TextColor.color(0x82FF70)));
         }
     }
 
@@ -528,6 +529,12 @@ public class CustomDropsManager implements Listener {
         Component displayName = Component.text("Bolsa de loot")
                 .color(TextColor.fromHexString("#8B4513"));
 
+        List<Component> lore = new ArrayList<>();
+        lore.add(Component.text("Contenido: ",NamedTextColor.GRAY).decoration(TextDecoration.ITALIC,false));
+        for (ItemStack item : items){
+            lore.add(item.displayName().append(Component.text(" x"+ item.getAmount(),TextColor.color(0x82FF70)).decoration(TextDecoration.ITALIC,false)));
+        }
+        meta.lore(lore);
         meta.displayName(displayName);
         bundle.setItemMeta(meta);
 
@@ -565,9 +572,11 @@ public class CustomDropsManager implements Listener {
 
     @EventHandler
     public void onLootGenerate(LootGenerateEvent event) {
+
         if(event.getInventoryHolder() instanceof DecoratedPotInventory invholder){
             return;
         }
+
         LootTable lootTable = event.getLootTable();
 
         List<ItemStack> loot = event.getLoot();

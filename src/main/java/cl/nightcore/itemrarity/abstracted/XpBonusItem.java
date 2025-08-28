@@ -24,24 +24,12 @@ public class XpBonusItem extends SocketableItem {
                         .getMultipliers(this, modifierType)
                         .isEmpty()) {
             // Aplicar el nuevo multiplicador
-
             setItemMeta(AuraSkillsBukkit.get()
                     .getItemManager()
                     .addMultiplier(this, modifierType, null, multiplier, true)
                     .getItemMeta());
 
-            // Actualizar el lore
-            reApplyMultipliers();
-
-            // Notificar al jugador
-            player.sendMessage(ItemConfig.XP_MULTIPLIER_PREFIX.append(
-                    Component.text("¡Multiplicador de experiencia mejorado a " + multiplier + "%!")
-                            .color(NamedTextColor.GREEN)));
-        } else {
-            // Notificar que no se puede aplicar un multiplicador menor
-            player.sendMessage(ItemConfig.XP_MULTIPLIER_PREFIX.append(Component.text(
-                            "El objeto ya tiene un multiplicador de experiencia mayor (" + currentMultiplier + "%).")
-                    .color(NamedTextColor.RED)));
+            this.setNewLore();
         }
     }
 

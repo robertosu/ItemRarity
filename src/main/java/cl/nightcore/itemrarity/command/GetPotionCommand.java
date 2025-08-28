@@ -24,15 +24,6 @@ public class GetPotionCommand implements CommandExecutor {
             return true;
         }
 
-        // Comando especial para poción aleatoria
-        if ("random".equalsIgnoreCase(args[0])) {
-            return handleRandomPotion(player, args);
-        }
-
-        // Comando especial para pack mixto
-        if ("pack".equalsIgnoreCase(args[0])) {
-            return handleMixedPack(player, args);
-        }
 
         // Obtener y validar el stat
         CombinedStats stat;
@@ -48,90 +39,15 @@ public class GetPotionCommand implements CommandExecutor {
         if (potionArgs == null) return true; // Error en el parsing
 
         // Crear y dar las pociones usando el PotionManager
-        PotionManager.givePotions(player, stat, potionArgs.value, potionArgs.duration, potionArgs.amount);
+        PotionManager.givePotionsWithValues(player, stat, potionArgs.value, potionArgs.duration, potionArgs.amount);
 
         // Mensaje de confirmación
-        String potionInfo = PotionManager.getPotionInfo(stat, potionArgs.value, potionArgs.duration);
+        String potionInfo = PotionManager.getPotionInfoWithValues(stat, potionArgs.value, potionArgs.duration);
         player.sendMessage("¡Has recibido " + potionArgs.amount + " poción(es) de " + potionInfo + "!");
 
         return true;
     }
 
-    /**
-     * Maneja el comando de poción aleatoria
-     */
-    private boolean handleRandomPotion(Player player, String[] args) {
-        int amount = 1;
-
-        // Verificar si se especificó cantidad
-        if (args.length > 1) {
-            try {
-                amount = Integer.parseInt(args[1]);
-                if (amount <= 0) {
-                    player.sendMessage("La cantidad debe ser mayor a 0.");
-                    return true;
-                }
-            } catch (NumberFormatException e) {
-                player.sendMessage("La cantidad debe ser un número válido.");
-                return true;
-            }
-        }
-
-        PotionManager.giveRandomPotions(player, amount);
-        player.sendMessage("¡Has recibido " + amount + " poción(es) aleatoria(s)!");
-        return true;
-    }
-
-    /**
-     * Maneja el comando de pack mixto
-     */
-    private boolean handleMixedPack(Player player, String[] args) {
-        double value = 10.0;
-        int duration = 300;
-        int amountPerStat = 1;
-
-        // Parsear argumentos: /getpotion pack [valor] [duración] [cantidadPorStat]
-        if (args.length > 1) {
-            try {
-                value = Double.parseDouble(args[1]);
-            } catch (NumberFormatException e) {
-                player.sendMessage("El valor debe ser un número válido.");
-                return true;
-            }
-        }
-
-        if (args.length > 2) {
-            try {
-                duration = Integer.parseInt(args[2]);
-                if (duration <= 0) {
-                    player.sendMessage("La duración debe ser mayor a 0.");
-                    return true;
-                }
-            } catch (NumberFormatException e) {
-                player.sendMessage("La duración debe ser un número válido.");
-                return true;
-            }
-        }
-
-        if (args.length > 3) {
-            try {
-                amountPerStat = Integer.parseInt(args[3]);
-                if (amountPerStat <= 0) {
-                    player.sendMessage("La cantidad por stat debe ser mayor a 0.");
-                    return true;
-                }
-            } catch (NumberFormatException e) {
-                player.sendMessage("La cantidad por stat debe ser un número válido.");
-                return true;
-            }
-        }
-
-        PotionManager.giveMixedPotionPack(player, value, duration, amountPerStat);
-        player.sendMessage("¡Has recibido un pack mixto de pociones (+" + value +
-                ", " + PotionManager.formatDuration(duration) +
-                ", " + amountPerStat + " por stat)!");
-        return true;
-    }
 
     /**
      * Parsea los argumentos del comando

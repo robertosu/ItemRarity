@@ -53,8 +53,7 @@ public class UpgradeableItem extends SocketableItem {
                 this.setNewLevel(newlevel);
                 //this.appendAttributeLines(attributeLines,false);
                 this.setMonoliticStats(newlevel);
-                this.setLore();
-                this.reApplyMultipliers();
+                this.setNewLore();
                 player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX.color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
                         .append(Component.text("Mejora exitosa, tu objeto subió a: ", ItemUpgrader.getLoreColor())
                                 .append(Component.text("Nivel " + newlevel, NamedTextColor.DARK_GRAY))));
@@ -78,10 +77,10 @@ public class UpgradeableItem extends SocketableItem {
                             player.sendMessage(ItemConfig.ITEM_UPGRADER_PREFIX.color(ItemUpgraderModel.getPrimaryColor(itemUpgrader.getType()))
                                     .append(Component.text("La mejora falló, tu objeto bajó a: ", NamedTextColor.RED)
                                             .append(Component.text("Nivel " + newlevel, ItemUpgrader.getActiveColor()))));
-                            this.setNewLevel(newlevel);
-                            this.setLore();
-                            this.setMonoliticStats(newlevel);
-                            this.reApplyMultipliers();
+                            this.setNewLevel(newlevel); // BAJAMOS NIVEL
+                            this.setMonoliticStats(newlevel); // BAJAMOS NIVEL de modifier
+                            this.setNewLore(); // BAJAMOS NIVEL GRAFICAMENTE
+
 
                             // Reproducir sonido de fallo (puedes usar un sonido diferente si lo deseas)
                             player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_DESTROY, 1.0f, 1.0f);
@@ -137,11 +136,6 @@ public class UpgradeableItem extends SocketableItem {
 
     @Override
     protected void setMonoliticStats(int level) {
-
-        var line = Component.text("|")
-                .color(NamedTextColor.DARK_GRAY)
-                .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE);
-
         var monoliticTraits = this.statProvider.getMonoliticTraits();
 
         for (Trait trait : monoliticTraits) {
@@ -149,31 +143,7 @@ public class UpgradeableItem extends SocketableItem {
             var value = level * added + added;
             removeTraitModifierByName(this, trait, MONOLITIC_TRAITMODIFIER);
             addMonoliticTraitModifier(this, trait, value);
-            var component =
-                    Component.text(" +" + getFormattedValue(value,trait) + " ").color(getTraitColor(trait)).decoration(TextDecoration.ITALIC,TextDecoration.State.FALSE)
-                            .append(Component.text(trait.getDisplayName(AURA_LOCALE) + " ")
-                                    .color(NamedTextColor.DARK_GRAY).decoration(TextDecoration.ITALIC,TextDecoration.State.FALSE)
-                                    .append(Component.text("|").color(NamedTextColor.DARK_GRAY))
-                                    .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE));
-            line = line.append(component);
         }
-        var meta = this.getItemMeta();
-        var lore = meta.lore();
-        // 9 trait = SPACES
-        // Remove any line that contains exactly 9 spaces
-        lore.removeIf(component -> {
-            return PlainTextComponentSerializer.plainText().serialize(component).equals("         "); // 9 spaces
-        });
-
-        lore.removeIf(component -> {
-            return PlainTextComponentSerializer.plainText().serialize(component).contains("| "); // 9 spaces
-        });
-
-        lore.addFirst(Component.text("         ")); // 9 spaces
-        lore.addFirst(line);
-        lore.addFirst(Component.text("         ")); // 9 spaces
-        meta.lore(lore);
-        this.setItemMeta(meta);
     }
 
 

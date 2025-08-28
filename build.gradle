@@ -68,6 +68,8 @@ dependencies {
     compileOnly 'dev.aurelium:auraskills-api:2.3.6'
     compileOnly 'me.clip:placeholderapi:2.11.6'
     compileOnly 'cl.nightcore:MythicProjectiles:1.1'
+    compileOnly 'dev.jorel:commandapi-bukkit-core:10.1.2'
+    annotationProcessor 'dev.jorel:commandapi-annotations:10.1.2'
 
 }
 

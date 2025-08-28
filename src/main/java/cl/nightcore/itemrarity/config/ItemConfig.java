@@ -1,7 +1,9 @@
 package cl.nightcore.itemrarity.config;
 
 import cl.nightcore.itemrarity.item.BlessingBall;
+import cl.nightcore.itemrarity.item.DarkmagicObject;
 import cl.nightcore.itemrarity.item.roller.BlessingObject;
+import cl.nightcore.itemrarity.item.roller.DarkScroll;
 import cl.nightcore.itemrarity.item.roller.MagicObject;
 import cl.nightcore.itemrarity.item.roller.RedemptionObject;
 import cl.nightcore.itemrarity.item.gem.GemObject;
@@ -35,6 +37,8 @@ public class ItemConfig {
     public static final NamespacedKey MAGIC_OBJECT_KEY_NS;
     public static final NamespacedKey BLESSING_OBJECT_KEY_NS;
     public static final NamespacedKey BLESSING_BALL_KEY_NS;
+    public static final NamespacedKey DARKMAGIC_KEY_NS;
+    public static final NamespacedKey DARKSCROLL_KEY_NS;
 
     public static final TextColor COMMON_COLOR = TextColor.color(0xDEDEDE);
     public static final TextColor UNCOMMON_COLOR = TextColor.color(0x2CAF34);
@@ -54,20 +58,23 @@ public class ItemConfig {
     public static final Component GEM_UPGRADER_PREFIX = Component.text("[Forja de gemas]: ").color(GemRemover.getPrimaryColor());
     public static final Component XP_MULTIPLIER_PREFIX = Component.text("[Multiplicador XP]: ").color(BlessingObject.getPrimaryColor());
     public static final Component STATPOTION_PREFIX = Component.text("[StatPotion]: ").color(NamedTextColor.LIGHT_PURPLE);
+    public static final Component DARKMAGIC_PREFIX = Component.text("[Magia oscura]: ").color(DarkmagicObject.getPrimaryColor());
+    public static final Component DARKSCROLL_PREFIX = Component.text("[Pergamino prohibido]: ").color(DarkScroll.getPrimaryColor());
 
-    public static final String BLESSING_OBJECT_KEY = "blessing_object";
+    public static final String BLESSING_OBJECT_KEY = "blessing";
     public static final String GEM_REMOVER_KEY = "gem_remover";
     public static final String IDENTIFY_SCROLL_KEY = "identify_scroll";
 
-    public static final String MAGIC_OBJECT_KEY = "magic_object";
-    public static final String REDEMPTION_OBJECT_KEY = "redemption_object";
+    public static final String MAGIC_OBJECT_KEY = "magic";
+    public static final String REDEMPTION_OBJECT_KEY = "redemption";
     public static final String BLESSING_BALL_KEY = "blessing_ball";
-    public static final String ITEM_UPGRADER_KEY = "item_upgrader";
+    public static final String ITEM_UPGRADER_KEY = "upgrader";
     public static final String GEM_STAT_KEY = "gem_stat";
     public static final String GEM_LEVEL_KEY = "gem_level";
     public static final String GEM_UPGRADER_KEY = "gem_upgrader";
     public static final String SOCKET_GEM_KEY = "socket_gem";
-
+    public static final String DARKMAGIC_KEY = "darkmagic";
+    public static final String DARKSCROLL_KEY = "darkscroll";
 
 
 
@@ -86,6 +93,7 @@ public class ItemConfig {
         MAGIC_OBJECT_KEY_NS = new NamespacedKey(PLUGIN,MAGIC_OBJECT_KEY);
         BLESSING_OBJECT_KEY_NS = new NamespacedKey(PLUGIN,BLESSING_OBJECT_KEY);
         BLESSING_BALL_KEY_NS = new NamespacedKey(PLUGIN,BLESSING_BALL_KEY);
-
+        DARKMAGIC_KEY_NS = new NamespacedKey(PLUGIN,DARKMAGIC_KEY);
+        DARKSCROLL_KEY_NS = new NamespacedKey(PLUGIN,DARKSCROLL_KEY);
     }
 }

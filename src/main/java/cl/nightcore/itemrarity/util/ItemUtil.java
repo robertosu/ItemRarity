@@ -2,6 +2,7 @@ package cl.nightcore.itemrarity.util;
 
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.config.ItemConfig;
+import cl.nightcore.itemrarity.item.DarkmagicObject;
 import cl.nightcore.itemrarity.item.ExperienceMultiplier;
 import cl.nightcore.itemrarity.item.ItemUpgrader;
 import cl.nightcore.itemrarity.item.gem.GemRemover;
@@ -38,17 +39,19 @@ public class ItemUtil {
     public static final Random RANDOM = new Random();
     public static final DecimalFormat DF = new DecimalFormat("0.#");
     private static final MyTypedKey[] TYPED_KEYS = {
-            // Más comunes primero
-            new MyTypedKey(ItemConfig.IDENTIFY_SCROLL_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.IDENTIFY_SCROLL),
-            new MyTypedKey(GemModel.getGemStatKeyNs(), PersistentDataType.STRING, ObjectType.GEM),
-            new MyTypedKey(ItemConfig.MAGIC_OBJECT_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.MAGIC_OBJECT),
-            new MyTypedKey(ItemUpgrader.getItemUpgraderKeyNs(), PersistentDataType.INTEGER, ObjectType.ITEM_UPGRADER),
-            new MyTypedKey(ItemConfig.BLESSING_OBJECT_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.BLESSING_OBJECT),
-            new MyTypedKey(ItemConfig.REDEMPTION_OBJECT_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.REDEMPTION_OBJECT),
-            new MyTypedKey(GemRemover.getGemRemoverKeyNs(), PersistentDataType.INTEGER, ObjectType.GEM_REMOVER),
-            new MyTypedKey(ItemConfig.BLESSING_BALL_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.BLESSING_BALL),
-            new MyTypedKey(SocketStone.getSocketGemKeyNs(), PersistentDataType.BOOLEAN, ObjectType.SOCKET_STONE),
-            new MyTypedKey(ExperienceMultiplier.XP_MULTIPLIER_KEY_NS, PersistentDataType.INTEGER, ObjectType.XP_MULTIPLIER)
+        // Más comunes primero
+        new MyTypedKey(ItemConfig.IDENTIFY_SCROLL_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.IDENTIFY_SCROLL),
+        new MyTypedKey(GemModel.getGemStatKeyNs(), PersistentDataType.STRING, ObjectType.GEM),
+        new MyTypedKey(ItemConfig.MAGIC_OBJECT_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.MAGIC_OBJECT),
+        new MyTypedKey(ItemUpgrader.getItemUpgraderKeyNs(), PersistentDataType.INTEGER, ObjectType.ITEM_UPGRADER),
+        new MyTypedKey(ItemConfig.BLESSING_OBJECT_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.BLESSING_OBJECT),
+        new MyTypedKey(ItemConfig.REDEMPTION_OBJECT_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.REDEMPTION_OBJECT),
+        new MyTypedKey(GemRemover.getGemRemoverKeyNs(), PersistentDataType.INTEGER, ObjectType.GEM_REMOVER),
+        new MyTypedKey(ItemConfig.BLESSING_BALL_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.BLESSING_BALL),
+        new MyTypedKey(SocketStone.getSocketGemKeyNs(), PersistentDataType.BOOLEAN, ObjectType.SOCKET_STONE),
+        new MyTypedKey(ExperienceMultiplier.XP_MULTIPLIER_KEY_NS, PersistentDataType.INTEGER, ObjectType.XP_MULTIPLIER),
+        new MyTypedKey(ItemConfig.DARKMAGIC_KEY_NS,PersistentDataType.BOOLEAN,ObjectType.DARKMAGIC),
+            new MyTypedKey(ItemConfig.DARKSCROLL_KEY_NS,PersistentDataType.BOOLEAN,ObjectType.DARKSCROLL)
     };
     //public static Component reset = Component.text().content("").color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false).build();
 
@@ -266,6 +269,8 @@ public class ItemUtil {
         ITEM_UPGRADER,
         SOCKET_STONE,
         XP_MULTIPLIER,
+        DARKMAGIC,
+        DARKSCROLL,
         NONE
     }
 

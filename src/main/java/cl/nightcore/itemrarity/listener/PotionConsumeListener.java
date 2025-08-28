@@ -1,6 +1,7 @@
 package cl.nightcore.itemrarity.listener;
 
 import cl.nightcore.itemrarity.item.potion.StatPotion;
+import cl.nightcore.itemrarity.model.StatPotionModel;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -21,19 +22,22 @@ public class PotionConsumeListener implements Listener {
             return;
         }
 
-        // Obtener datos de la poción
-        StatPotion.StatPotionData potionData = StatPotion.getPotionData(item);
-        if (potionData == null) {
+        StatPotionModel potionModel = new StatPotionModel(item);
+
+        // Obtener datos necesarios del modelo
+        if (potionModel.getStat() == null) {
             return;
         }
 
         // Crear una poción temporal para aplicar el efecto
-        StatPotion tempPotion = new StatPotion(
-                potionData.stat(),
-                potionData.value(),
-                potionData.duration(),
-                item.displayName(),
-                ItemUtil.getColorOfStat(potionData.stat()));
+        // Usar el constructor apropiado según el formato
+        StatPotion tempPotion;
+
+        // Formato nuevo: usar enums
+        tempPotion = new StatPotion(
+                potionModel.getStat(),
+                potionModel.getLevel(),
+                potionModel.getDuration());
 
         // Aplicar el efecto de la poción
         tempPotion.consumePotion(player);

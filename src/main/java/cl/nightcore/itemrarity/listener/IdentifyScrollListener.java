@@ -1,5 +1,6 @@
 package cl.nightcore.itemrarity.listener;
 
+import cl.nightcore.itemrarity.item.DarkmagicObject;
 import cl.nightcore.itemrarity.item.gem.GemManager;
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.abstracted.SocketableItem;
@@ -12,6 +13,8 @@ import cl.nightcore.itemrarity.model.GemRemoverModel;
 import cl.nightcore.itemrarity.model.ItemUpgraderModel;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import cl.nightcore.itemrarity.util.PerformanceTimer;
+import com.nexomc.nexo.api.NexoBlocks;
+import com.nexomc.nexo.api.NexoItems;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.BlocksAttacks;
 import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
@@ -22,6 +25,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -36,6 +40,8 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.function.BiFunction;
 
+import static cl.nightcore.itemrarity.config.ItemConfig.DARKMAGIC_PREFIX;
+import static cl.nightcore.itemrarity.config.ItemConfig.DARKSCROLL_PREFIX;
 import static cl.nightcore.itemrarity.util.ItemUtil.isGem;
 import static cl.nightcore.itemrarity.util.ItemUtil.isIdentified;
 
@@ -87,7 +93,6 @@ public class IdentifyScrollListener implements Listener {
         if (ItemUtil.isInvalidInteraction(targetItem)) {
             return;
         }
-
 
         ItemUtil.ObjectType objectType = ItemUtil.getObjectType(cursor);
 
@@ -184,7 +189,6 @@ public class IdentifyScrollListener implements Listener {
                     event.setCancelled(true);
                     return;
                 }
-
                 handleItemUpgrade(event, targetItem, cursor, player);
                 break;
             case SOCKET_STONE:
@@ -203,8 +207,64 @@ public class IdentifyScrollListener implements Listener {
                 }
                 handleExperienceMultiplier(event, targetItem, cursor, player);
                 break;
+            case DARKMAGIC:
+                if (!isIdentified(targetItem)) {
+                    sendErrorMessage(player, "Tu objeto debe estar identificado.", ItemConfig.XP_MULTIPLIER_PREFIX);
+                    event.setCancelled(true);
+                    return;
+                }
+                handleDarkMagic(event, targetItem, cursor, player);
+                break;
+            case DARKSCROLL:
+                if (!isIdentified(targetItem)) {
+                    sendErrorMessage(player, "Tu objeto debe estar identificado.", ItemConfig.XP_MULTIPLIER_PREFIX);
+                    event.setCancelled(true);
+                    return;
+                }
+                handleDarkScroll(event, targetItem, cursor, player);
+                break;
         }
     }
+
+    private void handleDarkScroll(InventoryClickEvent event, ItemStack targetItem, ItemStack cursor, Player player){
+        UpgradeableItem item = new UpgradeableItem(targetItem);
+        int result = item.addExtraBonus();
+
+        if (result > 0){
+            event.setCurrentItem(item);
+            consumeItem(event, cursor);
+            event.setCancelled(true);
+            if (result == 1) {
+                player.sendMessage(DARKSCROLL_PREFIX.append(Component.text("Se ha desbloqueado el 7mo bono (Máximo 8).", DarkmagicObject.getLoreColor())));
+            }else if (result == 2){
+                player.sendMessage(DARKSCROLL_PREFIX.append(Component.text("Se ha desbloqueado el 8vo bono (Máximo 8).", DarkmagicObject.getLoreColor())));
+            }
+        } else {
+            player.sendMessage(DARKSCROLL_PREFIX.append(Component.text("Ya has desbloqeuado el 7mo y 8vo bono.", NamedTextColor.RED)));
+            event.setCancelled(true);
+        }
+    }
+
+    private void handleDarkMagic(InventoryClickEvent event, ItemStack targetItem, ItemStack cursor, Player player){
+        UpgradeableItem item = new UpgradeableItem(targetItem);
+        int result = item.rerollExtraBonuses();
+        if (result > 0){
+            event.setCurrentItem(item);
+            consumeItem(event, cursor);
+            event.setCancelled(true);
+
+            player.sendMessage(DARKMAGIC_PREFIX.append(Component.text("Se han cambiado los bonos 6 y 7",DarkmagicObject.getLoreColor())));
+
+        } else {
+            event.setCancelled(true);
+            throw new IllegalStateException("No se debería poder rollear bonos 6 y 7 si no están previamente presentes");
+
+        }
+
+    }
+
+
+
 
 
     private void handleExperienceMultiplier(InventoryClickEvent event, ItemStack targetItem, ItemStack cursor, Player player) {
@@ -216,8 +276,15 @@ public class IdentifyScrollListener implements Listener {
 
         if (newMultiplier > currentMultiplier) {
             xpBonusItem.addExperienceMultiplier(newMultiplier, player);
+
             event.setCurrentItem(xpBonusItem);
             consumeItem(event, cursor);
+
+            // Notificar al jugador
+            player.sendMessage(ItemConfig.XP_MULTIPLIER_PREFIX.append(
+                    Component.text("¡Multiplicador de experiencia mejorado a " + newMultiplier + "%!")
+                            .color(NamedTextColor.GREEN)));
+
         } else {
             player.sendMessage(ItemConfig.XP_MULTIPLIER_PREFIX.append(
                     Component.text("El objeto ya tiene un multiplicador mayor (" + currentMultiplier + "%).")
@@ -313,6 +380,16 @@ public class IdentifyScrollListener implements Listener {
             event.setCancelled(true);
             return;
         }
+
+        try{
+            ItemUtil.getProvider(ItemUtil.getItemType(targetItem));
+        }catch (Exception e){
+            sendErrorMessage(player, "Este tipo de item no es identificable", ItemConfig.PLUGIN_PREFIX);
+            event.setCancelled(true);
+            return;
+
+        }
+
 
         consumeItem(event, cursor);
         event.setCurrentItem(ItemRarity.identifyItem(player, targetItem));

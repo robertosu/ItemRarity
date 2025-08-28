@@ -2,6 +2,7 @@ package cl.nightcore.itemrarity;
 
 import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
 import cl.nightcore.itemrarity.command.*;
+import cl.nightcore.itemrarity.command.ItemGetCommand;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.customstats.*;
 import cl.nightcore.itemrarity.item.roller.IdentifyScroll;
@@ -34,17 +35,15 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener 
 
     public static UpgradeableItem identifyItem(Player player, ItemStack item) {
         UpgradeableItem weapon = new UpgradeableItem(item);
-        weapon.identify();
         weapon.initializeSocketData();
-        UpgradeableItem weapon2 = new UpgradeableItem(weapon);
-        weapon2.rerollStatsEnhanced();
+        weapon.identify();
 
         Component message = Component.text("¡Identificaste el arma! Calidad: ", IdentifyScroll.getLoreColor())
-                .append(weapon2.getRarityComponent());
+                .append(weapon.getRarityComponent());
         player.sendMessage(ItemConfig.PLUGIN_PREFIX.append(message));
 
 
-        return weapon2;
+        return weapon;
     }
 
     public static UpgradeableItem rollStats(Player player, ItemStack item) {
@@ -79,20 +78,16 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener 
     public void onEnable() {
         PLUGIN = this;
         AURA_LOCALE = AuraSkillsApi.get().getMessageManager().getDefaultLanguage();
-        Objects.requireNonNull(getCommand("getscroll")).setExecutor(new GetScrollCommand());
-        Objects.requireNonNull(getCommand("getmagic")).setExecutor(new GetMagicCommand());
-        Objects.requireNonNull(getCommand("getblessing")).setExecutor(new GetBlessingCommand());
-        Objects.requireNonNull(getCommand("getredemption")).setExecutor(new GetRedemptionCommand());
+
         Objects.requireNonNull(getCommand("getgem")).setExecutor(new GetGemCommand());
         Objects.requireNonNull(getCommand("getremover")).setExecutor(new GetGemRemoverCommand());
-        Objects.requireNonNull(getCommand("getblessingball")).setExecutor(new GetBlessingBallCommand());
         Objects.requireNonNull(getCommand("getitemupgrader")).setExecutor(new GetItemUpgraderCommand());
-        Objects.requireNonNull(getCommand("getsocketstone")).setExecutor(new GetSocketStoneCommand());
         Objects.requireNonNull(getCommand("testdistr")).setExecutor(new TestCommand());
-        Objects.requireNonNull(getCommand("getxpmultiplier")).setExecutor(new GetExperienceMultiplierCommand());
         Objects.requireNonNull(getCommand("getstatpotion")).setExecutor(new GetPotionCommand());
         Objects.requireNonNull(getCommand("blockdata")).setExecutor(new NexoHelpCommand());
         Objects.requireNonNull(getCommand("party")).setExecutor(new PartyCommands());
+
+
 
         getServer().getPluginManager().registerEvents(new IdentifyScrollListener(), this);
         getServer().getPluginManager().registerEvents(new CancelUsageInRecipesListener(), this);
@@ -101,7 +96,7 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener 
         getServer().getPluginManager().registerEvents(new NexoSmithingListener(), this);
         getServer().getPluginManager().registerEvents(this, this); // Para el PlayerQuitEvent
 
-
+        new ItemGetCommand(this);
 
         getServer().getPluginManager().registerEvents(new CustomDropsManager(), this);
         getServer().getPluginManager().registerEvents(new UnifiedExperienceManager(), this);

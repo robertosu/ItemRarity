@@ -52,11 +52,7 @@ public class SocketableItem extends IdentifiedItem {
 
     private  static final Component GEMS_SPACER = Component.text("      "); // 6 soaces
 
-    private static final Component GEMS_HEADER =
-            Component.text("Gemas:").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false);
 
-    private static final Component EMPTY_SOCKET =
-            Component.text(" ⛶ Vacío").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false);
 
     public SocketableItem(ItemStack item) {
         super(item);
@@ -72,7 +68,6 @@ public class SocketableItem extends IdentifiedItem {
         container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, sockets);
 
         setItemMeta(meta);
-        updateLoreWithSockets();
     }
 
 
@@ -134,7 +129,7 @@ public class SocketableItem extends IdentifiedItem {
         container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, availableSockets - 1);
 
         setItemMeta(meta);
-        updateLoreWithSockets();
+        this.setNewLore();
 
         player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1.0f, 2.0f);
         player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(
@@ -151,10 +146,6 @@ public class SocketableItem extends IdentifiedItem {
                     Component.text("Este objeto no tiene gemas instaladas.").color(NamedTextColor.GRAY)));
             return false;
         }
-
-        // SOLUCIÓN: Preservar las líneas de atributos ANTES de hacer cambios
-        var attributeLines = getAttributeLines();
-
         // Recolectar las gemas extraídas
         List<GemObject> extractedGems = new ArrayList<>();
 
@@ -180,17 +171,12 @@ public class SocketableItem extends IdentifiedItem {
                 GemObject extractedGem = gemManager.createGem(1, gemLevel, stat.name());
                 extractedGems.add(extractedGem);
             }
-
             // Remover el modificador de la gema
             removeStatModifierByName(stat, GEM_STATMODIFIER);
         }
-
         removeStoredGemsNBT();
-
         // SOLUCIÓN: En lugar de solo llamar setLore(), regenerar todo correctamente
-        setLore();
-        appendTraitLines(attributeLines);
-
+        setNewLore();
         // Entregar las gemas al jugador
         for (GemObject gem : extractedGems) {
             HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(gem);
@@ -227,57 +213,10 @@ public class SocketableItem extends IdentifiedItem {
         return gems;
     }
 
+
+
     @Override
-    protected void updateLoreWithSockets() {
-        ItemMeta meta = getItemMeta();
-
-        List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
-        if (lore == null) lore = new ArrayList<>();
-
-        // Remove existing socket information
-        lore.removeIf(line -> line.toString().contains("⛶")
-                || line.toString().contains("\uD83D\uDC8E")
-                || line.toString().contains("Gemas:") || line.equals(GEMS_SPACER));
-
-        // Add socket header
-        List<Component> socketInfo = new ArrayList<>();
-        socketInfo.add(GEMS_SPACER);
-        socketInfo.add(GEMS_HEADER);
-
-        // Add installed gems
-        Map<Stat, Integer> installedGems = getInstalledGems();
-        for (Map.Entry<Stat, Integer> entry : installedGems.entrySet()) {
-            Stat stat = entry.getKey();
-            int value = calculateGemValue(entry.getValue()); // calcular valor de la gema basado en su nivel.
-
-            // Color del stat
-            TextColor statColor = ItemUtil.getColorOfStat(stat);
-
-            // Construcción del texto con colores aplicados explícitamente, otherwise ExcellentEnchants bugea el lore
-            Component gemLine = Component.text(" \uD83D\uDC8E ", statColor) // Color explícito para el símbolo
-                    .append(Component.text(stat.getDisplayName(AURA_LOCALE))
-                            .color(statColor)) // Color explícito para el nombre de la stat
-                    .append(Component.text(String.format(" +%d", value))
-                            .color(statColor)) // Color explícito para el valor
-                    .decoration(TextDecoration.ITALIC, false); // Quitar cursiva
-
-            socketInfo.add(gemLine);
-        }
-
-        // Add empty sockets
-        for (int i = 0; i < getAvailableSockets(); i++) {
-            socketInfo.add(EMPTY_SOCKET);
-        }
-
-        // Insert socket information at appropriate position
-        int insertIndex = findSocketInfoInsertIndex(lore);
-        lore.addAll(insertIndex, socketInfo);
-
-        meta.lore(lore);
-        setItemMeta(meta);
-    }
-
-    private int calculateGemValue(int level) {
+    protected int calculateGemValue(int level) {
         return 4 + (level - 1) * level / 2;
     }
 
@@ -301,8 +240,8 @@ public class SocketableItem extends IdentifiedItem {
 
     public boolean addRandomMissingStat(Player player) {
         // Verificar máximo de stats permitidas
-        if (this.getMaxBonuses() != 6) {
-            this.setMaxBonuses(6);
+        if (this.getMaxBonuses() != 5) {
+            this.setMaxBonuses(5);
         }else{
             player.sendMessage(ItemConfig.BLESSING_BALL_PREFIX.append(
                     Component.text("El ítem ya tiene el máximo de estadísticas permitidas (6).")
@@ -323,20 +262,16 @@ public class SocketableItem extends IdentifiedItem {
             return false;
         }
 
-        var attributeLines = getAttributeLines();
-
         // Obtener stats disponibles y actuales
         List<Stat> availableStats = statProvider.getAvailableStats();
         List<String> currentNativeStats = nativeStats.stream()
                 .map(modifier -> modifier.type().name())
                 .toList();
 
-
         // Encontrar stats faltantes
         List<Stat> missingStats = availableStats.stream()
                 .filter(stat -> !currentNativeStats.contains(stat.name()))
                 .toList();
-
 
         if (missingStats.isEmpty()) {
             player.sendMessage(
@@ -350,7 +285,6 @@ public class SocketableItem extends IdentifiedItem {
         int baseValue = StatValueGenerator.generateValueForStat(
                 statProvider.isThisStatGauss(statToAdd)
         );
-
         // Aplicar modificador
         ItemStack modifiedItem = AuraSkillsBukkit.get()
                 .getItemManager()
@@ -370,19 +304,7 @@ public class SocketableItem extends IdentifiedItem {
         // Actualizar lore
         setItemMeta(modifiedItem.getItemMeta());
 
-        // Regenerar tdo el lore correctamente:
-        emptyLore();
-
-        reApplyStatsToItem(AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER));
-
-        setLore();
-
-        appendAttributeLines(attributeLines,true);
-
-        setMonoliticStats(getLevel());
-
-        reApplyMultipliers();
-        //appendAttributeLines(attributeLines);
+        setNewLore();
 
         return true;
     }
@@ -416,7 +338,7 @@ public class SocketableItem extends IdentifiedItem {
             container.set(MAX_SOCKETS_KEY_NS, PersistentDataType.INTEGER, maxSockets + 1);
             container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, availableSockets + 1);
             setItemMeta(meta);
-            updateLoreWithSockets();
+            this.setNewLore();
             player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1.0f, 0.4f);
             player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(
                     Component.text("Se añadió una ranura de gema a tu objeto.")

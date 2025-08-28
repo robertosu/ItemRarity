@@ -30,10 +30,9 @@ public class ExperienceMultiplier extends ItemStack {
         meta.getPersistentDataContainer().set(XP_MULTIPLIER_KEY_NS, PersistentDataType.INTEGER, multiplier);
         
         // Set display name
-        meta.displayName(Component.text("Multiplicador XP de habilidades " + multiplier + "%")
+        meta.displayName(Component.text("Mult. de XP habilidades " + multiplier + "%")
                 .color(PRIMARY_COLOR)
                 .decoration(TextDecoration.ITALIC, false));
-        
         // Set lore
         meta.lore(getTheLore());
         meta.setCustomModelData(6060 + (multiplier / 100 - 1)); // Modelos 6020-6024 para 100%-500%
@@ -44,19 +43,25 @@ public class ExperienceMultiplier extends ItemStack {
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text(" ")
                 .color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text("Arrastra este item al objeto que desear mejorar")
+        lore.add(Component.text("Arrastra este item al objeto que deseas mejorar")
+                .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text("Una vez agregado no se puede quitar")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
         lore.add(Component.text(" ")
                 .color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
         lore.add(Component.text("Añade un multiplicador de experiencia global de " + multiplier + "%")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text("con el cual ganarás mas xp en todas las habilidades (/skills) ")
+        lore.add(Component.text("al usar un item con este multiplicador ganarás mas XP")
+                .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text("en todas las habilidades (/skills).")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
         lore.add(Component.text(" ")
                 .color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text("Si el objeto ya tiene un multiplicador, solo se aplicará")
+        lore.add(Component.text("Si el objeto ya tiene un multiplicador igual o mayor")
                 .color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text("si el nuevo valor es mayor que el existente")
+        lore.add(Component.text("este no se agregará, si agregas uno mayor no recuperarás")
+                .color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text("el anterior.")
                 .color(NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
         return lore;
     }
