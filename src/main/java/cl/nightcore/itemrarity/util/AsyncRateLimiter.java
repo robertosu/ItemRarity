@@ -320,7 +320,7 @@ public class AsyncRateLimiter {
     public void clearPlayerDataAsync(Player player) {
         CompletableFuture.runAsync(() -> {
             UUID playerId = player.getUniqueId();
-            String playerPrefix = playerId.toString() + ":";
+            String playerPrefix = playerId + ":";
 
             // Limpiar cooldowns
             playerCooldowns.entrySet().removeIf(entry ->

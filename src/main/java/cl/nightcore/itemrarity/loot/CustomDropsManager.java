@@ -16,9 +16,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -40,22 +38,16 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class CustomDropsManager implements Listener {
 
-    private final Random random = new Random();
-
-    private final List<ChestDropConfig> chestDrops = new ArrayList<>();
-    private final Map<String, List<ChestDropConfig>> specificChestDrops = new HashMap<>();
-
-    private final List<ConditionalDropConfig> conditionalDrops = new ArrayList<>();
-
-    private final Set<UUID> processedEntities = ConcurrentHashMap.newKeySet();
     private static final long CLEANUP_DELAY_TICKS = 100L; // 5 segundos
-
-
     private static final int MIN_ITEMS_FOR_BUNDLE = 3; // Mínimo de items para crear bundle
     private static final int MAX_ITEMS_PER_BUNDLE = 64; // Máximo de items por bundle
     private static final boolean ENABLE_BUNDLES_FOR_BOSSES = true;
     private static final boolean ENABLE_BUNDLES_FOR_NORMAL_MOBS = false;
-
+    private final Random random = new Random();
+    private final List<ChestDropConfig> chestDrops = new ArrayList<>();
+    private final Map<String, List<ChestDropConfig>> specificChestDrops = new HashMap<>();
+    private final List<ConditionalDropConfig> conditionalDrops = new ArrayList<>();
+    private final Set<UUID> processedEntities = ConcurrentHashMap.newKeySet();
 
 
 
@@ -282,22 +274,21 @@ public class CustomDropsManager implements Listener {
 
             double levelPenalty = LevelGapManager.getLevelPenaltyMultiplier(player, mobLevel);
 
-            if (levelPenalty != 1.0){
-                player.sendMessage("§cMucha diferencia de nivel con el jefe, % de drops * "+levelPenalty);
-
-            }
-
             if (levelPenalty <= 0) continue;
 
             // Aplicar bonus de party si está en una (solo para bosses)
             double partyBonus = isBoss ? PartyManager.getPartyExpBonus(player.getUniqueId()) : 1.0;
             double finalMultiplier = levelPenalty * partyBonus;
-
+            //TODO hacer que EL MENSAJE DE NERF A PROBABILIDADES SE MUESTRE SOLO SI HAY DROPS VALIDOS PARA LA ENTIDAD
             // PROCESAMIENTO INDIVIDUAL: Drops condicionales para cada jugador
             List<ItemStack> playerDrops = processConditionalDropsForPlayer(
                     entity, mobLevel, isBoss, bossDifficulty, finalMultiplier);
 
             totalDropsProcessed += playerDrops.size();
+
+            if (totalDropsProcessed > 0 && levelPenalty != 1.0){
+                player.sendMessage(String.format("§e%.0f%% drops por diferencia de nivel con enemigo!", (levelPenalty - 1.0) * 100));
+            }
 
             // ENTREGA SEGURA: Inventario primero, luego dropear naturalmente
             deliverItemsToPlayer(player, playerDrops);
@@ -330,8 +321,6 @@ public class CustomDropsManager implements Listener {
             ));
         }
     }
-
-
     /**
      *  Procesa drops condicionales para UN JUGADOR específico
      * Retorna una lista de items que el jugador debe recibir
@@ -374,7 +363,7 @@ public class CustomDropsManager implements Listener {
      */
     private void deliverItemsToPlayer(Player player, List<ItemStack> items) {
         if (items.isEmpty()) {
-            player.sendMessage(Component.text("No hubo suerte con los drops, prueba a matar niveles mas altos", NamedTextColor.RED));
+            //player.sendMessage(Component.text("No hubo suerte con los drops, prueba a matar niveles mas altos", NamedTextColor.RED));
             return;
         }
 
@@ -550,12 +539,12 @@ public class CustomDropsManager implements Listener {
     }
 
     private void loadConditionalMobDrops() {
-        conditionalDrops.addAll(MobDrops.instance().getMobDrops());
+        conditionalDrops.addAll(ItemRarity.PLUGIN.getMobDrops().getMobDrops());
     }
 
     private void loadChestDrops(){
-        chestDrops.addAll(ChestDrops.instance().getChestDrops());
-        specificChestDrops.putAll(ChestDrops.instance().getSpecificChestDrops());
+        chestDrops.addAll(ItemRarity.PLUGIN.getChestDrops().getChestDrops());
+        specificChestDrops.putAll(ItemRarity.PLUGIN.getChestDrops().getSpecificChestDrops());
     }
 
 

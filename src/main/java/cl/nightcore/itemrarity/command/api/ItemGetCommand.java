@@ -1,6 +1,7 @@
 package cl.nightcore.itemrarity.command;
 
 import cl.nightcore.itemrarity.ItemRarity;
+import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
 import cl.nightcore.itemrarity.item.BlessingBall;
 import cl.nightcore.itemrarity.item.DarkmagicObject;
 import cl.nightcore.itemrarity.item.ExperienceMultiplier;
@@ -79,8 +80,24 @@ public class ItemGetCommand {
                 .withSubcommand(
                         new CommandAPICommand("help")
                                 .executesPlayer(this::showHelp)
+                ).withSubcommand(
+                        new CommandAPICommand("updatelore")
+                                .executesPlayer(this::handleUpdateLore)
                 )
                 .register();
+    }
+
+    private void handleUpdateLore(Player player, CommandArguments args){
+        var item = player.getInventory().getItemInMainHand();
+
+        if (item.isEmpty()){
+            player.sendMessage("Debes tener un objeto en tu mano");
+        }else{
+            UpgradeableItem newItem = new UpgradeableItem(item);
+            newItem.setNewLore();
+            player.getInventory().setItemInMainHand(newItem);
+        }
+
     }
 
     private void handleMagic(Player player, CommandArguments args) {

@@ -7,7 +7,6 @@ import cl.nightcore.itemrarity.item.ItemUpgrader;
 import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.model.ItemUpgraderModel;
 import cl.nightcore.itemrarity.util.ItemUtil;
-import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.stat.Stat;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

@@ -38,9 +38,9 @@ public class DarkmagicObject extends ItemStack {
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Arrastra este objeto a un item")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text("para cambiar sus bonos extra.")
+        lore.add(Component.text("para cambiar sus bonos 6-7.")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text("(Séptimo y octavo bonos de estadisticas)")
+        lore.add(Component.text("(Sexto y séptimo bono de estadisticas)")
                 .color(LORE_COLOR).decoration(TextDecoration.ITALIC, false));
         meta.lore(lore);
 

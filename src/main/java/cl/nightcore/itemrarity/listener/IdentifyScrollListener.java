@@ -1,20 +1,18 @@
 package cl.nightcore.itemrarity.listener;
 
-import cl.nightcore.itemrarity.item.DarkmagicObject;
-import cl.nightcore.itemrarity.item.gem.GemManager;
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.abstracted.SocketableItem;
 import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
 import cl.nightcore.itemrarity.abstracted.XpBonusItem;
 import cl.nightcore.itemrarity.config.ItemConfig;
+import cl.nightcore.itemrarity.item.DarkmagicObject;
+import cl.nightcore.itemrarity.item.gem.GemManager;
 import cl.nightcore.itemrarity.model.ExperienceMultiplierModel;
 import cl.nightcore.itemrarity.model.GemModel;
 import cl.nightcore.itemrarity.model.GemRemoverModel;
 import cl.nightcore.itemrarity.model.ItemUpgraderModel;
 import cl.nightcore.itemrarity.util.ItemUtil;
 import cl.nightcore.itemrarity.util.PerformanceTimer;
-import com.nexomc.nexo.api.NexoBlocks;
-import com.nexomc.nexo.api.NexoItems;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.BlocksAttacks;
 import io.papermc.paper.datacomponent.item.blocksattacks.DamageReduction;
@@ -25,7 +23,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -235,9 +232,9 @@ public class IdentifyScrollListener implements Listener {
             consumeItem(event, cursor);
             event.setCancelled(true);
             if (result == 1) {
-                player.sendMessage(DARKSCROLL_PREFIX.append(Component.text("Se ha desbloqueado el 7mo bono (Máximo 8).", DarkmagicObject.getLoreColor())));
+                player.sendMessage(DARKSCROLL_PREFIX.append(Component.text("Se ha desbloqueado un 6to bono (6/7).", DarkmagicObject.getLoreColor())));
             }else if (result == 2){
-                player.sendMessage(DARKSCROLL_PREFIX.append(Component.text("Se ha desbloqueado el 8vo bono (Máximo 8).", DarkmagicObject.getLoreColor())));
+                player.sendMessage(DARKSCROLL_PREFIX.append(Component.text("Se ha desbloqueado un 7mo bono (7/7).", DarkmagicObject.getLoreColor())));
             }
         } else {
             player.sendMessage(DARKSCROLL_PREFIX.append(Component.text("Ya has desbloqeuado el 7mo y 8vo bono.", NamedTextColor.RED)));
@@ -252,12 +249,11 @@ public class IdentifyScrollListener implements Listener {
             event.setCurrentItem(item);
             consumeItem(event, cursor);
             event.setCancelled(true);
-
-            player.sendMessage(DARKMAGIC_PREFIX.append(Component.text("Se han cambiado los bonos 6 y 7",DarkmagicObject.getLoreColor())));
+            player.sendMessage(DARKMAGIC_PREFIX.append(Component.text("Se han cambiado los bonos 6-7",DarkmagicObject.getLoreColor())));
 
         } else {
             event.setCancelled(true);
-            throw new IllegalStateException("No se debería poder rollear bonos 6 y 7 si no están previamente presentes");
+            player.sendMessage(DARKSCROLL_PREFIX.append(Component.text("Aun no has desbloqueado el bono 6-7", NamedTextColor.RED)));
 
         }
 

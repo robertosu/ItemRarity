@@ -12,8 +12,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -28,20 +28,17 @@ public class DamageTracker {
 
     // Referencias a entidades para validaciÃ³n
     private static final Map<UUID, LivingEntity> entityReferences = new ConcurrentHashMap<>();
-
-    // Task de limpieza automÃ¡tica
-    private static BukkitTask cleanupTask;
-
     // ConfiguraciÃ³n diferenciada por tipo
     private static final double BOSS_MIN_DAMAGE_PERCENTAGE = 5.0;      // 5% para bosses
     private static final double MOB_MIN_DAMAGE_PERCENTAGE = 25.0;      // 25% para mobs normales
     private static final int MAX_LOOT_RECEIVERS = 10;
-
     // Tiempos de cache diferenciados
     private static final long BOSS_CACHE_EXPIRE_TIME = 300000;     // 5 minutos para bosses
     private static final long MOB_CACHE_EXPIRE_TIME = 120000;      // 2 minutos para mobs normales
     private static final long CLEANUP_INTERVAL = 20000;           // 20 segundos
     private static final long ENTITY_CHECK_INTERVAL = 45000;      // 45 segundos
+    // Task de limpieza automÃ¡tica
+    private static BukkitTask cleanupTask;
 
     // InicializaciÃ³n estÃ¡tica
     static {
@@ -275,10 +272,10 @@ public class DamageTracker {
         private final int mobLevel;
         private final boolean isBoss;
         private final BossDifficulty difficulty;
+        private final long creationTime;
         private double totalDamageDealt = 0.0;
         private volatile long lastUpdate;
         private volatile long lastEntityCheck;
-        private final long creationTime;
 
         public MobDamageData(double maxHealth, UUID entityId, int mobLevel,
                              boolean isBoss, BossDifficulty difficulty) {

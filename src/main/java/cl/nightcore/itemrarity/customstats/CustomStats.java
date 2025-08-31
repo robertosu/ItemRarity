@@ -25,7 +25,8 @@ public class CustomStats {
     public static final CustomStat ACCURACY = CustomStat.builder(NamespacedId.of("itemrarity", "accuracy"))
             .trait(CustomTraits.HIT_CHANCE, 0.5) // Hit chance will increase by 0.5 per accuracy level
             .displayName("Precisión")
-            .description("La precisión aumenta tu probabilidad de acertar ataques, contrarresta directamente la evasión.")
+            .description(
+                    "La precisión aumenta tu probabilidad de acertar ataques, contrarresta directamente la evasión.")
             .color("<#FF80D5>")
             .symbol("\uD83C\uDFAF")
             .build();
@@ -47,6 +48,4 @@ public class CustomStats {
             .group("upper_right") // A group defined in AuraSkills/menus/stats.yml
             .order(3) // The position within that group
             .build();
-
-
 }

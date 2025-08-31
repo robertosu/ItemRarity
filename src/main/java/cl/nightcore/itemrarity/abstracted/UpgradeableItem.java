@@ -10,9 +10,6 @@ import dev.aurelium.auraskills.api.trait.Trait;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -20,13 +17,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
-import static cl.nightcore.itemrarity.ItemRarity.PLUGIN;
 import static cl.nightcore.itemrarity.config.ItemConfig.LEVEL_KEY_NS;
 
 public class UpgradeableItem extends SocketableItem {
-    private static final int MAX_LEVEL = 9;
-    private static final NamespacedKey DAMAGE_MODIFIER_KEY = new NamespacedKey(PLUGIN, "level_damage");
 
 
     public UpgradeableItem(ItemStack item) {
@@ -49,7 +42,6 @@ public class UpgradeableItem extends SocketableItem {
         if (level < MAX_LEVEL) {
             if (ItemUtil.rollthedice(adjustedPercentage)) {
                 int newlevel = level + 1;
-                var attributeLines = this.getAttributeLines();
                 this.setNewLevel(newlevel);
                 //this.appendAttributeLines(attributeLines,false);
                 this.setMonoliticStats(newlevel);
@@ -156,13 +148,6 @@ public class UpgradeableItem extends SocketableItem {
         return AuraSkillsBukkit.get().getItemManager().getFormattedTraitValue(value, originalTrait);
     }
 
-    private double determineValueIncreasePerLevelForTrait(Trait trait){
-        switch(trait.name()){
-            case "ATTACK_DAMAGE" -> { return 1.0; }
-            case "ATTACK_SPEED" -> { return 0.01; }
-            case "DAMAGE_REDUCTION", "HP" -> { return 0.5; }
-        }
-        return 0;
-    }
+
 
 }

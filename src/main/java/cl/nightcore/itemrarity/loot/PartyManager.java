@@ -19,13 +19,14 @@ import java.util.stream.Collectors;
 
 public class PartyManager implements Listener {
 
+    // 🔥 NUEVA CONFIGURACIÓN: Distancia máxima para recibir rewards
+    public static final double MAX_DISTANCE_FOR_REWARDS = 50.0; // bloques
+    public static final boolean DISTANCE_CHECK_ENABLED = true;
     // Maps principales (thread-safe)
     private static final Map<UUID, Party> playerParties = new ConcurrentHashMap<>();
     private static final Map<UUID, Party> allParties = new ConcurrentHashMap<>();
-
     // Sistema de invitaciones
     private static final Map<UUID, PendingInvitation> pendingInvitations = new ConcurrentHashMap<>();
-
     // Lock para operaciones críticas
     private static final ReentrantLock OPERATION_LOCK = new ReentrantLock();
     // ConfiguraciÃ³n
@@ -36,9 +37,6 @@ public class PartyManager implements Listener {
     private static final long CLEANUP_INTERVAL = 60000; // 1 minuto
     // ConfiguraciÃ³n para mobs normales
     private static final boolean NORMAL_MOBS_USE_PARTY = true; // Activar/desactivar party para mobs normales
-    // 🔥 NUEVA CONFIGURACIÓN: Distancia máxima para recibir rewards
-    public static final double MAX_DISTANCE_FOR_REWARDS = 50.0; // bloques
-    public static final boolean DISTANCE_CHECK_ENABLED = true;
     // Tareas de limpieza
     private static BukkitTask cleanupTask;
     private static BukkitTask invitationCleanupTask;

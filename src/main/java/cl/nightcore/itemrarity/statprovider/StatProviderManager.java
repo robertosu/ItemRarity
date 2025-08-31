@@ -8,25 +8,23 @@ public class StatProviderManager {
     private final LeggingsModifierProvider leggingsModifierProvider = new LeggingsModifierProvider();
     private final WeaponModifierProvider weaponModifierProvider = new WeaponModifierProvider();
 
-
-    public BootsModifierProvider boots(){
+    public BootsModifierProvider boots() {
         return bootsModifierProvider;
     }
 
-    public ChestplateModifierProvider chestplate(){
+    public ChestplateModifierProvider chestplate() {
         return chestplateModifierProvider;
     }
 
-    public HelmetModifierProvider helmet(){
+    public HelmetModifierProvider helmet() {
         return helmetModifierProvider;
     }
 
-    public  LeggingsModifierProvider leggings(){
+    public LeggingsModifierProvider leggings() {
         return leggingsModifierProvider;
     }
 
-    public WeaponModifierProvider weapon(){
+    public WeaponModifierProvider weapon() {
         return weaponModifierProvider;
     }
-
 }

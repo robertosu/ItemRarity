@@ -2,9 +2,9 @@
 package cl.nightcore.itemrarity.listener;
 
 import cl.nightcore.itemrarity.ItemRarity;
+import cl.nightcore.itemrarity.loot.DamageTracker;
 import cl.nightcore.itemrarity.loot.LevelGapManager;
 import cl.nightcore.itemrarity.loot.PartyManager;
-import cl.nightcore.itemrarity.loot.DamageTracker;
 import cl.nightcore.mythicProjectiles.boss.BossDifficulty;
 import cl.nightcore.mythicProjectiles.boss.WorldBoss;
 import cl.nightcore.mythicProjectiles.util.MobUtil;
@@ -95,7 +95,22 @@ public class UnifiedExperienceManager implements Listener {
      */
     public static void debugXPCalculation(LivingEntity entity, int baseVanillaXP) {
         XPCalculationInfo info = getXPCalculationInfo(entity, baseVanillaXP);
-        ItemRarity.PLUGIN.getLogger().info("XP Debug: " + info.toString());
+        ItemRarity.PLUGIN.getLogger().info("XP Debug: " + info);
+    }
+
+    /**
+     * 🔥 NUEVOS MÉTODOS DE CONFIGURACIÓN
+     */
+    public static double getMaxRewardDistance() {
+        return PartyManager.MAX_DISTANCE_FOR_REWARDS;
+    }
+
+    public static boolean isDistanceCheckEnabled() {
+        return PartyManager.DISTANCE_CHECK_ENABLED;
+    }
+
+    public static boolean isDivideXpAmongParty() {
+        return DIVIDE_XP_AMONG_PARTY;
     }
 
     /**
@@ -249,8 +264,6 @@ public class UnifiedExperienceManager implements Listener {
                 });
     }
 
-
-
     /**
      * 🔥 ACTUALIZADO: Distribuye experiencia entre jugadores elegibles
      * Ahora con división de XP real entre miembros de party
@@ -347,21 +360,6 @@ public class UnifiedExperienceManager implements Listener {
      */
     public boolean isAuraSkillsAvailable() {
         return auraSkillsApi != null;
-    }
-
-    /**
-     * 🔥 NUEVOS MÉTODOS DE CONFIGURACIÓN
-     */
-    public static double getMaxRewardDistance() {
-        return PartyManager.MAX_DISTANCE_FOR_REWARDS;
-    }
-
-    public static boolean isDistanceCheckEnabled() {
-        return PartyManager.DISTANCE_CHECK_ENABLED;
-    }
-
-    public static boolean isDivideXpAmongParty() {
-        return DIVIDE_XP_AMONG_PARTY;
     }
 
     /**

@@ -9,12 +9,11 @@ import java.util.Optional;
 import java.util.Random;
 
 public class ConditionalDropConfig {
+    private static final Random random = new Random();
     private final ItemStack item;
     private final double chance;
     private final int minAmount;
     private final int maxAmount;
-    private static final Random random = new Random();
-
     // Condiciones opcionales
     private final Integer requiredLevel;
     private final Integer maxLevel;

@@ -9,13 +9,17 @@ import cl.nightcore.itemrarity.item.roller.IdentifyScroll;
 import cl.nightcore.itemrarity.item.roller.MagicObject;
 import cl.nightcore.itemrarity.listener.*;
 import cl.nightcore.itemrarity.loot.CustomDropsManager;
+import cl.nightcore.itemrarity.loot.Items;
 import cl.nightcore.itemrarity.loot.PartyManager;
+import cl.nightcore.itemrarity.loot.chest.ChestDrops;
+import cl.nightcore.itemrarity.loot.mob.MobDrops;
 import cl.nightcore.itemrarity.statprovider.StatProviderManager;
 import cl.nightcore.itemrarity.util.AnvilRepairUtil.ItemRepairManager;
 import cl.nightcore.itemrarity.util.AsyncRateLimiter;
 import dev.aurelium.auraskills.api.AuraSkillsApi;
 import dev.aurelium.auraskills.api.registry.NamespacedRegistry;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -29,6 +33,25 @@ import java.util.Objects;
 public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener {
 
     public static ItemRarity PLUGIN;
+
+    public MobDrops getMobDrops() {
+        return mobDrops;
+    }
+
+    private MobDrops mobDrops;
+
+    public ChestDrops getChestDrops() {
+        return chestDrops;
+    }
+
+    private ChestDrops chestDrops;
+
+    public Items getItemRegistry() {
+        return itemRegistry;
+    }
+
+    private Items itemRegistry;
+
     public static Locale AURA_LOCALE;
 
     private final StatProviderManager statProviderManager = new StatProviderManager();
@@ -79,6 +102,19 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener 
         PLUGIN = this;
         AURA_LOCALE = AuraSkillsApi.get().getMessageManager().getDefaultLanguage();
 
+        Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> {
+            itemRegistry = new Items();
+        }, 200L); // 20 ticks = 1 segundo
+
+        Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> {
+            mobDrops = new MobDrops();
+            chestDrops = new ChestDrops();
+            getServer().getPluginManager().registerEvents(new CustomDropsManager(), this);
+        }, 300L); // 20 ticks = 1 segundo
+
+
+
+
         Objects.requireNonNull(getCommand("getgem")).setExecutor(new GetGemCommand());
         Objects.requireNonNull(getCommand("getremover")).setExecutor(new GetGemRemoverCommand());
         Objects.requireNonNull(getCommand("getitemupgrader")).setExecutor(new GetItemUpgraderCommand());
@@ -98,7 +134,7 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener 
 
         new ItemGetCommand(this);
 
-        getServer().getPluginManager().registerEvents(new CustomDropsManager(), this);
+
         getServer().getPluginManager().registerEvents(new UnifiedExperienceManager(), this);
         getServer().getPluginManager().registerEvents(new PartyManager(), this);
 

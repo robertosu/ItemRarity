@@ -26,11 +26,7 @@ public class LevelGapManager {
         }
         
         // Jugador de nivel muy bajo vs mob de nivel alto
-        if (LOWER_LEVEL_PENALTY && levelDifference < -MAX_LEVEL_DIFFERENCE) {
-            return true;
-        }
-        
-        return false;
+        return LOWER_LEVEL_PENALTY && levelDifference < -MAX_LEVEL_DIFFERENCE;
     }
 
 
@@ -57,12 +53,8 @@ public class LevelGapManager {
         if (config.higherLevelPenalty && levelDifference > config.maxLevelDifference) {
             return true;
         }
-        
-        if (config.lowerLevelPenalty && levelDifference < -config.maxLevelDifference) {
-            return true;
-        }
-        
-        return false;
+
+        return config.lowerLevelPenalty && levelDifference < -config.maxLevelDifference;
     }
     
     public record LevelGapConfig(int maxLevelDifference, boolean higherLevelPenalty, boolean lowerLevelPenalty) {

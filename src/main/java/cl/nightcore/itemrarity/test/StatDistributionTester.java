@@ -46,7 +46,7 @@ public class StatDistributionTester {
             averages.add(average);
             
             // Calcular rareza y contarla
-            Component rarity = RarityCalculator.calculateRarity(rollQuality, average);
+            Component rarity = RarityCalculator.calculateRarity(average);
 
             String rarityName = PlainTextComponentSerializer.plainText().serialize(rarity);
 

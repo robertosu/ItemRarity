@@ -3,11 +3,9 @@ package cl.nightcore.itemrarity.item.roller;
 
 import cl.nightcore.itemrarity.config.ItemConfig;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -37,7 +35,7 @@ public class DarkScroll extends ItemStack {
         // Set lore using Adventure API
         List<Component> lore = new ArrayList<>();
         lore.add(Component.text("Arrastra este item a tu objeto para").color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
-        lore.add(Component.text("desbloquear nuevos bonos ocultos (6 y 7).").color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
+        lore.add(Component.text("desbloquear un sexto o séptimo bono (6-7)").color(LORE_COLOR).decoration(TextDecoration.ITALIC,false));
         meta.lore(lore);
 
         // Set glint effect

@@ -2,12 +2,12 @@ package cl.nightcore.itemrarity.config;
 
 import cl.nightcore.itemrarity.item.BlessingBall;
 import cl.nightcore.itemrarity.item.DarkmagicObject;
+import cl.nightcore.itemrarity.item.gem.GemObject;
+import cl.nightcore.itemrarity.item.gem.GemRemover;
 import cl.nightcore.itemrarity.item.roller.BlessingObject;
 import cl.nightcore.itemrarity.item.roller.DarkScroll;
 import cl.nightcore.itemrarity.item.roller.MagicObject;
 import cl.nightcore.itemrarity.item.roller.RedemptionObject;
-import cl.nightcore.itemrarity.item.gem.GemObject;
-import cl.nightcore.itemrarity.item.gem.GemRemover;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -40,12 +40,12 @@ public class ItemConfig {
     public static final NamespacedKey DARKMAGIC_KEY_NS;
     public static final NamespacedKey DARKSCROLL_KEY_NS;
 
-    public static final TextColor COMMON_COLOR = TextColor.color(0xDEDEDE);
+    public static final TextColor COMMON_COLOR = TextColor.color(0xA09683);
     public static final TextColor UNCOMMON_COLOR = TextColor.color(0x2CAF34);
     public static final TextColor RARE_COLOR = TextColor.color(0x0333AF);
-    public static final TextColor EPIC_COLOR = TextColor.color(0x812EDD);
-    public static final TextColor LEGENDARY_COLOR =TextColor.color(0xFFBF00);
-    public static final TextColor GODLIKE_COLOR = TextColor.color(0xFF0003);
+    public static final TextColor EPIC_COLOR = TextColor.color(0x6C029C);
+    public static final TextColor LEGENDARY_COLOR =TextColor.color(0xFFC600);
+    public static final TextColor GODLIKE_COLOR = TextColor.color(0xDE0000);
 
     public static final Component PLUGIN_PREFIX = Component.text("[Pergamino]: ").color(NamedTextColor.GOLD);
     public static final Component REROLL_PREFIX = Component.text("[Objeto Mágico]: ").color(MagicObject.getPrimaryColor());
@@ -57,7 +57,7 @@ public class ItemConfig {
     public static final Component GEM_REMOVER_PREFIX = Component.text("[Removedor]: ").color(GemRemover.getPrimaryColor());
     public static final Component GEM_UPGRADER_PREFIX = Component.text("[Forja de gemas]: ").color(GemRemover.getPrimaryColor());
     public static final Component XP_MULTIPLIER_PREFIX = Component.text("[Multiplicador XP]: ").color(BlessingObject.getPrimaryColor());
-    public static final Component STATPOTION_PREFIX = Component.text("[StatPotion]: ").color(NamedTextColor.LIGHT_PURPLE);
+    public static final Component STATPOTION_PREFIX = Component.text("[Elíxir]: ").color(NamedTextColor.LIGHT_PURPLE);
     public static final Component DARKMAGIC_PREFIX = Component.text("[Magia oscura]: ").color(DarkmagicObject.getPrimaryColor());
     public static final Component DARKSCROLL_PREFIX = Component.text("[Pergamino prohibido]: ").color(DarkScroll.getPrimaryColor());
 

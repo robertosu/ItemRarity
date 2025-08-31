@@ -2,7 +2,6 @@ package cl.nightcore.itemrarity.listener;
 
 import cl.nightcore.itemrarity.item.potion.StatPotion;
 import cl.nightcore.itemrarity.model.StatPotionModel;
-import cl.nightcore.itemrarity.util.ItemUtil;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;

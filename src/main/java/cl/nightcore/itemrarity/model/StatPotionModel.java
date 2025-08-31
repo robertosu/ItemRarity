@@ -5,7 +5,6 @@ import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.item.potion.PotionManager;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -22,13 +21,27 @@ public record StatPotionModel(ItemStack item) {
     private static final NamespacedKey POTION_DURATION_SECONDS = new NamespacedKey(ItemRarity.PLUGIN, "potion_duration_seconds");
 
     /**
+     * Método estático de conveniencia para verificar si un item es poción
+     */
+    public static boolean isStatPotion(ItemStack item) {
+        return new StatPotionModel(item).isStatPotion();
+    }
+
+    /**
+     * Método estático para crear un modelo desde un ItemStack
+     */
+    public static StatPotionModel of(ItemStack item) {
+        return new StatPotionModel(item);
+    }
+
+    /**
      * Verifica si el ItemStack es una poción de stats
      */
     public boolean isStatPotion() {
         if (item == null || item.getItemMeta() == null) {
             return false;
         }
-        
+
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
         return container.has(IS_STAT_POTION, PersistentDataType.BOOLEAN);
     }
@@ -43,7 +56,7 @@ public record StatPotionModel(ItemStack item) {
 
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
         String statName = container.get(POTION_STAT, PersistentDataType.STRING);
-        
+
         if (statName == null) {
             return null;
         }
@@ -65,7 +78,7 @@ public record StatPotionModel(ItemStack item) {
 
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
         String levelName = container.get(POTION_LEVEL, PersistentDataType.STRING);
-        
+
         if (levelName == null) {
             return null;
         }
@@ -87,7 +100,7 @@ public record StatPotionModel(ItemStack item) {
 
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
         String durationName = container.get(POTION_DURATION, PersistentDataType.STRING);
-        
+
         if (durationName == null) {
             return null;
         }
@@ -108,7 +121,7 @@ public record StatPotionModel(ItemStack item) {
         }
 
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        
+
         // Intentar obtener del formato nuevo primero
         PotionManager.PotionLevel level = getLevel();
         if (level != null) {
@@ -129,7 +142,7 @@ public record StatPotionModel(ItemStack item) {
         }
 
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        
+
         // Intentar obtener del formato nuevo primero
         PotionManager.PotionDuration duration = getDuration();
         if (duration != null) {
@@ -150,7 +163,7 @@ public record StatPotionModel(ItemStack item) {
         }
 
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        return getLevel() == null && getDuration() == null && 
+        return getLevel() == null && getDuration() == null &&
                container.has(POTION_VALUE, PersistentDataType.DOUBLE);
     }
 
@@ -162,25 +175,11 @@ public record StatPotionModel(ItemStack item) {
         if (duration != null) {
             return duration.getFormattedTime();
         }
-        
+
         // Formatear duración manual para formato legacy
         int seconds = getDurationSeconds();
         int minutes = seconds / 60;
         int remainingSeconds = seconds % 60;
         return String.format("%d:%02d", minutes, remainingSeconds);
-    }
-
-    /**
-     * Método estático de conveniencia para verificar si un item es poción
-     */
-    public static boolean isStatPotion(ItemStack item) {
-        return new StatPotionModel(item).isStatPotion();
-    }
-
-    /**
-     * Método estático para crear un modelo desde un ItemStack
-     */
-    public static StatPotionModel of(ItemStack item) {
-        return new StatPotionModel(item);
     }
 }

@@ -2,7 +2,6 @@ package cl.nightcore.itemrarity.util;
 
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.config.ItemConfig;
-import cl.nightcore.itemrarity.item.DarkmagicObject;
 import cl.nightcore.itemrarity.item.ExperienceMultiplier;
 import cl.nightcore.itemrarity.item.ItemUpgrader;
 import cl.nightcore.itemrarity.item.gem.GemRemover;
@@ -37,7 +36,7 @@ import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 public class ItemUtil {
 
     public static final Random RANDOM = new Random();
-    public static final DecimalFormat DF = new DecimalFormat("0.#");
+    public static final DecimalFormat AttributesDF = new DecimalFormat("0.#");
     private static final MyTypedKey[] TYPED_KEYS = {
         // Más comunes primero
         new MyTypedKey(ItemConfig.IDENTIFY_SCROLL_KEY_NS, PersistentDataType.BOOLEAN, ObjectType.IDENTIFY_SCROLL),
@@ -53,7 +52,6 @@ public class ItemUtil {
         new MyTypedKey(ItemConfig.DARKMAGIC_KEY_NS,PersistentDataType.BOOLEAN,ObjectType.DARKMAGIC),
             new MyTypedKey(ItemConfig.DARKSCROLL_KEY_NS,PersistentDataType.BOOLEAN,ObjectType.DARKSCROLL)
     };
-    //public static Component reset = Component.text().content("").color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false).build();
 
 
     public static boolean isIdentified(ItemStack item) {
@@ -219,12 +217,12 @@ public class ItemUtil {
         // Recuperar o inicializar la lore como componentes
         List<Component> lore = meta.hasLore() ? meta.lore() : new ArrayList<>();
         // Filtrar líneas existentes que contengan atributos sin quitar la primera
-
+        //TODO hacer que no se remueva el componente del refinado (atk speed)
         lore.removeIf(line ->  !line.toString().contains("|") && (line.toString().contains("Daño p") || line.toString().contains("Velocidad d") || line.toString().contains("En la mano") || PlainTextComponentSerializer.plainText().serialize(line).equals("          ")));
         // Añadir nuevas líneas
         lore.add(Component.text("          "));
         lore.add(Component.text("En la mano principal:", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-        lore.add(Component.text(" " + DF.format(totalDamage) + " Daño por ataque", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false));
+        lore.add(Component.text(" " + AttributesDF.format(totalDamage) + " Daño por ataque", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false));
         lore.add(Component.text(" " + attackSpeedDisplay + " Velocidad de ataque", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false));// Aplicar la nueva lore
         meta.lore(lore);
         // Ocultar atributos por defecto

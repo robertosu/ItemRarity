@@ -2,7 +2,7 @@ name: ItemRarity
 version: 0.2.5
 main: cl.nightcore.itemrarity.ItemRarity
 api-version: 1.20
-depend: [ AuraSkills ]
+depend: [AuraSkills, Nexo]
 
 commands:
   getscroll:

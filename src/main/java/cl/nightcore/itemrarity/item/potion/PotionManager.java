@@ -10,68 +10,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class PotionManager {
 
-    // Enum para niveles de pociones con valores fijos
-    public enum PotionLevel {
-        ONE(5, "1"),
-        TWO(10, "2"),
-        THREE(15, "3"),
-        FOUR(20, "4"),
-        FIVE(25, "5");
-
-        private final double value;
-        private final String name;
-
-        PotionLevel(double value, String name) {
-            this.value = value;
-            this.name = name;
-        }
-
-        public double getValue() {
-            return value;
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
-
-    // Enum para duraciones con valores fijos
-    public enum PotionDuration {
-        LOW(300, "Efímero"),    // 5 min
-        MEDIUM(600, "Intermedio"), // 10 min
-        HIGH(900, "Duradero"),  // 15 min
-        HIGHEST(1800, "Muy Duradero"); // 30 min
-
-        private final int seconds;
-        private final String name;
-
-        PotionDuration(int seconds, String name) {
-            this.seconds = seconds;
-            this.name = name;
-        }
-
-        public int getSeconds() {
-            return seconds;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public int getTicks() {
-            return seconds * 20;
-        }
-
-        public String getFormattedTime() {
-            int totalSeconds = seconds;
-            int minutes = totalSeconds / 60;
-            int remainingSeconds = totalSeconds % 60;
-            return String.format("%d:%02d", minutes, remainingSeconds);
-        }
-    }
-
-    // ========== MÉTODOS USANDO ENUMS ==========
-
     /**
      * Crea una poción con nivel y duración específicos usando enums
      */
@@ -85,6 +23,8 @@ public class PotionManager {
     public static StatPotion createPotion(CombinedStats stat, PotionLevel level) {
         return createPotion(stat, level, PotionDuration.MEDIUM);
     }
+
+    // ========== MÉTODOS USANDO ENUMS ==========
 
     /**
      * Crea una poción con duración específica (nivel 1 por defecto)
@@ -218,8 +158,6 @@ public class PotionManager {
         return potions;
     }
 
-    // ========== MÉTODOS USANDO VALORES DIRECTOS ==========
-
     /**
      * Crea una poción con valores específicos
      */
@@ -233,6 +171,8 @@ public class PotionManager {
     public static StatPotion createPotionWithValue(CombinedStats stat, double value) {
         return new StatPotion(stat, value, 300); // 5 minutos por defecto
     }
+
+    // ========== MÉTODOS USANDO VALORES DIRECTOS ==========
 
     /**
      * Crea múltiples pociones con valores específicos
@@ -266,8 +206,6 @@ public class PotionManager {
         return createPotionWithValues(randomStat, randomValue, randomDuration);
     }
 
-    // ========== MÉTODOS LEGACY (para compatibilidad) ==========
-
     /**
      * @deprecated Use createPotionWithValues(CombinedStats, double, int) instead
      */
@@ -284,7 +222,7 @@ public class PotionManager {
         return createPotionsWithValues(stat, value, duration, amount);
     }
 
-    // ========== MÉTODOS DE ENTREGA A JUGADORES ==========
+    // ========== MÉTODOS LEGACY (para compatibilidad) ==========
 
     /**
      * Da pociones al jugador usando enums
@@ -307,6 +245,8 @@ public class PotionManager {
             player.getInventory().addItem(potion);
         }
     }
+
+    // ========== MÉTODOS DE ENTREGA A JUGADORES ==========
 
     /**
      * Da una sola poción al jugador usando enums
@@ -446,8 +386,6 @@ public class PotionManager {
         return createMixedPotionPack(PotionLevel.FIVE, PotionDuration.HIGHEST, 2);
     }
 
-    // ========== MÉTODOS DE UTILIDAD ==========
-
     /**
      * Valida si un stat string es válido
      */
@@ -471,6 +409,8 @@ public class PotionManager {
             return false;
         }
     }
+
+    // ========== MÉTODOS DE UTILIDAD ==========
 
     /**
      * Valida si una duración string es válida
@@ -570,5 +510,65 @@ public class PotionManager {
     public static String getPotionInfoWithValues(CombinedStats stat, double value, int duration) {
         return stat.getDisplayName(ItemRarity.AURA_LOCALE) +
                 " (+" + value + ") con duración de " + formatDuration(duration);
+    }
+
+    // Enum para niveles de pociones con valores fijos
+    public enum PotionLevel {
+        ONE(5, "1"),
+        TWO(10, "2"),
+        THREE(15, "3"),
+        FOUR(20, "4"),
+        FIVE(25, "5");
+
+        private final double value;
+        private final String name;
+
+        PotionLevel(double value, String name) {
+            this.value = value;
+            this.name = name;
+        }
+
+        public double getValue() {
+            return value;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    // Enum para duraciones con valores fijos
+    public enum PotionDuration {
+        LOW(300, "Efímero"),    // 5 min
+        MEDIUM(600, "Intermedio"), // 10 min
+        HIGH(900, "Duradero"),  // 15 min
+        HIGHEST(1800, "Muy Duradero"); // 30 min
+
+        private final int seconds;
+        private final String name;
+
+        PotionDuration(int seconds, String name) {
+            this.seconds = seconds;
+            this.name = name;
+        }
+
+        public int getSeconds() {
+            return seconds;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getTicks() {
+            return seconds * 20;
+        }
+
+        public String getFormattedTime() {
+            int totalSeconds = seconds;
+            int minutes = totalSeconds / 60;
+            int remainingSeconds = totalSeconds % 60;
+            return String.format("%d:%02d", minutes, remainingSeconds);
+        }
     }
 }

@@ -1,6 +1,8 @@
 package cl.nightcore.itemrarity.listener;
 
+import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
 import cl.nightcore.itemrarity.util.AnvilRepairUtil.ItemRepairManager;
+import cl.nightcore.itemrarity.util.ItemUtil;
 import com.nexomc.nexo.api.NexoItems;
 import com.nexomc.nexo.api.events.NexoItemsLoadedEvent;
 import org.bukkit.event.EventHandler;
@@ -29,12 +31,18 @@ public class AnvilListener implements Listener {
 
         // Ambos son items custom - validar con nuestro sistema
         if (event.getInventory().getSecondItem() != null || event.getInventory().getSecondItem() != null) {
+
             if (!repairManager.isValidRepair(
                     NexoItems.idFromItem(event.getInventory().getFirstItem()),
-                    NexoItems.idFromItem(event.getInventory().getSecondItem()))) {
+                    NexoItems.idFromItem(event.getInventory().getSecondItem())) && NexoItems.exists(event.getResult())) {
                 // Combinación no permitida - cancelar
                 event.setResult(null);
             }
+        }
+        if (event.getResult() != null || ItemUtil.isIdentified(event.getResult())){
+            UpgradeableItem temp = new UpgradeableItem(event.getResult());
+            temp.setNewLore();
+            event.setResult(temp);
         }
     }
 }

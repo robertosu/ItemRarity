@@ -15,30 +15,20 @@ import cl.nightcore.itemrarity.item.roller.BlessingObject;
 import cl.nightcore.itemrarity.item.roller.IdentifyScroll;
 import cl.nightcore.itemrarity.item.roller.MagicObject;
 import cl.nightcore.itemrarity.item.roller.RedemptionObject;
+import com.nexomc.nexo.api.NexoItems;
+import org.bukkit.inventory.ItemStack;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 public class Items {
 
-    private static Items instance;
     private static final int MAX_GEM_LEVEL = 5;
-
-    // Items existentes
-    private final MagicObject magicObject = new MagicObject(1, ItemRarity.PLUGIN);
-    private final BlessingObject blessingObject = new BlessingObject(1, ItemRarity.PLUGIN);
-    private final IdentifyScroll identifyScroll = new IdentifyScroll(1, ItemRarity.PLUGIN);
-    private final RedemptionObject redemptionObject = new RedemptionObject(1, ItemRarity.PLUGIN);
-
-
-    private final BlessingBall blessingBall = new BlessingBall(1,ItemRarity.PLUGIN);
-
-    private final SocketStone socketStone = new SocketStone(1,ItemRarity.PLUGIN);
-
-    private final Map<String,GemRemover> allGemRemovers;
-
     // Multiplicadores de experiencia disponibles
     private static final int[] XP_MULTIPLIERS = {100, 200, 300, 400, 500};
-
     // Configuraciones de upgraders: [level, type]
     private static final int[][] UPGRADER_CONFIGS = {
             {1, 1}, // Forja Inestable nivel 1
@@ -48,51 +38,42 @@ public class Items {
             {1, 3}, // Forja Estable nivel 1
             {2, 3}  // Forja Estable nivel 2
     };
-
     private  static final int[] GEMREMOVER_LEVELS = {1,2,3};
+    private static Items instance;
+    // Items existentes
+    private final MagicObject magicObject = new MagicObject(1, ItemRarity.PLUGIN);
+    private final BlessingObject blessingObject = new BlessingObject(1, ItemRarity.PLUGIN);
+    private final IdentifyScroll identifyScroll = new IdentifyScroll(1, ItemRarity.PLUGIN);
+    private final RedemptionObject redemptionObject = new RedemptionObject(1, ItemRarity.PLUGIN);
+    private final BlessingBall blessingBall = new BlessingBall(1,ItemRarity.PLUGIN);
+    private final SocketStone socketStone = new SocketStone(1,ItemRarity.PLUGIN);
 
-    public Map<String, ExperienceMultiplier> getAllXpMultipliers() {
-        return allXpMultipliers;
+    public ItemStack getDarkOpalUpgrade() {
+        if(NexoItems.exists("dark_opal_upgrade")){
+            System.out.println("Loaded: dark_opal_upgrade" );
+
+        }
+        return NexoItems.itemFromId("dark_opal_upgrade").build().clone();
+
     }
 
-    public Map<String, ItemUpgrader> getAllUpgraders() {
-        return allUpgraders;
-    }
-
-    public Map<String, GemObject> getAllGems() {
-        return allGems;
-    }
-
-
-    public Map<String, StatPotion> getAllPotions() {
-        return allPotions;
-    }
-
-    public Map<String,GemRemover> getAllGemRemovers() {
-        return allGemRemovers;
-    }
-
+    private final Map<String,GemRemover> allGemRemovers;
     // Mapa con TODAS las pociones instanciadas
     // Clave: "STAT_LEVEL_DURATION" (ej: "STRENGTH_THREE_HIGH")
     private final Map<String, StatPotion> allPotions;
-
     // Mapa con TODAS las gemas pregeneradas
     // Clave: "STAT_LEVEL" (ej: "STRENGTH_3")
     private final Map<String, GemObject> allGems;
-
     // Mapa con TODOS los multiplicadores de experiencia
     // Clave: "XP_MULTIPLIER" (ej: "XP_200")
     private final Map<String, ExperienceMultiplier> allXpMultipliers;
-
     // Mapa con TODOS los upgraders
     // Clave: "UPGRADER_LEVEL_TYPE" (ej: "UPGRADER_1_2")
     private final Map<String, ItemUpgrader> allUpgraders;
-
-
     // Manager para crear gemas
     private final GemManager gemManager;
 
-    private Items() {
+    public Items() {
         this.allPotions = new HashMap<>();
         this.allGems = new HashMap<>();
 
@@ -110,12 +91,25 @@ public class Items {
         initializeGemRemovers();
     }
 
-    public static synchronized Items instance(){
-        if(Items.instance != null){
-            return instance;
-        }
-        instance = new Items();
-        return instance;
+
+    public Map<String, ExperienceMultiplier> getAllXpMultipliers() {
+        return allXpMultipliers;
+    }
+
+    public Map<String, ItemUpgrader> getAllUpgraders() {
+        return allUpgraders;
+    }
+
+    public Map<String, GemObject> getAllGems() {
+        return allGems;
+    }
+
+    public Map<String, StatPotion> getAllPotions() {
+        return allPotions;
+    }
+
+    public Map<String,GemRemover> getAllGemRemovers() {
+        return allGemRemovers;
     }
 
     private  void  initializeGemRemovers(){

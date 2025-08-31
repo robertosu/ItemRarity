@@ -1,8 +1,8 @@
 package cl.nightcore.itemrarity.abstracted;
 
-import cl.nightcore.itemrarity.item.gem.GemManager;
 import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.config.ItemConfig;
+import cl.nightcore.itemrarity.item.gem.GemManager;
 import cl.nightcore.itemrarity.item.gem.GemObject;
 import cl.nightcore.itemrarity.item.gem.SocketStone;
 import cl.nightcore.itemrarity.model.GemModel;
@@ -16,8 +16,6 @@ import dev.aurelium.auraskills.api.stat.StatModifier;
 import dev.aurelium.auraskills.api.util.AuraSkillsModifier;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
@@ -44,34 +42,23 @@ public class SocketableItem extends IdentifiedItem {
 
     private static final String MAX_SOCKETS_KEY = "item_max_sockets";
     private static final String AVAILABLE_SOCKETS_KEY = "item_available_sockets";
-    private static final String GEM_KEY_PREFIX = "gem_";
 
     private static final NamespacedKey MAX_SOCKETS_KEY_NS = new NamespacedKey(PLUGIN, MAX_SOCKETS_KEY);
-    private static final NamespacedKey AVAILABLE_SOCKETS_KEY_NS = new NamespacedKey(PLUGIN, AVAILABLE_SOCKETS_KEY);
     private static final GemManager gemManager = new GemManager();
-
-    private  static final Component GEMS_SPACER = Component.text("      "); // 6 soaces
-
-
 
     public SocketableItem(ItemStack item) {
         super(item);
     }
 
     public void initializeSocketData() {
-
         ItemMeta meta = getItemMeta();
         PersistentDataContainer container = meta.getPersistentDataContainer();
         int sockets = RANDOM.nextInt(MAX_POSSIBLE_SOCKETS) + 1;
 
         container.set(MAX_SOCKETS_KEY_NS, PersistentDataType.INTEGER, sockets);
-        container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, sockets);
 
         setItemMeta(meta);
     }
-
-
-
 
     public int installGem(GemModel gem, Player player) {
         // Verificar si hay espacios disponibles para gemas
@@ -81,20 +68,17 @@ public class SocketableItem extends IdentifiedItem {
                             .color(NamedTextColor.RED)));
             return 1;
         }
-
         // Verificar si ya hay una gema del mismo tipo
         if (hasGemWithStat(gem.getStat())) {
             player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(
                     Component.text("El objeto ya tiene una gema de este tipo.").color(NamedTextColor.RED)));
             return 1;
         }
-
         // Verificar si la gema es compatible con las stats posibles para un item
         if (!gem.isCompatible(statProvider)) {
             sendCompatibleGemsForItemType(player);
             return 1;
         }
-
         // Verificar si la gema se rompe durante la instalación (40% de probabilidad de fallo)
         if (gemBreaks(60)) {
             player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1.0f, 0.4f);
@@ -104,31 +88,13 @@ public class SocketableItem extends IdentifiedItem {
                             .color(NamedTextColor.RED)));
             return 2;
         }
-
         // Si todas las verificaciones pasan, proceder a instalar la gema
         Stat stat = gem.getStat();
 
         // Aplicar la gema usando el nuevo método de la API
-        ItemStack modifiedItem = AuraSkillsBukkit.get()
+        this.setItemMeta(AuraSkillsBukkit.get()
                 .getItemManager()
-                .addStatModifier(this, modifierType, stat, gem.getValue() , AuraSkillsModifier.Operation.ADD,"gemstone",false);
-
-        setItemMeta(modifiedItem.getItemMeta());
-
-        // Actualizar los datos del socket con el ItemMeta más reciente
-        ItemMeta meta = getItemMeta();
-        PersistentDataContainer container = meta.getPersistentDataContainer();
-
-        // Store gem data
-        String gemKey = GEM_KEY_PREFIX + stat.name();
-        String gemLevel = String.format("%d", gem.getLevel());
-        container.set(new NamespacedKey(PLUGIN, gemKey), PersistentDataType.STRING, gemLevel);
-
-        // Update available sockets
-        int availableSockets = getAvailableSockets();
-        container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, availableSockets - 1);
-
-        setItemMeta(meta);
+                .addStatModifier(this, modifierType, stat, gem.getValue() , AuraSkillsModifier.Operation.ADD,GEM_STATMODIFIER,false).getItemMeta());
         this.setNewLore();
 
         player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1.0f, 2.0f);
@@ -139,7 +105,9 @@ public class SocketableItem extends IdentifiedItem {
     }
 
     public boolean extractAllGems(Player player, GemRemoverModel gemRemover) {
-        Map<Stat, Integer> installedGems = getInstalledGems();
+        var installedGems = getInstalledGems();
+        Stat stat;
+        int gemLevel;
 
         if (installedGems.isEmpty()) {
             player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(
@@ -149,18 +117,17 @@ public class SocketableItem extends IdentifiedItem {
         // Recolectar las gemas extraídas
         List<GemObject> extractedGems = new ArrayList<>();
 
-        // Procesar cada gema instalada
-        for (Map.Entry<Stat, Integer> entry : installedGems.entrySet()) {
-            Stat stat = entry.getKey();
-            int gemLevel = entry.getValue();
 
+        for (StatModifier statModifier : installedGems){
+            stat = statModifier.stat();
+            gemLevel = calculateGemLevel((int)statModifier.value());
             // Verificar si la gema se rompe
             if (gemBreaks(gemRemover.getPercentage())) {
                 player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1.0f, 0.4f);
                 player.sendMessage(ItemConfig.GEMSTONE_PREFIX.append(Component.text("La gema de ")
                         .color(NamedTextColor.RED)
                         .append(Component.text(stat.getDisplayName(AURA_LOCALE)).color(ItemUtil.getColorOfStat(stat)))
-                        .append(Component.text(" se rompió durante la extracción."))));
+                        .append(Component.text(" se rompió al extraer."))));
             } else {
                 // Crear una instancia de la gema extraída
                 player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1.0f, 2.0f);
@@ -173,8 +140,8 @@ public class SocketableItem extends IdentifiedItem {
             }
             // Remover el modificador de la gema
             removeStatModifierByName(stat, GEM_STATMODIFIER);
+
         }
-        removeStoredGemsNBT();
         // SOLUCIÓN: En lugar de solo llamar setLore(), regenerar todo correctamente
         setNewLore();
         // Entregar las gemas al jugador
@@ -187,30 +154,14 @@ public class SocketableItem extends IdentifiedItem {
         return true;
     }
 
-    private void removeStoredGemsNBT() {
-        ItemMeta meta = getItemMeta();
-        PersistentDataContainer container = meta.getPersistentDataContainer();
 
-        for (Stat stat : CombinedStats.values()) {
-            container.remove(new NamespacedKey(PLUGIN, GEM_KEY_PREFIX + stat.name()));
+    public List<StatModifier> getInstalledGems() {
+        try{
+            var gemsmodifiers = AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, modifierType,GEM_STATMODIFIER);
+            return gemsmodifiers;
+        }catch (Exception e){
+            throw new IllegalStateException("Error al obtener gemas de este items (AS API)");
         }
-
-        container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, getMaxSockets());
-        setItemMeta(meta);
-    }
-
-    public Map<Stat, Integer> getInstalledGems() {
-        Map<Stat, Integer> gems = new HashMap<>();
-        PersistentDataContainer container = getItemMeta().getPersistentDataContainer();
-
-        for (Stat stat : CombinedStats.values()) {
-            String key = GEM_KEY_PREFIX + stat.name();
-            String value = container.get(new NamespacedKey(PLUGIN, key), PersistentDataType.STRING);
-            if (value != null) {
-                gems.put(stat, Integer.parseInt(value));
-            }
-        }
-        return gems;
     }
 
 
@@ -219,6 +170,20 @@ public class SocketableItem extends IdentifiedItem {
     protected int calculateGemValue(int level) {
         return 4 + (level - 1) * level / 2;
     }
+
+
+    protected int calculateGemLevel(int value) {
+        return switch (value) {
+            case 4 -> 1;
+            case 5 -> 2;
+            case 7 -> 3;
+            case 10 -> 4;
+            case 14 -> 5;
+            case 19 -> 6;
+            default -> throw new IllegalStateException("Valor inválido de la gema");
+        };
+    }
+
 
     private int findSocketInfoInsertIndex(List<Component> lore) {
         // Buscar la línea que comienza con (rareza)
@@ -331,12 +296,10 @@ public class SocketableItem extends IdentifiedItem {
 
     public boolean addSocket(Player player){
         int maxSockets = getMaxSockets();
-        int availableSockets = getAvailableSockets();
         if(maxSockets < MAX_POSSIBLE_SOCKETS){
             ItemMeta meta = getItemMeta();
             PersistentDataContainer container = meta.getPersistentDataContainer();
             container.set(MAX_SOCKETS_KEY_NS, PersistentDataType.INTEGER, maxSockets + 1);
-            container.set(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, availableSockets + 1);
             setItemMeta(meta);
             this.setNewLore();
             player.playSound(player, Sound.BLOCK_AMETHYST_BLOCK_BREAK, 1.0f, 0.4f);
@@ -354,10 +317,20 @@ public class SocketableItem extends IdentifiedItem {
 
 
     public boolean hasGemWithStat(Stat stat) {
-        return getItemMeta()
-                .getPersistentDataContainer()
-                .has(new NamespacedKey(PLUGIN, GEM_KEY_PREFIX + stat.name()), PersistentDataType.STRING);
+        var modifiers = AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, modifierType, GEM_STATMODIFIER);
+        if (modifiers.isEmpty()){
+            return false;
+        }
+        for (StatModifier modifier : modifiers){
+            System.out.println(modifier.stat().name());
+
+            if(modifier.stat().name().equals(stat.name())) return true;
+        }
+        return  false;
     }
+
+
+
 
     public int getMaxSockets() {
         return getItemMeta()
@@ -366,9 +339,8 @@ public class SocketableItem extends IdentifiedItem {
     }
 
     public int getAvailableSockets() {
-        return getItemMeta()
-                .getPersistentDataContainer()
-                .getOrDefault(AVAILABLE_SOCKETS_KEY_NS, PersistentDataType.INTEGER, 0);
+        var modifiers = AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this,modifierType,GEM_STATMODIFIER);
+        return (getMaxSockets() - modifiers.size());
     }
 
     public boolean hasAvailableSockets() {
