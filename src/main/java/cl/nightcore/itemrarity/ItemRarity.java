@@ -1,8 +1,12 @@
 package cl.nightcore.itemrarity;
 
+import cl.nightcore.itemrarity.abstracted.StatRollCache;
 import cl.nightcore.itemrarity.abstracted.UpgradeableItem;
-import cl.nightcore.itemrarity.command.*;
-import cl.nightcore.itemrarity.command.ItemGetCommand;
+import cl.nightcore.itemrarity.command.NexoHelpCommand;
+import cl.nightcore.itemrarity.command.PartyCommands;
+import cl.nightcore.itemrarity.command.ReloadRepairCommand;
+import cl.nightcore.itemrarity.command.TestCommand;
+import cl.nightcore.itemrarity.command.api.ItemGetCommand;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.customstats.*;
 import cl.nightcore.itemrarity.item.roller.IdentifyScroll;
@@ -29,6 +33,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+
+import static cl.nightcore.itemrarity.abstracted.IdentifiedItem.initializeStatCache;
 
 public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener {
 
@@ -72,7 +78,7 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener 
     public static UpgradeableItem rollStats(Player player, ItemStack item) {
         UpgradeableItem upgradeableItem;
         upgradeableItem = new UpgradeableItem(item);
-        upgradeableItem.rerollStatsEnhanced();
+        upgradeableItem.rerollStatsEnhancedCached();
 
         Component message = Component.text("¡El objeto cambió! Rareza: ", MagicObject.getLoreColor());
         player.sendMessage(ItemConfig.REROLL_PREFIX.append(message).append(upgradeableItem.getRarityComponent()));
@@ -112,25 +118,18 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener 
             getServer().getPluginManager().registerEvents(new CustomDropsManager(), this);
         }, 300L); // 20 ticks = 1 segundo
 
-
-
-
-        Objects.requireNonNull(getCommand("getgem")).setExecutor(new GetGemCommand());
-        Objects.requireNonNull(getCommand("getremover")).setExecutor(new GetGemRemoverCommand());
-        Objects.requireNonNull(getCommand("getitemupgrader")).setExecutor(new GetItemUpgraderCommand());
         Objects.requireNonNull(getCommand("testdistr")).setExecutor(new TestCommand());
-        Objects.requireNonNull(getCommand("getstatpotion")).setExecutor(new GetPotionCommand());
         Objects.requireNonNull(getCommand("blockdata")).setExecutor(new NexoHelpCommand());
         Objects.requireNonNull(getCommand("party")).setExecutor(new PartyCommands());
-
-
 
         getServer().getPluginManager().registerEvents(new IdentifyScrollListener(), this);
         getServer().getPluginManager().registerEvents(new CancelUsageInRecipesListener(), this);
 
         getServer().getPluginManager().registerEvents(new PotionConsumeListener(),this);
         getServer().getPluginManager().registerEvents(new NexoSmithingListener(), this);
-        getServer().getPluginManager().registerEvents(this, this); // Para el PlayerQuitEvent
+
+        initializeStatCache(this);
+
 
         new ItemGetCommand(this);
 

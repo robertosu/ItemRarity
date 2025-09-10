@@ -19,11 +19,10 @@ public class ItemConfig {
 
     public static final String ROLLCOUNT_KEY = "magicobject_roll_count";
     public static final String ITEM_LEVEL_KEY = "item_level";
-    public static final String SCROLLED_IDENTIFIER_KEY = "is_identify_scrolled";
+    public static final String SCROLLED_IDENTIFIER_KEY = "ided";
     public static final String MAX_BONUSES_KEY = "maxbonuses";
 
     public static final NamespacedKey LEVEL_KEY_NS;
-    public static final NamespacedKey ROLLCOUNT_KEY_NS;
     public static final NamespacedKey SCROLLED_IDENTIFIER_KEY_NS;
     public static final NamespacedKey MAX_BONUSES_KEY_NS;
     public static final NamespacedKey GEM_REMOVER_KEY_NS;
@@ -57,7 +56,7 @@ public class ItemConfig {
     public static final Component GEM_REMOVER_PREFIX = Component.text("[Removedor]: ").color(GemRemover.getPrimaryColor());
     public static final Component GEM_UPGRADER_PREFIX = Component.text("[Forja de gemas]: ").color(GemRemover.getPrimaryColor());
     public static final Component XP_MULTIPLIER_PREFIX = Component.text("[Multiplicador XP]: ").color(BlessingObject.getPrimaryColor());
-    public static final Component STATPOTION_PREFIX = Component.text("[Elíxir]: ").color(NamedTextColor.LIGHT_PURPLE);
+    public static final Component STATPOTION_PREFIX = Component.text("[Elíxir]: ").color(TextColor.color(0xF1628C));
     public static final Component DARKMAGIC_PREFIX = Component.text("[Magia oscura]: ").color(DarkmagicObject.getPrimaryColor());
     public static final Component DARKSCROLL_PREFIX = Component.text("[Pergamino prohibido]: ").color(DarkScroll.getPrimaryColor());
 
@@ -80,20 +79,19 @@ public class ItemConfig {
 
     static {
         LEVEL_KEY_NS = new NamespacedKey(PLUGIN, ITEM_LEVEL_KEY);
-        ROLLCOUNT_KEY_NS = new NamespacedKey(PLUGIN, ROLLCOUNT_KEY);
         SCROLLED_IDENTIFIER_KEY_NS = new NamespacedKey(PLUGIN, SCROLLED_IDENTIFIER_KEY);
         MAX_BONUSES_KEY_NS = new NamespacedKey(PLUGIN, MAX_BONUSES_KEY);
         GEM_REMOVER_KEY_NS = new NamespacedKey(PLUGIN, GEM_REMOVER_KEY);
         ITEM_UPGRADER_KEY_NS = new NamespacedKey(PLUGIN, ITEM_UPGRADER_KEY);
         GEM_STAT_KEY_NS = new NamespacedKey(PLUGIN, GEM_STAT_KEY);
-        GEM_UPGRADER_KEY_NS = new NamespacedKey(PLUGIN,GEM_UPGRADER_KEY);
-        SOCKET_GEM_KEY_NS = new NamespacedKey(PLUGIN,SOCKET_GEM_KEY);
-        IDENTIFY_SCROLL_KEY_NS = new NamespacedKey(PLUGIN,IDENTIFY_SCROLL_KEY);
-        REDEMPTION_OBJECT_KEY_NS = new NamespacedKey(PLUGIN,REDEMPTION_OBJECT_KEY);
-        MAGIC_OBJECT_KEY_NS = new NamespacedKey(PLUGIN,MAGIC_OBJECT_KEY);
-        BLESSING_OBJECT_KEY_NS = new NamespacedKey(PLUGIN,BLESSING_OBJECT_KEY);
-        BLESSING_BALL_KEY_NS = new NamespacedKey(PLUGIN,BLESSING_BALL_KEY);
-        DARKMAGIC_KEY_NS = new NamespacedKey(PLUGIN,DARKMAGIC_KEY);
-        DARKSCROLL_KEY_NS = new NamespacedKey(PLUGIN,DARKSCROLL_KEY);
+        GEM_UPGRADER_KEY_NS = new NamespacedKey(PLUGIN, GEM_UPGRADER_KEY);
+        SOCKET_GEM_KEY_NS = new NamespacedKey(PLUGIN, SOCKET_GEM_KEY);
+        IDENTIFY_SCROLL_KEY_NS = new NamespacedKey(PLUGIN, IDENTIFY_SCROLL_KEY);
+        REDEMPTION_OBJECT_KEY_NS = new NamespacedKey(PLUGIN, REDEMPTION_OBJECT_KEY);
+        MAGIC_OBJECT_KEY_NS = new NamespacedKey(PLUGIN, MAGIC_OBJECT_KEY);
+        BLESSING_OBJECT_KEY_NS = new NamespacedKey(PLUGIN, BLESSING_OBJECT_KEY);
+        BLESSING_BALL_KEY_NS = new NamespacedKey(PLUGIN, BLESSING_BALL_KEY);
+        DARKMAGIC_KEY_NS = new NamespacedKey(PLUGIN, DARKMAGIC_KEY);
+        DARKSCROLL_KEY_NS = new NamespacedKey(PLUGIN, DARKSCROLL_KEY);
     }
 }

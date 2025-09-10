@@ -6,14 +6,12 @@ import cl.nightcore.itemrarity.item.ItemUpgrader;
 import cl.nightcore.itemrarity.item.gem.GemObject;
 import cl.nightcore.itemrarity.item.gem.GemRemover;
 import cl.nightcore.itemrarity.item.potion.StatPotion;
-import cl.nightcore.itemrarity.loot.Items;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 public class ChestDrops {
 

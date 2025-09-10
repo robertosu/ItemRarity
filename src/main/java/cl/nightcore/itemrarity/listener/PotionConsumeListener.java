@@ -21,24 +21,14 @@ public class PotionConsumeListener implements Listener {
             return;
         }
 
-        StatPotionModel potionModel = new StatPotionModel(item);
+        StatPotionModel potionModel = StatPotionModel.fromItemStack(item);
 
         // Obtener datos necesarios del modelo
-        if (potionModel.getStat() == null) {
+        if (potionModel.stat() == null) {
             return;
         }
 
-        // Crear una poción temporal para aplicar el efecto
-        // Usar el constructor apropiado según el formato
-        StatPotion tempPotion;
-
-        // Formato nuevo: usar enums
-        tempPotion = new StatPotion(
-                potionModel.getStat(),
-                potionModel.getLevel(),
-                potionModel.getDuration());
-
         // Aplicar el efecto de la poción
-        tempPotion.consumePotion(player);
+        potionModel.consumePotion(player);
     }
 }

@@ -3,7 +3,6 @@ package cl.nightcore.itemrarity.loot.mob;
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.item.potion.PotionManager;
-import cl.nightcore.itemrarity.loot.Items;
 import cl.nightcore.mythicProjectiles.boss.BossDifficulty;
 
 import java.util.ArrayList;

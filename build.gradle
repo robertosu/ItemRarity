@@ -53,6 +53,9 @@ repositories {
         name = "CodeMC"
         url = uri("https://repo.codemc.io/repository/maven-public/")
     }
+    maven {
+        url 'https://repo.nightexpressdev.com/releases'
+    }
 }
 
 configurations {
@@ -70,6 +73,7 @@ dependencies {
     compileOnly 'cl.nightcore:MythicProjectiles:1.1'
     compileOnly 'dev.jorel:commandapi-bukkit-core:10.1.2'
     annotationProcessor 'dev.jorel:commandapi-annotations:10.1.2'
+    compileOnly 'su.nightexpress.excellentenchants:Core:5.1.0'
 
 }
 

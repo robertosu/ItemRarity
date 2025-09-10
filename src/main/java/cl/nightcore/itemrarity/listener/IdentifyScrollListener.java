@@ -112,8 +112,10 @@ public class IdentifyScrollListener implements Listener {
         if (event.getSlotType() != InventoryType.SlotType.CRAFTING){
             return;
         }
-
+        timer.start();
         handleInteraction(event, targetItem, cursor, objectType);
+        timer.stop();
+        System.out.println(timer.getFormattedDuration());
     }
 
 
@@ -398,12 +400,10 @@ public class IdentifyScrollListener implements Listener {
             ItemStack cursor,
             Player player,
             BiFunction<Player, ItemStack, ItemStack> operation) {
-        timer.start();
+
         consumeItem(event, cursor);
         event.setCurrentItem(operation.apply(player, targetItem));
         event.setCancelled(true);
-        timer.stop();
-        System.out.println(timer.getFormattedDuration());
     }
 
     private void consumeItem(InventoryClickEvent event, ItemStack cursor) {

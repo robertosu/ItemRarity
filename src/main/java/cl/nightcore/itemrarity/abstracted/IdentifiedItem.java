@@ -6,7 +6,6 @@ import cl.nightcore.itemrarity.config.CombinedTraits;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.item.roller.BlessingObject;
 import cl.nightcore.itemrarity.item.roller.RedemptionObject;
-import cl.nightcore.itemrarity.rollquality.MainRollQuality;
 import cl.nightcore.itemrarity.rollquality.StatValueGenerator;
 import cl.nightcore.itemrarity.statprovider.ModifierProvider;
 import cl.nightcore.itemrarity.util.ItemType;
@@ -14,6 +13,7 @@ import cl.nightcore.itemrarity.util.ItemUtil;
 import cl.nightcore.itemrarity.util.RarityCalculator;
 import com.nexomc.nexo.api.NexoItems;
 import dev.aurelium.auraskills.api.AuraSkillsBukkit;
+import dev.aurelium.auraskills.api.item.ItemManager;
 import dev.aurelium.auraskills.api.item.ModifierType;
 import dev.aurelium.auraskills.api.skill.Multiplier;
 import dev.aurelium.auraskills.api.stat.Stat;
@@ -21,16 +21,12 @@ import dev.aurelium.auraskills.api.stat.StatModifier;
 import dev.aurelium.auraskills.api.trait.Trait;
 import dev.aurelium.auraskills.api.trait.TraitModifier;
 import dev.aurelium.auraskills.api.util.AuraSkillsModifier;
-import io.papermc.paper.datacomponent.DataComponentType;
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.enchantments.Enchantment;
@@ -40,6 +36,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.Plugin;
+import su.nightexpress.excellentenchants.api.EnchantRegistry;
+import su.nightexpress.excellentenchants.api.enchantment.CustomEnchantment;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -48,11 +47,14 @@ import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 
 public abstract class IdentifiedItem extends ItemStack {
 
+    private static final ItemManager ITEM_MANAGER = AuraSkillsBukkit.get().getItemManager();
     protected static final String NATIVE_STATMODIFIER = "native";
     protected static final String MONOLITIC_TRAITMODIFIER = "monolitic";
     protected static final String GEM_STATMODIFIER = "gema";
     protected static final int MAX_EXTRA_BONUSES = 2;
     protected static final int MAX_LEVEL = 9;
+
+    private static StatRollCache statRollCache;
 
     protected static final boolean randomOperations = false;
 
@@ -66,11 +68,7 @@ public abstract class IdentifiedItem extends ItemStack {
     protected final ItemType itemType;
     protected final ModifierProvider statProvider;
 
-    // Separar listas para stats gaussianos y no gaussianos
-    private final List<Stat> addedStats;
-    private final List<Stat> addedGaussStats;
-    private final List<Integer> statValues;
-    private final List<Integer> gaussStatValues;
+    private final List<ModifierPojoExtend> statsPojos;
 
     // Nueva estructura para pre-calcular lore de stats
     private final List<Component> preCalculatedStatLines;
@@ -79,16 +77,19 @@ public abstract class IdentifiedItem extends ItemStack {
     protected Component rarity;
     List<Component> newLore;
 
+
+    public static void initializeStatCache(Plugin plugin) {
+        statRollCache = new StatRollCache(plugin);
+    }
+
+
     public IdentifiedItem(ItemStack item) {
         super(item);
         this.itemType = ItemUtil.getItemType(item);
         this.statProvider = ItemUtil.getProvider(this.itemType);
         this.modifierType = ItemUtil.getModifierType(this.itemType);
-        this.addedStats = new ArrayList<>();
-        this.addedGaussStats = new ArrayList<>();
-        this.statValues = new ArrayList<>();
-        this.gaussStatValues = new ArrayList<>();
         this.preCalculatedStatLines = new ArrayList<>();
+        this.statsPojos = new ArrayList<>();
     }
 
     public static double calculateTotalDamage(ItemStack item, double baseDamage) {
@@ -143,72 +144,144 @@ public abstract class IdentifiedItem extends ItemStack {
         this.setNewLore();
     }
 
+
+    protected List<Component> generateStatsCached() {
+        int statsCount = getMaxBonuses();
+
+        // Get pre-rolled stats from cache
+        StatRollCache.PrerolledStats prerolled = statRollCache.getPrerolledStats(statProvider, statsCount);
+
+        if (prerolled != null) {
+            // Use cached data
+            this.statsPojos.clear();
+            Collections.addAll(this.statsPojos, prerolled.statsPojos());
+
+            // Update modifier type for each pojo (since cache can't know the specific modifier type)
+            for (ModifierPojoExtend pojo : this.statsPojos) {
+                pojo.type = this.modifierType; // Assuming this field is accessible
+            }
+            this.preCalculatedRarity = prerolled.rarity();
+            this.rarity = prerolled.rarity();
+        }
+        return prerolled.preCalculatedStatLines();
+    }
+
+    public void rerollStatsEnhancedCached() {
+        // Single operation to remove all modifiers matching ID
+        this.setItemMeta(ITEM_MANAGER.removeStatModifiersByIdentifier(this, modifierType, NATIVE_STATMODIFIER).getItemMeta());
+
+        // Generate stats using cache
+        //generateStatsCached();
+
+        // Apply stats and update lore efficiently
+        updateLoreDirectCached(generateStatsCached(), applyStatsToItemGetMeta());
+    }
+
+
+    private void updateLoreDirectCached(List<Component> lines, ItemMeta meta) {
+        List<Component> currentLore = meta.lore();
+
+        if (currentLore == null || currentLore.isEmpty()) {
+            setNewLore();
+            return;
+        }
+
+        // Find second empty component efficiently
+        int emptyCount = 0;
+        int secondEmptyIndex = -1;
+
+        for (int i = 0; i < currentLore.size() && emptyCount < 2; i++) {
+            if (currentLore.get(i).equals(Component.empty())) {
+                emptyCount++;
+                if (emptyCount == 2) {
+                    secondEmptyIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if (secondEmptyIndex == -1) {
+            setNewLore();
+            return;
+        }
+
+        // Build new lore using cached stat lines
+        int remainingSize = currentLore.size() - secondEmptyIndex;
+        List<Component> updatedLore = new ArrayList<>(lines.size() + remainingSize);
+
+        // Add cached stat lines
+        updatedLore.addAll(lines);
+
+        // Add remaining lore efficiently using subList
+        updatedLore.addAll(currentLore.subList(secondEmptyIndex, currentLore.size()));
+
+        // Single lore update
+        meta.lore(updatedLore);
+
+        // Update name only if rarity changed
+        handleCustomName(meta, false);
+    }
+
+
+
+    private ModifierPojoExtend getStatModifierPojo(Stat stat, double value, boolean gaussian){
+        return new ModifierPojoExtend(modifierType, stat, value, AuraSkillsModifier.Operation.ADD, NATIVE_STATMODIFIER, false, gaussian);
+    }
+
+
+
+    private ItemManager.ModifierPojo getRandomStatModifierPojo(Stat stat, double value){
+
+        AuraSkillsModifier.Operation operation = ThreadLocalRandom.current().nextBoolean()
+                ? AuraSkillsModifier.Operation.ADD
+                : AuraSkillsModifier.Operation.ADD_PERCENT;
+
+        return new ItemManager.ModifierPojo(modifierType, stat, value, operation, NATIVE_STATMODIFIER, false);
+    }
+
+
     protected void generateStats() {
-        int statsCount = getMaxBonuses(); // Número total de stats a generar
+        int statsCount = getMaxBonuses();
         List<Stat> availableStats = statProvider.getAvailableStats();
+
+        // Variables para el cálculo de rareza
+        double sum = 0.0;
+        List<Component> tempStatLines = new ArrayList<>();
 
         // 1. Agregar stats gaussianas
         for (Stat stat : statProvider.getGaussStats()) {
-            addedGaussStats.add(stat);
-            int value = StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
-            gaussStatValues.add(value);
+            int value = StatValueGenerator.generateValueForStat(true);
+
+            // Agregar al POJO
+            statsPojos.add(getStatModifierPojo(stat, value, true));
+
+            // Generar línea de lore inmediatamente
+            sum += value;
+            Component statLine = createStatLoreLine(stat, value);
+            tempStatLines.add(statLine);
         }
 
-        // 2. Calcular cuántas stats adicionales se necesitan
-        int remainingStats = statsCount - addedGaussStats.size();
-
-        // 3. Agregar stats aleatorias hasta alcanzar el límite
+        // 2. Agregar stats restantes
+        int remainingStats = statsCount - statsPojos.size();
         for (int i = 0; i < remainingStats; i++) {
             Stat stat;
             do {
                 stat = availableStats.get(ThreadLocalRandom.current().nextInt(availableStats.size()));
-            } while (addedStats.contains(stat) || addedGaussStats.contains(stat)); // Evitar duplicados en ambas listas
+            } while (containsStat(stat));
 
-            addedStats.add(stat);
-            int value = StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
-            statValues.add(value);
-        }
-    }
+            int value = StatValueGenerator.generateValueForStat(false);
 
-    // Método para pre-calcular las líneas de lore de stats
-    private void preCalculateStatLines() {
-        preCalculatedStatLines.clear();
+            // Agregar al POJO
+            statsPojos.add(getStatModifierPojo(stat, value, false));
 
-        var sum = 0.0;
-        List<Component> tempStatLines = new ArrayList<>();
-
-        // Procesar stats gaussianos
-        for (int i = 0; i < addedGaussStats.size(); i++) {
-            Stat stat = addedGaussStats.get(i);
-            double value = gaussStatValues.get(i);
+            // Generar línea de lore inmediatamente
             sum += value;
-
-            // Crear línea de lore para esta stat
-            String valueText = " +" + (int) value;
-            Component statLine = Component.text(valueText, ItemUtil.getColorOfStat(stat))
-                    .decoration(TextDecoration.ITALIC, false)
-                    .append(Component.text(" " + stat.getDisplayName(AURA_LOCALE), TextColor.color(0x636363)))
-                    .decoration(TextDecoration.ITALIC, false);
+            Component statLine = createStatLoreLine(stat, value);
             tempStatLines.add(statLine);
         }
 
-        // Procesar stats normales
-        for (int i = 0; i < addedStats.size(); i++) {
-            Stat stat = addedStats.get(i);
-            double value = statValues.get(i);
-            sum += value;
-
-            // Crear línea de lore para esta stat
-            String valueText = " +" + (int) value;
-            Component statLine = Component.text(valueText, ItemUtil.getColorOfStat(stat))
-                    .decoration(TextDecoration.ITALIC, false)
-                    .append(Component.text(" " + stat.getDisplayName(AURA_LOCALE), TextColor.color(0x636363)))
-                    .decoration(TextDecoration.ITALIC, false);
-            tempStatLines.add(statLine);
-        }
-
-        // Calcular rareza y agregar al lore pre-calculado
-        int totalStats = addedStats.size() + addedGaussStats.size();
+        // 3. Calcular rareza una sola vez
+        int totalStats = statsPojos.size();
         double average = sum / totalStats;
         if (totalStats == 4) {
             average *= 0.85; // Aplicar penalización early game
@@ -217,13 +290,189 @@ public abstract class IdentifiedItem extends ItemStack {
         this.preCalculatedRarity = RarityCalculator.calculateRarity(average);
         this.rarity = preCalculatedRarity;
 
-        // Agregar header y líneas de stats
+        // 4. Construir el lore final
         preCalculatedStatLines.add(Component.empty());
         preCalculatedStatLines.add(Component.text("Bonos 1-5: ", NamedTextColor.GRAY)
                 .decoration(TextDecoration.ITALIC, false)
                 .append(preCalculatedRarity));
         preCalculatedStatLines.addAll(tempStatLines);
     }
+
+
+
+    protected ItemMeta generateStatsOptimized() {
+        int statsCount = getMaxBonuses();
+        List<Stat> availableStats = statProvider.getAvailableStats();
+
+        double sum = 0.0;
+
+        // Pre-allocate arrays for batch operations
+        ModifierPojoExtend[] pojoArray = new ModifierPojoExtend[statsCount];
+        Component[] statLines = new Component[statsCount];
+
+        int index = 0;
+
+        // Generate Gaussian stats first
+        for (Stat stat : statProvider.getGaussStats()) {
+            if (index >= statsCount) break;
+
+            int value = StatValueGenerator.generateValueForStat(true);
+            sum += value;
+
+            pojoArray[index] = getStatModifierPojo(stat, value, true);
+            statLines[index] = createStatLineFast(stat, value);
+            index++;
+        }
+
+        // Fill remaining slots
+        while (index < statsCount) {
+            Stat stat;
+            do {
+                stat = availableStats.get(ThreadLocalRandom.current().nextInt(availableStats.size()));
+            } while (containsStatInArray(stat, pojoArray, index));
+
+            int value = StatValueGenerator.generateValueForStat(false);
+            sum += value;
+
+            pojoArray[index] = getStatModifierPojo(stat, value, false);
+            statLines[index] = createStatLineFast(stat, value);
+            index++;
+        }
+
+        // Batch add to collections
+        Collections.addAll(statsPojos, pojoArray);
+
+        // Calculate rarity once
+        double average = sum / statsCount;
+        if (statsCount == 4) {
+            average *= 0.85;
+        }
+        this.preCalculatedRarity = RarityCalculator.calculateRarity(average);
+        this.rarity = preCalculatedRarity;
+
+        // Build pre-calculated lines efficiently
+        preCalculatedStatLines.add(Component.empty());
+        preCalculatedStatLines.add(Component.text("Bonos 1-5: ", NamedTextColor.GRAY)
+                .decoration(TextDecoration.ITALIC, false)
+                .append(preCalculatedRarity));
+        Collections.addAll(preCalculatedStatLines, statLines);
+
+        // Apply stats in single batch operation
+        return ITEM_MANAGER.addStatModifierArray(this, pojoArray).getItemMeta();
+    }
+
+
+
+    private boolean containsStatInArray(Stat stat, ModifierPojoExtend[] array, int currentIndex) {
+        for (int i = 0; i < currentIndex; i++) {
+            if (array[i].stat.equals(stat)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Component createStatLineFast(Stat stat, int value) {
+        return Component.text(" +" + value, ItemUtil.getColorOfStat(stat))
+                .decoration(TextDecoration.ITALIC, false)
+                .append(Component.text(" " + stat.getDisplayName(AURA_LOCALE), TextColor.color(0x636363)))
+                .decoration(TextDecoration.ITALIC, false);
+    }
+
+
+    protected void generateStatsExceptHighest(StatModifier highestModifier) {
+        int statsCount = getMaxBonuses();
+        List<Stat> availableStats = statProvider.getAvailableStats();
+        // Limpiar colecciones previas
+        statsPojos.clear();
+        preCalculatedStatLines.clear();
+
+        statsPojos.add(getStatModifierPojo(highestModifier.stat(),highestModifier.value(),statProvider.isThisStatGauss(highestModifier.stat())));
+
+        // Variables para el cálculo de rareza
+        double sum = 0.0;
+        List<Component> tempStatLines = new ArrayList<>();
+
+        // 1. Agregar stats gaussianas
+        for (Stat stat : statProvider.getGaussStats()) {
+            if (stat.name().equals(highestModifier.stat().name())){
+                continue;
+            }
+            int value = StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
+
+            // Agregar al POJO
+            statsPojos.add(getStatModifierPojo(stat, value, true));
+
+            // Generar línea de lore inmediatamente
+            sum += value;
+            Component statLine = createStatLoreLine(stat, value);
+            tempStatLines.add(statLine);
+        }
+
+        // 2. Agregar stats restantes
+        int remainingStats = statsCount - statsPojos.size();
+        for (int i = 0; i < remainingStats; i++) {
+            Stat stat;
+            do {
+                stat = availableStats.get(ThreadLocalRandom.current().nextInt(availableStats.size()));
+                if (stat.name().equals(highestModifier.stat().name())){
+                    continue;
+                }
+            } while (containsStat(stat));
+
+            int value = StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
+
+            // Agregar al POJO
+            statsPojos.add(getStatModifierPojo(stat, value, false));
+
+            // Generar línea de lore inmediatamente
+            sum += value;
+            Component statLine = createStatLoreLine(stat, value);
+            tempStatLines.add(statLine);
+        }
+
+        // 3. Calcular rareza una sola vez
+        int totalStats = statsPojos.size();
+        double average = sum / totalStats;
+        if (totalStats == 4) {
+            average *= 0.85; // Aplicar penalización early game
+        }
+
+        this.preCalculatedRarity = RarityCalculator.calculateRarity(average);
+        this.rarity = preCalculatedRarity;
+
+        // 4. Construir el lore final
+        preCalculatedStatLines.add(Component.empty());
+        preCalculatedStatLines.add(Component.text("Bonos 1-5: ", NamedTextColor.GRAY)
+                .decoration(TextDecoration.ITALIC, false)
+                .append(preCalculatedRarity));
+        preCalculatedStatLines.addAll(tempStatLines);
+    }
+
+    private boolean containsStat(Stat stat) {
+        return statsPojos.stream().anyMatch(pojo -> pojo.stat.equals(stat));
+    }
+
+
+    // Método helper para crear líneas de lore de stats
+    private Component createStatLoreLine(Stat stat, int value) {
+        String valueText = " +" + value;
+        return Component.text(valueText, ItemUtil.getColorOfStat(stat))
+                .decoration(TextDecoration.ITALIC, false)
+                .append(Component.text(" " + stat.getDisplayName(AURA_LOCALE), TextColor.color(0x636363)))
+                .decoration(TextDecoration.ITALIC, false);
+    }
+
+
+    private boolean containsGaussianStat(Stat stat) {
+        return statsPojos.stream().anyMatch(pojo -> pojo.stat.equals(stat) && pojo.gaussian);
+    }
+
+    private boolean containsNormalStat(Stat stat) {
+        return statsPojos.stream().anyMatch(pojo -> pojo.stat.equals(stat) && !pojo.gaussian);
+    }
+
+
 
     protected void removeTraitModifierByName(ItemStack item, Trait trait, String name) {
         this.setItemMeta(AuraSkillsBukkit.get()
@@ -239,29 +488,12 @@ public abstract class IdentifiedItem extends ItemStack {
                 .getItemMeta());
     }
 
-    protected StatModifier getLowestModifier() {
-        // Obtener todos los modificadores de estadísticas nativas
-        List<StatModifier> nativeModifiers =
-                AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
 
-        StatModifier lowestModifier = null;
-        double lowestValue = Double.MAX_VALUE;
-
-        // Encontrar el modificador con el valor más bajo
-        for (StatModifier modifier : nativeModifiers) {
-            if (modifier.value() < lowestValue) {
-                lowestValue = modifier.value();
-                lowestModifier = modifier;
-            }
-        }
-
-        return lowestModifier;
-    }
 
     public StatModifier getHighestStatModifier() {
         // Obtener todos los modificadores de estadísticas nativas
         List<StatModifier> nativeModifiers =
-                AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
+                ITEM_MANAGER.getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
 
         StatModifier highestModifier = null;
         double highestValue = Double.MIN_VALUE;
@@ -277,6 +509,10 @@ public abstract class IdentifiedItem extends ItemStack {
         return highestModifier;
     }
 
+
+
+
+
     protected void generateStatsExceptHighestStat(Stat excludedStat, double excludedvalue) {
         CombinedStats excludedCombinedStat =
                 CombinedStats.valueOf(excludedStat.getId().getKey().toUpperCase());
@@ -284,33 +520,27 @@ public abstract class IdentifiedItem extends ItemStack {
         List<Stat> availableStats = statProvider.getAvailableStats();
 
         // Limpiar todas las listas
-        addedStats.clear();
-        addedGaussStats.clear();
-        statValues.clear();
-        gaussStatValues.clear();
+        statsPojos.clear();
 
         // 1. Procesar stats Gauss
         for (Stat stat : statProvider.getGaussStats()) {
             CombinedStats currentCombinedStat =
                     CombinedStats.valueOf(stat.getId().getKey().toUpperCase());
             if (!currentCombinedStat.equals(excludedCombinedStat)) {
-                addedGaussStats.add(stat);
                 int value = StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
-                gaussStatValues.add(value);
+                statsPojos.add(getStatModifierPojo(stat, value, true));
             }
         }
 
         // Agregar el stat excluido a la lista apropiada
         if (statProvider.isThisStatGauss(excludedStat)) {
-            addedGaussStats.add(excludedStat);
-            gaussStatValues.add((int) Math.round(excludedvalue));
+            statsPojos.add(getStatModifierPojo(excludedStat, (int) excludedvalue, true));
         } else {
-            addedStats.add(excludedStat);
-            statValues.add((int) Math.round(excludedvalue));
+            statsPojos.add(getStatModifierPojo(excludedStat, (int) excludedvalue, false));
         }
 
         // 2. Calcular stats adicionales necesarias
-        int currentTotalStats = addedStats.size() + addedGaussStats.size();
+        int currentTotalStats = statsPojos.size();
         int remainingStats = statsCount - currentTotalStats;
 
         // 3. Agregar stats aleatorias hasta alcanzar el límite
@@ -318,16 +548,22 @@ public abstract class IdentifiedItem extends ItemStack {
             Stat stat;
             do {
                 stat = availableStats.get(ThreadLocalRandom.current().nextInt(availableStats.size()));
-                CombinedStats currentCombinedStat =
-                        CombinedStats.valueOf(stat.getId().getKey().toUpperCase());
-                // Verificar que la stat no esté ya añadida y no sea la excluida
-            } while (addedStats.contains(stat) || addedGaussStats.contains(stat) ||
-                    CombinedStats.valueOf(stat.getId().getKey().toUpperCase()).equals(excludedCombinedStat));
+            } while (containsStatOrExcluded(stat, excludedCombinedStat));
 
-            addedStats.add(stat);
             int value = StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
-            statValues.add(value);
+            statsPojos.add(getStatModifierPojo(stat, value, false));
         }
+    }
+
+    private boolean containsStatOrExcluded(Stat stat, CombinedStats excludedCombinedStat) {
+        // Verificar si ya está en las listas de POJOs
+        boolean alreadyExists = containsStat(stat);
+
+        // Verificar si es la stat excluida
+        CombinedStats currentCombinedStat = CombinedStats.valueOf(stat.getId().getKey().toUpperCase());
+        boolean isExcluded = currentCombinedStat.equals(excludedCombinedStat);
+
+        return alreadyExists || isExcluded;
     }
 
     protected void removeAllModifierStatsByName(String name) {
@@ -337,59 +573,34 @@ public abstract class IdentifiedItem extends ItemStack {
     }
 
     protected void applyStatsToItem() {
-        var sum = 0.0;
+        this.setItemMeta(ITEM_MANAGER.addStatModifierArray(this, statsPojos.toArray(new ItemManager.ModifierPojo[0])).getItemMeta());
+    }
 
-        // Aplicar stats gaussianos
-        for (int i = 0; i < addedGaussStats.size(); i++) {
-            Stat stat = addedGaussStats.get(i);
-            double value = gaussStatValues.get(i);
-            sum += value;
-            addNativeStatModifier(stat, value, randomOperations);
-        }
 
-        // Aplicar stats normales
-        for (int i = 0; i < addedStats.size(); i++) {
-            Stat stat = addedStats.get(i);
-            double value = statValues.get(i);
-            sum += value;
-            addNativeStatModifier(stat, value, randomOperations);
-        }
-
-        // Calcular rareza basada en el promedio total
-        int totalStats = addedStats.size() + addedGaussStats.size();
+    protected ItemMeta applyStatsToItemGetMeta(){
+        return ITEM_MANAGER.addStatModifierArray(this, statsPojos.toArray(new ItemManager.ModifierPojo[0])).getItemMeta();
     }
 
     public void removeModifiers() {
-        for (CombinedStats combinedStat : CombinedStats.values()) {
+      /*  for (CombinedStats combinedStat : CombinedStats.values()) {
             this.setItemMeta(AuraSkillsBukkit.get()
                     .getItemManager()
                     .removeStatModifier(this, modifierType, combinedStat.getDelegateStat(), NATIVE_STATMODIFIER)
                     .getItemMeta());
-        }
-    }
+        }*/
+        this.setItemMeta(ITEM_MANAGER.removeStatModifiersByIdentifier(this,modifierType,NATIVE_STATMODIFIER).getItemMeta());
 
-    protected void emptyLore() {
-        ItemMeta meta = this.getItemMeta();
-        List<Component> emptylore = new ArrayList<>();
-        meta.lore(emptylore);
-        this.setItemMeta(meta);
     }
 
     public double calculateAverage() {
         // Si tenemos stats pre-calculadas, usar esas
-        if (!preCalculatedStatLines.isEmpty()) {
+        if (!preCalculatedStatLines.isEmpty() && !statsPojos.isEmpty()) {
             var sum = 0.0;
             int totalStats = 0;
 
-            // Sumar stats gaussianos
-            for (int i = 0; i < addedGaussStats.size(); i++) {
-                sum += gaussStatValues.get(i);
-                totalStats++;
-            }
-
-            // Sumar stats normales
-            for (int i = 0; i < addedStats.size(); i++) {
-                sum += statValues.get(i);
+            // Sumar todos los stats de la lista unificada
+            for (ModifierPojoExtend pojo : statsPojos) {
+                sum += pojo.value;
                 totalStats++;
             }
 
@@ -409,7 +620,7 @@ public abstract class IdentifiedItem extends ItemStack {
 
         // Fallback al método original si no hay stats pre-calculadas
         List<StatModifier> nativeModifiers =
-                AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
+                ITEM_MANAGER.getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
         if (nativeModifiers.isEmpty()) {
             throw new IllegalStateException("No hay estadísticas nativas para calcular el promedio.");
         }
@@ -433,6 +644,9 @@ public abstract class IdentifiedItem extends ItemStack {
 
         return baseAverage; // 5 stats, sin penalización
     }
+
+
+
 
     public TextColor getRarityColor() {
         return this.rarity.color();
@@ -501,7 +715,7 @@ public abstract class IdentifiedItem extends ItemStack {
     }
 
     private void addExtraStat(Stat stat) {
-        this.setItemMeta(AuraSkillsBukkit.get().getItemManager().addStatModifier(this, this.modifierType, stat, StatValueGenerator.generateValueForStat(false), AuraSkillsModifier.Operation.ADD_PERCENT, "extra", false).getItemMeta());
+        this.setItemMeta(ITEM_MANAGER.addStatModifier(this, this.modifierType, stat, StatValueGenerator.generateValueForStat(false), AuraSkillsModifier.Operation.ADD_PERCENT, "extra", false).getItemMeta());
     }
 
     public int rerollExtraBonuses() {
@@ -535,12 +749,17 @@ public abstract class IdentifiedItem extends ItemStack {
     }
 
     protected Optional<List<StatModifier>> getExtraBonuses() {
-        return Optional.ofNullable(AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, this.modifierType, "extra"));
+        return Optional.ofNullable(ITEM_MANAGER.getStatModifiersById(this, this.modifierType, "extra"));
     }
 
-    public void setNewLore(){
-        newLore = new ArrayList<>();
 
+    public void setNewLore(){
+        setNewLore(false);
+    }
+
+
+    public void setNewLore(boolean hardWipeName){
+        newLore = new ArrayList<>();
         // Si no tenemos rareza pre-calculada, calcularla normalmente
         if (preCalculatedRarity == null) {
             this.rarity = RarityCalculator.calculateRarity(calculateAverage());
@@ -555,13 +774,19 @@ public abstract class IdentifiedItem extends ItemStack {
         getRefinedLines();
         getGemsLines();
         getMultipliersLines();
+        getEnchantmentLines();
+
+
+        getItemMeta().addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        getItemMeta().addItemFlags(ItemFlag.HIDE_STORED_ENCHANTS);
         if (!itemType.isArmor()) {
             getItemMeta().addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
             getAttributeLines();
         }
         this.lore(newLore);
-        handleCustomName(this.getItemMeta());
+        handleCustomName(this.getItemMeta(),hardWipeName);
     }
+
 
     // Método fusionado para líneas de refinado (estadísticas base + rareza)
     protected void getRefinedLines(){
@@ -600,7 +825,7 @@ public abstract class IdentifiedItem extends ItemStack {
         newLore.add(refinedHeader);
 
         // Debug: Verificar cuántos traits tenemos
-        List<TraitModifier> traitModifiers = AuraSkillsBukkit.get().getItemManager().getTraitModifiers(this, modifierType);
+        List<TraitModifier> traitModifiers = ITEM_MANAGER.getTraitModifiers(this, modifierType);
 
         // Agregar estadísticas base (traits monolíticos) apiladas verticalmente
         int traitCount = 0;
@@ -649,25 +874,6 @@ public abstract class IdentifiedItem extends ItemStack {
         };
     }
 
-    protected void getMonoliticLines(){
-        var line = Component.text("|")
-                .color(NamedTextColor.DARK_GRAY)
-                .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE);
-
-        for (TraitModifier traitModifier : AuraSkillsBukkit.get().getItemManager().getTraitModifiers(this,modifierType)) {
-            var added = determineValueIncreasePerLevelForTrait(traitModifier.trait());
-            var component =
-                    Component.text(" +" + getFormattedValue(traitModifier.value(),traitModifier.trait()) + " ").color(getTraitColor(traitModifier.trait())).decoration(TextDecoration.ITALIC,TextDecoration.State.FALSE)
-                            .append(Component.text(traitModifier.trait().getDisplayName(AURA_LOCALE) + " ")
-                                    .color(TextColor.color(0x636363)).decoration(TextDecoration.ITALIC,TextDecoration.State.FALSE)
-                                    .append(Component.text("|").color(TextColor.color(0x636363)))
-                                    .decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE));
-            line = line.append(component);
-        }
-        newLore.add(Component.empty());
-        newLore.add(line);
-    }
-
     protected void getStatLines(){
         // Verificar si tenemos líneas de stats pre-calculadas
         if (!preCalculatedStatLines.isEmpty()) {
@@ -679,7 +885,7 @@ public abstract class IdentifiedItem extends ItemStack {
         newLore.add(Component.empty());
         newLore.add(Component.text("Bonos 1-5: ",NamedTextColor.GRAY).decoration(TextDecoration.ITALIC,false).append(rarity));
 
-        for (StatModifier statModifier : AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER)) {
+        for (StatModifier statModifier : ITEM_MANAGER.getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER)) {
             // Determinar si necesita el símbolo de porcentaje
             String valueText = " +" + (int) statModifier.value();
             if (statModifier.operation() == AuraSkillsModifier.Operation.ADD_PERCENT) {
@@ -724,7 +930,7 @@ public abstract class IdentifiedItem extends ItemStack {
 
     protected void getMultipliersLines(){
 
-        List<Multiplier> multipliers = AuraSkillsBukkit.get().getItemManager().getMultipliers(this, modifierType);
+        List<Multiplier> multipliers = ITEM_MANAGER.getMultipliers(this, modifierType);
 
         if (multipliers.isEmpty()){
             return;
@@ -733,7 +939,7 @@ public abstract class IdentifiedItem extends ItemStack {
             newLore.add(Component.text("Multiplicadores XP:",NamedTextColor.GRAY).decoration(TextDecoration.ITALIC,false));
         }
 
-        for (Multiplier multiplier : AuraSkillsBukkit.get().getItemManager().getMultipliers(this, modifierType)){
+        for (Multiplier multiplier : ITEM_MANAGER.getMultipliers(this, modifierType)){
             if (multiplier.skill() != null) {
                 newLore.add(Component.text(" +"+(int) multiplier.value()+"%",TextColor.color(0x62FFF8))
                         .append(Component.text(" XP de "+ multiplier.skill().getDisplayName(AURA_LOCALE),TextColor.color(0x62FFF8)))
@@ -744,6 +950,46 @@ public abstract class IdentifiedItem extends ItemStack {
                         .append(Component.text(" XP de Habilidades",TextColor.color(0x16A46E))).decoration(TextDecoration.ITALIC,false));
             }
         }
+    }
+
+    protected void getEnchantmentLines(){
+        List<Component> lines = new ArrayList<>();
+        var enchants = this.getEnchantments();
+        if(!enchants.isEmpty()){
+            lines.add(Component.empty());
+            lines.add(Component.text("Encantamientos:",NamedTextColor.GRAY).decoration(TextDecoration.ITALIC,false));
+        }
+
+        TextColor enchantColor;
+
+        for (var enchant : enchants.keySet()){
+
+            enchantColor = !enchant.isCursed() ? TextColor.color(0x994999) : TextColor.color(0xC4322D);
+
+            if (EnchantRegistry.getByKey(enchant.getKey()) != null){
+
+                CustomEnchantment custom = EnchantRegistry.getByKey(enchant.getKey());
+                lines.add(Component.text(" ")
+                        .append(custom.getBukkitEnchantment().displayName(enchants.get(enchant)).color(enchantColor)
+                        .decoration(TextDecoration.ITALIC,false)
+                        .append(Component.text("")
+                                .color(enchantColor).decoration(TextDecoration.ITALIC,false))));
+                lines.add(Component
+                        .text("  " + String.join("\n",
+                                custom.getDescription(enchants.get(enchant))),TextColor.color(0x636363))
+                        .decoration(TextDecoration.ITALIC,false));
+            }else{
+
+                lines.add(Component.text(" ")
+                        .append(enchant.displayName(enchants.get(enchant)).color(enchantColor)
+                                        .append(Component.text("")))
+                                .color(enchantColor).decoration(TextDecoration.ITALIC,false));
+                lines.add(Component.text("  ").append(EnchantmentDescriptionManager.getVanillaEnchantDescription(enchant)
+                        .color(TextColor.color(0x636363)).decoration(TextDecoration.ITALIC,false)));
+            }
+        }
+        newLore.addAll(lines);
+
     }
 
     protected void getAttributeLines(){
@@ -784,7 +1030,7 @@ public abstract class IdentifiedItem extends ItemStack {
         Trait originalTrait = (trait instanceof CombinedTraits) ?
                 ((CombinedTraits) trait).getDelegateTrait() : trait;
 
-        var stats = AuraSkillsBukkit.get().getItemManager().getLinkedStats(originalTrait);
+        var stats = ITEM_MANAGER.getLinkedStats(originalTrait);
         if (stats.stream().findAny().isPresent()) {
             return ItemUtil.getColorOfStat(stats.stream().findAny().get());
         }
@@ -795,7 +1041,7 @@ public abstract class IdentifiedItem extends ItemStack {
         Trait originalTrait = (trait instanceof CombinedTraits) ?
                 ((CombinedTraits) trait).getDelegateTrait() : trait;
 
-        return AuraSkillsBukkit.get().getItemManager().getFormattedTraitValue(value, originalTrait);
+        return ITEM_MANAGER.getFormattedTraitValue(value, originalTrait);
     }
 
     protected static double determineValueIncreasePerLevelForTrait(Trait trait){
@@ -807,7 +1053,10 @@ public abstract class IdentifiedItem extends ItemStack {
         return 0;
     }
 
-    public void handleCustomName(ItemMeta meta) {
+    public void handleCustomName(ItemMeta meta, boolean hard) {
+        if(hard){
+            this.rarity = RarityCalculator.calculateRarity(calculateAverage());
+        }
 
         int currentLevel = getLevel();
         TextColor levelColor = getLevelColor(currentLevel);
@@ -815,11 +1064,11 @@ public abstract class IdentifiedItem extends ItemStack {
                 .color(levelColor)
                 .decoration(TextDecoration.ITALIC, false);
 
-        if (NexoItems.idFromItem(this) != null) {
+        if (NexoItems.exists(this)) {
             if (meta.hasCustomName()) {
                 String plainText = PlainTextComponentSerializer.plainText().serialize(meta.customName());
                 // Remover cualquier patrón de refinado existente
-                String cleanedText = removeRefinementPattern(plainText);
+                String cleanedText = removeRefinementPattern(plainText, hard);
 
                 Component component = Component.text(cleanedText, getRarityColor())
                         .decoration(TextDecoration.ITALIC, false)
@@ -828,7 +1077,7 @@ public abstract class IdentifiedItem extends ItemStack {
             } else {
                 String plainText = PlainTextComponentSerializer.plainText().serialize(meta.itemName());
                 // Remover cualquier patrón de refinado existente
-                String cleanedText = removeRefinementPattern(plainText);
+                String cleanedText = removeRefinementPattern(plainText, hard);
 
                 Component component = Component.text(cleanedText, getRarityColor())
                         .decoration(TextDecoration.ITALIC, false)
@@ -839,7 +1088,7 @@ public abstract class IdentifiedItem extends ItemStack {
             if (meta.hasCustomName()) {
                 String plainText = PlainTextComponentSerializer.plainText().serialize(meta.customName());
                 // Remover cualquier patrón de refinado existente
-                String cleanedText = removeRefinementPattern(plainText);
+                String cleanedText = removeRefinementPattern(plainText, hard);
 
                 Component component = Component.text(cleanedText, getRarityColor())
                         .decoration(TextDecoration.ITALIC, false)
@@ -855,7 +1104,7 @@ public abstract class IdentifiedItem extends ItemStack {
                 meta.itemName(component);
             }
         }
-
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         meta.setTooltipStyle(RarityCalculator.getTooltip(rarity));
         this.setItemMeta(meta);
     }
@@ -867,18 +1116,27 @@ public abstract class IdentifiedItem extends ItemStack {
      * @param text El texto original del nombre del ítem
      * @return El texto limpio sin patrones de refinado
      */
-    private String removeRefinementPattern(String text) {
+    private String removeRefinementPattern(String text, boolean hard) {
         // Patrón regex para detectar espacio seguido de [+número] al final del string
         // Ejemplo: " [+1]", " [+9]", etc.
-        String pattern = "\\s+\\[\\+\\d+\\]$";
-        return text.replaceFirst(pattern, "");
+        String pattern;
+        if (hard) {
+            pattern = "\\s*\\[\\+\\d+\\]";
+            return text.replaceAll(pattern, "");
+        }else{
+            pattern = "\\s+\\[\\+\\d+\\]$";
+            return text.replaceFirst(pattern, "");
+        }
     }
 
 
 
 
-    protected void addNativeStatModifierArray(Stat stat, double value, boolean randomOperations) {
-        if (randomOperations && !statProvider.isThisStatGauss(stat)) {
+    protected void addNativeStatModifierArray(ModifierPojoExtend[] statPojos) {
+
+        this.setItemMeta(ITEM_MANAGER.addStatModifierArray(this, statPojos).getItemMeta());
+
+    /*    if (randomOperations && !statProvider.isThisStatGauss(stat)) {
             // Elegir aleatoriamente entre ADD y ADD_PERCENT
             AuraSkillsModifier.Operation operation = ThreadLocalRandom.current().nextBoolean()
                     ? AuraSkillsModifier.Operation.ADD
@@ -892,9 +1150,9 @@ public abstract class IdentifiedItem extends ItemStack {
             // Usar ADD por defecto cuando randomOperations es false
             this.setItemMeta(AuraSkillsBukkit.get()
                     .getItemManager()
-                    .addStatModifierA(this, modifierType, stat, value, AuraSkillsModifier.Operation.ADD, NATIVE_STATMODIFIER, false)
+                    .addStatModifierArray(this, modifierType, stat, value, AuraSkillsModifier.Operation.ADD, NATIVE_STATMODIFIER, false)
                     .getItemMeta());
-        }
+        }*/
     }
 
 
@@ -928,54 +1186,35 @@ public abstract class IdentifiedItem extends ItemStack {
                 .getItemMeta());
     }
 
-    // MÉTODO OPTIMIZADO: rerollStatsEnhanced con pre-cálculo de lore
-    public void rerollStatsEnhanced() {
-        emptyLore();
-        removeModifiers();
-        // Limpiar lore pre-calculado
-        preCalculatedStatLines.clear();
-        preCalculatedRarity = null;
 
-        // Generar nuevas stats
-        generateStats();
-        // Pre-calcular las líneas de lore mientras aplicamos stats
-        preCalculateStatLines();
-        // Aplicar nuevas stats
-        applyStatsToItem();
-        // Generar lore compuesto (usará las líneas pre-calculadas)
-        setNewLore();
+    public void rerollStatsEnhanced() {
+        // Single operation to remove all modifiers matching ID
+        this.setItemMeta(ITEM_MANAGER.removeStatModifiersByIdentifier(this, modifierType, NATIVE_STATMODIFIER).getItemMeta());
+        // Generate stats and apply in one go
+        // Direct lore update without full reconstruction
+        updateLoreDirect(generateStatsOptimized());
     }
 
-    // MÉTODO OPTIMIZADO: rerollLowestStat con pre-cálculo de lore
     public void rerollLowestStat(Player player) {
-        // Obtener la stat más baja
-        StatModifier lowestModifier = getLowestModifier();
-        Stat stat = lowestModifier.stat();
         var statModifiers = getNativeStatModifiers();
+        StatModifier lowestModifier = null;
+        double lowestValue = Double.MAX_VALUE;
 
-        emptyLore();
-        // Limpiar lore pre-calculado
-        preCalculatedStatLines.clear();
-        preCalculatedRarity = null;
-
-        // Generar nuevo valor base
-        int newValue = StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
-        statModifiers.remove(lowestModifier);
-        removeModifiers();
-
-        // Crear nuevo modificador
-        StatModifier newModifier = new StatModifier(NATIVE_STATMODIFIER, stat, newValue, AuraSkillsModifier.Operation.ADD);
-        statModifiers.addFirst(newModifier);
-
-        // Pre-calcular líneas de lore usando los modificadores
-        preCalculateStatLinesFromModifiers(statModifiers);
-
-        // Aplicar todos los modificadores
-        var sum = 0.0;
-        for (StatModifier modifier : statModifiers){
-            addNativeStatModifier(modifier.stat(), modifier.value(), randomOperations);
-            sum += modifier.value();
+        // Encontrar el modificador con el valor más bajo
+        for (StatModifier modifier : statModifiers) {
+            if (modifier.value() < lowestValue) {
+                lowestValue = modifier.value();
+                lowestModifier = modifier;
+            }
         }
+        Stat stat = lowestModifier.stat();
+
+        // Generar nuevo valor
+        int newValue = StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
+
+        // Solo remover y re-agregar el modificador específico
+        removeStatModifierByName(stat, NATIVE_STATMODIFIER);
+        addNativeStatModifier(stat, newValue, randomOperations);
 
         this.setNewLore();
 
@@ -988,24 +1227,58 @@ public abstract class IdentifiedItem extends ItemStack {
         player.sendMessage(ItemConfig.BLESSING_PREFIX.append(message));
     }
 
-    // MÉTODO OPTIMIZADO: rerollExceptHighestStat con pre-cálculo de lore
+    private void updateLoreDirect(ItemMeta meta) {
+        List<Component> currentLore = meta.lore();
+
+        if (currentLore == null || currentLore.isEmpty()) {
+            setNewLore();
+            return;
+        }
+
+        // Find second empty component efficiently
+        int emptyCount = 0;
+        int secondEmptyIndex = -1;
+
+        for (int i = 0; i < currentLore.size() && emptyCount < 2; i++) {
+            if (currentLore.get(i).equals(Component.empty())) {
+                emptyCount++;
+                if (emptyCount == 2) {
+                    secondEmptyIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if (secondEmptyIndex == -1) {
+            setNewLore();
+            return;
+        }
+
+        // Build new lore using ArrayList with known capacity
+        int remainingSize = currentLore.size() - secondEmptyIndex;
+        List<Component> updatedLore = new ArrayList<>(preCalculatedStatLines.size() + remainingSize);
+
+        // Add pre-calculated stats lines
+        updatedLore.addAll(preCalculatedStatLines);
+
+        // Add remaining lore efficiently using subList
+        updatedLore.addAll(currentLore.subList(secondEmptyIndex, currentLore.size()));
+
+        // Single lore update
+        meta.lore(updatedLore);
+
+        // Update name only if rarity changed (check if needed)
+        handleCustomName(meta,false);
+    }
+
+
     public void rerollExceptHighestStat(Player player) {
         // Obtener la stat más alta válida
         StatModifier highestMod = getHighestStatModifier();
         Stat stat = highestMod.type();
         double value = highestMod.value();
-
-        // vaciar lore
-        emptyLore();
-        // Limpiar lore pre-calculado
-        preCalculatedStatLines.clear();
-        preCalculatedRarity = null;
-
         // generar las stat deseadas
-        generateStatsExceptHighestStat(stat, value);
-        // Pre-calcular las líneas de lore
-        preCalculateStatLines();
-
+        generateStatsExceptHighest(highestMod);
         // Remover todos los modificadores existentes
         removeModifiers();
         // Generar nuevas stats excepto la más alta
@@ -1016,56 +1289,15 @@ public abstract class IdentifiedItem extends ItemStack {
         // Notificar al jugador
         Component message = Component.text("¡Se conservó ")
                 .color(RedemptionObject.getLoreColor())
-                .append(Component.text(stat.getDisplayName(AURA_LOCALE))
+                .append(Component.text( "+" + value +  " " + stat.getDisplayName(AURA_LOCALE))
                         .color(ItemUtil.getColorOfStat(stat)))
                 .append(Component.text(" Rareza: ").append(rarity));
         player.sendMessage(ItemConfig.REDEMPTION_PREFIX.append(message));
     }
 
-    // Método auxiliar para pre-calcular líneas desde una lista de modificadores existentes
-    private void preCalculateStatLinesFromModifiers(List<StatModifier> statModifiers) {
-        preCalculatedStatLines.clear();
-
-        double sum = 0.0;
-        List<Component> tempStatLines = new ArrayList<>();
-
-        // Procesar todos los modificadores
-        for (StatModifier modifier : statModifiers) {
-            sum += modifier.value();
-
-            // Crear línea de lore para esta stat
-            String valueText = " +" + (int) modifier.value();
-            if (modifier.operation() == AuraSkillsModifier.Operation.ADD_PERCENT) {
-                valueText += "%";
-            }
-
-            Component statLine = Component.text(valueText, ItemUtil.getColorOfStat(modifier.stat()))
-                    .decoration(TextDecoration.ITALIC, false)
-                    .append(Component.text(" " + modifier.stat().getDisplayName(AURA_LOCALE), TextColor.color(0x636363)))
-                    .decoration(TextDecoration.ITALIC, false);
-            tempStatLines.add(statLine);
-        }
-
-        // Calcular rareza
-        int totalStats = statModifiers.size();
-        double average = sum / totalStats;
-        if (totalStats == 4) {
-            average *= 0.85; // Aplicar penalización early game
-        }
-
-        this.preCalculatedRarity = RarityCalculator.calculateRarity(average);
-        this.rarity = preCalculatedRarity;
-
-        // Agregar header y líneas de stats
-        preCalculatedStatLines.add(Component.empty());
-        preCalculatedStatLines.add(Component.text("Bonos 1-5: ", NamedTextColor.GRAY)
-                .decoration(TextDecoration.ITALIC, false)
-                .append(preCalculatedRarity));
-        preCalculatedStatLines.addAll(tempStatLines);
-    }
 
     public List<StatModifier> getNativeStatModifiers() {
-        return AuraSkillsBukkit.get().getItemManager().getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
+        return ITEM_MANAGER.getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
     }
 
     protected abstract List<StatModifier> getInstalledGems();

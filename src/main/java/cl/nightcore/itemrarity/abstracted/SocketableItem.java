@@ -1,6 +1,5 @@
 package cl.nightcore.itemrarity.abstracted;
 
-import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.item.gem.GemManager;
 import cl.nightcore.itemrarity.item.gem.GemObject;
@@ -28,7 +27,6 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;

@@ -2,184 +2,121 @@ package cl.nightcore.itemrarity.model;
 
 import cl.nightcore.itemrarity.ItemRarity;
 import cl.nightcore.itemrarity.config.CombinedStats;
+import cl.nightcore.itemrarity.config.ItemConfig;
 import cl.nightcore.itemrarity.item.potion.PotionManager;
+import cl.nightcore.itemrarity.item.potion.StatPotion;
+import cl.nightcore.itemrarity.util.ItemUtil;
+import dev.aurelium.auraskills.api.AuraSkillsApi;
+import dev.aurelium.auraskills.api.stat.StatModifier;
+import dev.aurelium.auraskills.api.util.AuraSkillsModifier;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
-public record StatPotionModel(ItemStack item) {
+import java.util.concurrent.TimeUnit;
 
-    // Keys para persistent data
+public record StatPotionModel(
+        CombinedStats stat,
+        PotionManager.PotionLevel level,
+        PotionManager.PotionDuration duration
+) {
+
     private static final NamespacedKey POTION_STAT = new NamespacedKey(ItemRarity.PLUGIN, "potion_stat");
     private static final NamespacedKey POTION_LEVEL = new NamespacedKey(ItemRarity.PLUGIN, "potion_level");
     private static final NamespacedKey POTION_DURATION = new NamespacedKey(ItemRarity.PLUGIN, "potion_duration");
     private static final NamespacedKey IS_STAT_POTION = new NamespacedKey(ItemRarity.PLUGIN, "is_stat_potion");
-    
-    // Keys legacy para compatibilidad
-    private static final NamespacedKey POTION_VALUE = new NamespacedKey(ItemRarity.PLUGIN, "potion_value");
-    private static final NamespacedKey POTION_DURATION_SECONDS = new NamespacedKey(ItemRarity.PLUGIN, "potion_duration_seconds");
 
     /**
-     * Método estático de conveniencia para verificar si un item es poción
+     * Crea un modelo desde un ItemStack, retorna null si no es una poción válida
      */
-    public static boolean isStatPotion(ItemStack item) {
-        return new StatPotionModel(item).isStatPotion();
-    }
-
-    /**
-     * Método estático para crear un modelo desde un ItemStack
-     */
-    public static StatPotionModel of(ItemStack item) {
-        return new StatPotionModel(item);
-    }
-
-    /**
-     * Verifica si el ItemStack es una poción de stats
-     */
-    public boolean isStatPotion() {
+    public static StatPotionModel fromItemStack(ItemStack item) {
         if (item == null || item.getItemMeta() == null) {
-            return false;
-        }
-
-        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        return container.has(IS_STAT_POTION, PersistentDataType.BOOLEAN);
-    }
-
-    /**
-     * Obtiene el stat de la poción
-     */
-    public CombinedStats getStat() {
-        if (!isStatPotion()) {
             return null;
         }
 
         PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
+
+        if (!container.has(IS_STAT_POTION, PersistentDataType.BOOLEAN)) {
+            return null;
+        }
+
+        // Recuperar stat
         String statName = container.get(POTION_STAT, PersistentDataType.STRING);
+        if (statName == null) return null;
 
-        if (statName == null) {
-            return null;
-        }
-
+        CombinedStats stat;
         try {
-            return CombinedStats.valueOf(statName);
+            stat = CombinedStats.valueOf(statName);
         } catch (IllegalArgumentException e) {
             return null;
         }
-    }
 
-    /**
-     * Obtiene el nivel de la poción (nuevo formato)
-     */
-    public PotionManager.PotionLevel getLevel() {
-        if (!isStatPotion()) {
-            return null;
-        }
-
-        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
+        // Recuperar level
         String levelName = container.get(POTION_LEVEL, PersistentDataType.STRING);
+        if (levelName == null) return null;
 
-        if (levelName == null) {
-            return null;
-        }
-
+        PotionManager.PotionLevel level;
         try {
-            return PotionManager.PotionLevel.valueOf(levelName);
+            level = PotionManager.PotionLevel.valueOf(levelName);
         } catch (IllegalArgumentException e) {
             return null;
         }
-    }
 
-    /**
-     * Obtiene la duración de la poción (nuevo formato)
-     */
-    public PotionManager.PotionDuration getDuration() {
-        if (!isStatPotion()) {
-            return null;
-        }
-
-        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
+        // Recuperar duration
         String durationName = container.get(POTION_DURATION, PersistentDataType.STRING);
+        if (durationName == null) return null;
 
-        if (durationName == null) {
-            return null;
-        }
-
+        PotionManager.PotionDuration duration;
         try {
-            return PotionManager.PotionDuration.valueOf(durationName);
+            duration = PotionManager.PotionDuration.valueOf(durationName);
         } catch (IllegalArgumentException e) {
             return null;
         }
+
+        return new StatPotionModel(stat, level, duration);
     }
 
     /**
-     * Obtiene el valor de la poción (compatible con formato legacy y nuevo)
+     * Consume la poción y aplica el efecto al jugador
      */
-    public double getValue() {
-        if (!isStatPotion()) {
-            return 0.0;
-        }
+    public void consumePotion(Player player) {
+        // Calcular tiempo de expiración
+        long expirationTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(duration.getSeconds());
 
-        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
+        // Crear el modificador temporal
+        StatModifier modifier = new StatModifier(
+                StatPotion.POTION_MODIFIER_NAME + stat.getDelegateStat().name(),
+                stat.getDelegateStat(),
+                level.getValue(),
+                AuraSkillsModifier.Operation.ADD
+        );
 
-        // Intentar obtener del formato nuevo primero
-        PotionManager.PotionLevel level = getLevel();
-        if (level != null) {
-            return level.getValue();
-        }
+        modifier.makeTemporary(expirationTime, true);
 
-        // Fallback al formato legacy
-        Double legacyValue = container.get(POTION_VALUE, PersistentDataType.DOUBLE);
-        return legacyValue != null ? legacyValue : 0.0;
+        // Aplicar el modificador temporal
+        AuraSkillsApi.get().getUser(player.getUniqueId()).addTempStatModifier(modifier, true, expirationTime);
+
+        // Efectos visuales y sonoros
+        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_BURP, 1.0f, 1.0f);
+
+        // Mensaje de confirmación
+        Component message = Component.text("Poción consumida: ", NamedTextColor.GREEN)
+                .append(Component.text("+" + level.getValue() + " ")
+                        .color(getStatColor()))
+                .append(Component.text(stat.getDisplayName(ItemRarity.AURA_LOCALE))
+                        .color(getStatColor()))
+                .append(Component.text(" por " + duration.getFormattedTime(), NamedTextColor.YELLOW));
+
+        player.sendMessage(ItemConfig.STATPOTION_PREFIX.append(message));
     }
 
-    /**
-     * Obtiene la duración en segundos (compatible con formato legacy y nuevo)
-     */
-    public int getDurationSeconds() {
-        if (!isStatPotion()) {
-            return 0;
-        }
-
-        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-
-        // Intentar obtener del formato nuevo primero
-        PotionManager.PotionDuration duration = getDuration();
-        if (duration != null) {
-            return duration.getSeconds();
-        }
-
-        // Fallback al formato legacy
-        Integer legacyDuration = container.get(POTION_DURATION_SECONDS, PersistentDataType.INTEGER);
-        return legacyDuration != null ? legacyDuration : 300; // Default 5 minutos
-    }
-
-    /**
-     * Verifica si la poción usa el formato legacy
-     */
-    public boolean isLegacyFormat() {
-        if (!isStatPotion()) {
-            return false;
-        }
-
-        PersistentDataContainer container = item.getItemMeta().getPersistentDataContainer();
-        return getLevel() == null && getDuration() == null &&
-               container.has(POTION_VALUE, PersistentDataType.DOUBLE);
-    }
-
-    /**
-     * Obtiene la duración formateada como string
-     */
-    public String getFormattedDuration() {
-        PotionManager.PotionDuration duration = getDuration();
-        if (duration != null) {
-            return duration.getFormattedTime();
-        }
-
-        // Formatear duración manual para formato legacy
-        int seconds = getDurationSeconds();
-        int minutes = seconds / 60;
-        int remainingSeconds = seconds % 60;
-        return String.format("%d:%02d", minutes, remainingSeconds);
+    private TextColor getStatColor() {
+        return ItemUtil.getColorOfStat(stat);
     }
 }
