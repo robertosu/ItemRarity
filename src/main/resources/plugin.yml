@@ -1,46 +1,13 @@
 name: ItemRarity
 version: 0.2.5
 main: cl.nightcore.itemrarity.ItemRarity
-api-version: 1.20
+api-version: 1.21
 depend: [AuraSkills, Nexo]
 
 commands:
-  getscroll:
-    description: Obtienes un pergamino de identificación.
-    usage: /getscroll <cantidad>
-  getmagic:
-    description: Obtienes un objeto mágico.
-    usage: /getmagic <cantidad>
-  getblessing:
-    description: Obtienes un objeto bendición.
-    usage: /getblessing <cantidad>
-  getredemption:
-    description: Obtienes un objeto redención.
-    usage: /getredemption <cantidad>
-  getgem:
-    description: Obtienes una gema.
-    usage: /getgem <stat> <cantidad> <nivel>
-  getremover:
-    description: Obtienes un removedor de gemas.
-    usage: /getremover <cantidad>
-  getblessingball:
-    description: Obtienes una Bola bendición.
-    usage: /getblessingball <cantidad>
-  getitemupgrader:
-    description: Obtienes una Runa activa.
-    usage: /getitemupgrader <cantidad> <nivel>
-  getsocketstone:
-    description: Obtienes una piedra afilada.
-    usage: /getsocketstone <cantidad>
   testdistr:
     description: Testea las probabilidades.
     usage: /testdistr <rollqualityNumber> <testCount>
-  getxpmultiplier:
-    description: Obtienes multiplicadores de xp.
-    usage: /getxpmultiplier <porcentaje> [cantidad]
-  getstatpotion:
-    description: Obtienes pociones de stat temporales.
-    usage: /getpotion <stat> [cantidad] [valor] [duración]
   reloadrepair:
     description: Recarga las configuraciones de reparación desde Nexo
     permission: itemrarity.admin

@@ -62,6 +62,8 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener 
 
     private final StatProviderManager statProviderManager = new StatProviderManager();
 
+    ItemRepairManager repairManager;
+
     public static UpgradeableItem identifyItem(Player player, ItemStack item) {
         UpgradeableItem weapon = new UpgradeableItem(item);
         weapon.initializeSocketData();
@@ -110,13 +112,13 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener 
 
         Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> {
             itemRegistry = new Items();
-        }, 200L); // 20 ticks = 1 segundo
+        }, 100L); // 20 ticks = 1 segundo
 
         Bukkit.getScheduler().runTaskLaterAsynchronously(this, () -> {
             mobDrops = new MobDrops();
             chestDrops = new ChestDrops();
             getServer().getPluginManager().registerEvents(new CustomDropsManager(), this);
-        }, 300L); // 20 ticks = 1 segundo
+        }, 200L); // 20 ticks = 1 segundo
 
         Objects.requireNonNull(getCommand("testdistr")).setExecutor(new TestCommand());
         Objects.requireNonNull(getCommand("blockdata")).setExecutor(new NexoHelpCommand());
@@ -140,6 +142,11 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener 
         AuraSkillsApi auraSkills = AuraSkillsApi.get();
         NamespacedRegistry registry = auraSkills.useRegistry("itemrarity", getDataFolder());
         loadAuraSkillsCustoms(registry, auraSkills);
+
+        repairManager = new ItemRepairManager(this);
+
+
+
         loadRepairableItems();
         //initializeSmithingSystem();
 
@@ -161,11 +168,10 @@ public class ItemRarity extends JavaPlugin implements CommandExecutor, Listener 
 
     private void loadRepairableItems(){
         // Crear el ItemRepairManager con referencia al plugin
-        ItemRepairManager repairManager = new ItemRepairManager(this);
+
 
         // Cargar configuraciones desde Nexo
         repairManager.loadFromNexoConfigs();
-
         // Registrar el listener del yunque
         getServer().getPluginManager().registerEvents(new AnvilListener(repairManager), this);
 

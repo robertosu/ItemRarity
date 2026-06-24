@@ -26,6 +26,7 @@ import net.kyori.adventure.text.TranslatableComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -37,11 +38,13 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
-import su.nightexpress.excellentenchants.api.EnchantRegistry;
+import su.nightexpress.excellentenchants.enchantment.EnchantRegistry;
 import su.nightexpress.excellentenchants.api.enchantment.CustomEnchantment;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static cl.nightcore.itemrarity.ItemRarity.AURA_LOCALE;
 
@@ -60,9 +63,10 @@ public abstract class IdentifiedItem extends ItemStack {
 
     private static final Component GEMS_HEADER =
             Component.text("Gemas:").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false);
-    private static final Component EMPTY_SOCKET =
-            Component.text(" ⛶ ").color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC,false).append(
-                    Component.text("Vacío").color(TextColor.color(0x636363)).decoration(TextDecoration.ITALIC, false));
+    private static final Component EMPTY_SOCKET = Component.text(" ⛶ ")
+            .color(NamedTextColor.GRAY)
+            .decoration(TextDecoration.ITALIC, false)
+            .append(Component.text("Vacío").color(TextColor.color(0x636363)).decoration(TextDecoration.ITALIC, false));
 
     protected final ModifierType modifierType;
     protected final ItemType itemType;
@@ -72,16 +76,14 @@ public abstract class IdentifiedItem extends ItemStack {
 
     // Nueva estructura para pre-calcular lore de stats
     private final List<Component> preCalculatedStatLines;
-    private Component preCalculatedRarity;
+    // private Component preCalculatedRarity;
 
     protected Component rarity;
     List<Component> newLore;
 
-
     public static void initializeStatCache(Plugin plugin) {
         statRollCache = new StatRollCache(plugin);
     }
-
 
     public IdentifiedItem(ItemStack item) {
         super(item);
@@ -105,7 +107,8 @@ public abstract class IdentifiedItem extends ItemStack {
     public static double calculateAttackSpeed(ItemStack item) {
         double baseSpeed = 0;
 
-        Collection<AttributeModifier> baseModifiers = item.getType().getDefaultAttributeModifiers().get(Attribute.ATTACK_SPEED);
+        Collection<AttributeModifier> baseModifiers =
+                item.getType().getDefaultAttributeModifiers().get(Attribute.ATTACK_SPEED);
 
         if (NexoItems.idFromItem(item) == null) {
             for (AttributeModifier modifier : baseModifiers) {
@@ -117,7 +120,8 @@ public abstract class IdentifiedItem extends ItemStack {
         ItemMeta meta = item.getItemMeta();
         if (NexoItems.idFromItem(item) != null) {
             if (meta.getAttributeModifiers(Attribute.ATTACK_SPEED) != null) {
-                for (AttributeModifier modifier : Objects.requireNonNull(meta.getAttributeModifiers(Attribute.ATTACK_SPEED))) {
+                for (AttributeModifier modifier :
+                        Objects.requireNonNull(meta.getAttributeModifiers(Attribute.ATTACK_SPEED))) {
                     baseSpeed = modifier.getAmount() + 4;
                     return baseSpeed;
                 }
@@ -144,7 +148,6 @@ public abstract class IdentifiedItem extends ItemStack {
         this.setNewLore();
     }
 
-
     protected List<Component> generateStatsCached() {
         int statsCount = getMaxBonuses();
 
@@ -160,7 +163,6 @@ public abstract class IdentifiedItem extends ItemStack {
             for (ModifierPojoExtend pojo : this.statsPojos) {
                 pojo.type = this.modifierType; // Assuming this field is accessible
             }
-            this.preCalculatedRarity = prerolled.rarity();
             this.rarity = prerolled.rarity();
         }
         return prerolled.preCalculatedStatLines();
@@ -168,15 +170,16 @@ public abstract class IdentifiedItem extends ItemStack {
 
     public void rerollStatsEnhancedCached() {
         // Single operation to remove all modifiers matching ID
-        this.setItemMeta(ITEM_MANAGER.removeStatModifiersByIdentifier(this, modifierType, NATIVE_STATMODIFIER).getItemMeta());
+        this.setItemMeta(ITEM_MANAGER
+                .removeStatModifiersByIdentifier(this, modifierType, NATIVE_STATMODIFIER)
+                .getItemMeta());
 
         // Generate stats using cache
-        //generateStatsCached();
+        // generateStatsCached();
 
         // Apply stats and update lore efficiently
         updateLoreDirectCached(generateStatsCached(), applyStatsToItemGetMeta());
     }
-
 
     private void updateLoreDirectCached(List<Component> lines, ItemMeta meta) {
         List<Component> currentLore = meta.lore();
@@ -222,15 +225,12 @@ public abstract class IdentifiedItem extends ItemStack {
         handleCustomName(meta, false);
     }
 
-
-
-    private ModifierPojoExtend getStatModifierPojo(Stat stat, double value, boolean gaussian){
-        return new ModifierPojoExtend(modifierType, stat, value, AuraSkillsModifier.Operation.ADD, NATIVE_STATMODIFIER, false, gaussian);
+    private ModifierPojoExtend getStatModifierPojo(Stat stat, double value, boolean gaussian) {
+        return new ModifierPojoExtend(
+                modifierType, stat, value, AuraSkillsModifier.Operation.ADD, NATIVE_STATMODIFIER, false, gaussian);
     }
 
-
-
-    private ItemManager.ModifierPojo getRandomStatModifierPojo(Stat stat, double value){
+    private ItemManager.ModifierPojo getRandomStatModifierPojo(Stat stat, double value) {
 
         AuraSkillsModifier.Operation operation = ThreadLocalRandom.current().nextBoolean()
                 ? AuraSkillsModifier.Operation.ADD
@@ -238,7 +238,6 @@ public abstract class IdentifiedItem extends ItemStack {
 
         return new ItemManager.ModifierPojo(modifierType, stat, value, operation, NATIVE_STATMODIFIER, false);
     }
-
 
     protected void generateStats() {
         int statsCount = getMaxBonuses();
@@ -287,18 +286,15 @@ public abstract class IdentifiedItem extends ItemStack {
             average *= 0.85; // Aplicar penalización early game
         }
 
-        this.preCalculatedRarity = RarityCalculator.calculateRarity(average);
-        this.rarity = preCalculatedRarity;
+        this.rarity = RarityCalculator.calculateRarity(average);
 
         // 4. Construir el lore final
         preCalculatedStatLines.add(Component.empty());
         preCalculatedStatLines.add(Component.text("Bonos 1-5: ", NamedTextColor.GRAY)
                 .decoration(TextDecoration.ITALIC, false)
-                .append(preCalculatedRarity));
+                .append(this.rarity));
         preCalculatedStatLines.addAll(tempStatLines);
     }
-
-
 
     protected ItemMeta generateStatsOptimized() {
         int statsCount = getMaxBonuses();
@@ -347,21 +343,18 @@ public abstract class IdentifiedItem extends ItemStack {
         if (statsCount == 4) {
             average *= 0.85;
         }
-        this.preCalculatedRarity = RarityCalculator.calculateRarity(average);
-        this.rarity = preCalculatedRarity;
+        this.rarity = RarityCalculator.calculateRarity(average);
 
         // Build pre-calculated lines efficiently
         preCalculatedStatLines.add(Component.empty());
         preCalculatedStatLines.add(Component.text("Bonos 1-5: ", NamedTextColor.GRAY)
                 .decoration(TextDecoration.ITALIC, false)
-                .append(preCalculatedRarity));
+                .append(this.rarity));
         Collections.addAll(preCalculatedStatLines, statLines);
 
         // Apply stats in single batch operation
         return ITEM_MANAGER.addStatModifierArray(this, pojoArray).getItemMeta();
     }
-
-
 
     private boolean containsStatInArray(Stat stat, ModifierPojoExtend[] array, int currentIndex) {
         for (int i = 0; i < currentIndex; i++) {
@@ -379,7 +372,6 @@ public abstract class IdentifiedItem extends ItemStack {
                 .decoration(TextDecoration.ITALIC, false);
     }
 
-
     protected void generateStatsExceptHighest(StatModifier highestModifier) {
         int statsCount = getMaxBonuses();
         List<Stat> availableStats = statProvider.getAvailableStats();
@@ -387,7 +379,8 @@ public abstract class IdentifiedItem extends ItemStack {
         statsPojos.clear();
         preCalculatedStatLines.clear();
 
-        statsPojos.add(getStatModifierPojo(highestModifier.stat(),highestModifier.value(),statProvider.isThisStatGauss(highestModifier.stat())));
+        statsPojos.add(getStatModifierPojo(
+                highestModifier.stat(), highestModifier.value(), statProvider.isThisStatGauss(highestModifier.stat())));
 
         // Variables para el cálculo de rareza
         double sum = 0.0;
@@ -395,7 +388,7 @@ public abstract class IdentifiedItem extends ItemStack {
 
         // 1. Agregar stats gaussianas
         for (Stat stat : statProvider.getGaussStats()) {
-            if (stat.name().equals(highestModifier.stat().name())){
+            if (stat.name().equals(highestModifier.stat().name())) {
                 continue;
             }
             int value = StatValueGenerator.generateValueForStat(statProvider.isThisStatGauss(stat));
@@ -415,7 +408,7 @@ public abstract class IdentifiedItem extends ItemStack {
             Stat stat;
             do {
                 stat = availableStats.get(ThreadLocalRandom.current().nextInt(availableStats.size()));
-                if (stat.name().equals(highestModifier.stat().name())){
+                if (stat.name().equals(highestModifier.stat().name())) {
                     continue;
                 }
             } while (containsStat(stat));
@@ -438,21 +431,19 @@ public abstract class IdentifiedItem extends ItemStack {
             average *= 0.85; // Aplicar penalización early game
         }
 
-        this.preCalculatedRarity = RarityCalculator.calculateRarity(average);
-        this.rarity = preCalculatedRarity;
+        this.rarity = RarityCalculator.calculateRarity(average);
 
         // 4. Construir el lore final
         preCalculatedStatLines.add(Component.empty());
         preCalculatedStatLines.add(Component.text("Bonos 1-5: ", NamedTextColor.GRAY)
                 .decoration(TextDecoration.ITALIC, false)
-                .append(preCalculatedRarity));
+                .append(this.rarity));
         preCalculatedStatLines.addAll(tempStatLines);
     }
 
     private boolean containsStat(Stat stat) {
         return statsPojos.stream().anyMatch(pojo -> pojo.stat.equals(stat));
     }
-
 
     // Método helper para crear líneas de lore de stats
     private Component createStatLoreLine(Stat stat, int value) {
@@ -463,7 +454,6 @@ public abstract class IdentifiedItem extends ItemStack {
                 .decoration(TextDecoration.ITALIC, false);
     }
 
-
     private boolean containsGaussianStat(Stat stat) {
         return statsPojos.stream().anyMatch(pojo -> pojo.stat.equals(stat) && pojo.gaussian);
     }
@@ -471,8 +461,6 @@ public abstract class IdentifiedItem extends ItemStack {
     private boolean containsNormalStat(Stat stat) {
         return statsPojos.stream().anyMatch(pojo -> pojo.stat.equals(stat) && !pojo.gaussian);
     }
-
-
 
     protected void removeTraitModifierByName(ItemStack item, Trait trait, String name) {
         this.setItemMeta(AuraSkillsBukkit.get()
@@ -488,12 +476,9 @@ public abstract class IdentifiedItem extends ItemStack {
                 .getItemMeta());
     }
 
-
-
     public StatModifier getHighestStatModifier() {
         // Obtener todos los modificadores de estadísticas nativas
-        List<StatModifier> nativeModifiers =
-                ITEM_MANAGER.getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
+        List<StatModifier> nativeModifiers = ITEM_MANAGER.getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
 
         StatModifier highestModifier = null;
         double highestValue = Double.MIN_VALUE;
@@ -508,10 +493,6 @@ public abstract class IdentifiedItem extends ItemStack {
 
         return highestModifier;
     }
-
-
-
-
 
     protected void generateStatsExceptHighestStat(Stat excludedStat, double excludedvalue) {
         CombinedStats excludedCombinedStat =
@@ -560,7 +541,8 @@ public abstract class IdentifiedItem extends ItemStack {
         boolean alreadyExists = containsStat(stat);
 
         // Verificar si es la stat excluida
-        CombinedStats currentCombinedStat = CombinedStats.valueOf(stat.getId().getKey().toUpperCase());
+        CombinedStats currentCombinedStat =
+                CombinedStats.valueOf(stat.getId().getKey().toUpperCase());
         boolean isExcluded = currentCombinedStat.equals(excludedCombinedStat);
 
         return alreadyExists || isExcluded;
@@ -573,23 +555,21 @@ public abstract class IdentifiedItem extends ItemStack {
     }
 
     protected void applyStatsToItem() {
-        this.setItemMeta(ITEM_MANAGER.addStatModifierArray(this, statsPojos.toArray(new ItemManager.ModifierPojo[0])).getItemMeta());
+        this.setItemMeta(ITEM_MANAGER
+                .addStatModifierArray(this, statsPojos.toArray(new ItemManager.ModifierPojo[0]))
+                .getItemMeta());
     }
 
-
-    protected ItemMeta applyStatsToItemGetMeta(){
-        return ITEM_MANAGER.addStatModifierArray(this, statsPojos.toArray(new ItemManager.ModifierPojo[0])).getItemMeta();
+    protected ItemMeta applyStatsToItemGetMeta() {
+        return ITEM_MANAGER
+                .addStatModifierArray(this, statsPojos.toArray(new ItemManager.ModifierPojo[0]))
+                .getItemMeta();
     }
 
     public void removeModifiers() {
-      /*  for (CombinedStats combinedStat : CombinedStats.values()) {
-            this.setItemMeta(AuraSkillsBukkit.get()
-                    .getItemManager()
-                    .removeStatModifier(this, modifierType, combinedStat.getDelegateStat(), NATIVE_STATMODIFIER)
-                    .getItemMeta());
-        }*/
-        this.setItemMeta(ITEM_MANAGER.removeStatModifiersByIdentifier(this,modifierType,NATIVE_STATMODIFIER).getItemMeta());
-
+        this.setItemMeta(ITEM_MANAGER
+                .removeStatModifiersByIdentifier(this, modifierType, NATIVE_STATMODIFIER)
+                .getItemMeta());
     }
 
     public double calculateAverage() {
@@ -619,8 +599,7 @@ public abstract class IdentifiedItem extends ItemStack {
         }
 
         // Fallback al método original si no hay stats pre-calculadas
-        List<StatModifier> nativeModifiers =
-                ITEM_MANAGER.getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
+        List<StatModifier> nativeModifiers = ITEM_MANAGER.getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);
         if (nativeModifiers.isEmpty()) {
             throw new IllegalStateException("No hay estadísticas nativas para calcular el promedio.");
         }
@@ -644,9 +623,6 @@ public abstract class IdentifiedItem extends ItemStack {
 
         return baseAverage; // 5 stats, sin penalización
     }
-
-
-
 
     public TextColor getRarityColor() {
         return this.rarity.color();
@@ -681,14 +657,18 @@ public abstract class IdentifiedItem extends ItemStack {
     protected void getExtraBonusesLines() {
         if (this.getExtraBonuses().isPresent() && !this.getExtraBonuses().get().isEmpty()) {
             newLore.add(Component.empty());
-            newLore.add((Component.text("Bonos 6-7:").color(NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
+            newLore.add(
+                    (Component.text("Bonos 6-7:").color(NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false));
             for (StatModifier statModifier : this.getExtraBonuses().get()) {
-                String valueText = " +" + (int)statModifier.value();
+                String valueText = " +" + (int) statModifier.value();
                 if (statModifier.operation() == AuraSkillsModifier.Operation.ADD_PERCENT) {
                     valueText = valueText + "%";
                 }
-                newLore.add(Component.text(valueText, ItemUtil.getColorOfStat(statModifier.stat())).decoration(TextDecoration.ITALIC, false)
-                        .append(Component.text(" " + statModifier.stat().getDisplayName(ItemRarity.AURA_LOCALE), TextColor.color(0x636363))
+                newLore.add(Component.text(valueText, ItemUtil.getColorOfStat(statModifier.stat()))
+                        .decoration(TextDecoration.ITALIC, false)
+                        .append(Component.text(
+                                        " " + statModifier.stat().getDisplayName(ItemRarity.AURA_LOCALE),
+                                        TextColor.color(0x636363))
                                 .decoration(TextDecoration.ITALIC, false)));
             }
         }
@@ -701,8 +681,14 @@ public abstract class IdentifiedItem extends ItemStack {
         }
         if (actualSize < MAX_EXTRA_BONUSES) {
             List<Stat> availableStats = this.statProvider.getAvailableStats();
-            List currentExtraStats = this.getExtraBonuses().map(bonuses -> bonuses.stream().map(modifier -> modifier.type().name()).toList()).orElse(new ArrayList());
-            List<Stat> availableNewStats = availableStats.stream().filter(stat -> !currentExtraStats.contains(stat.name())).toList();
+            List currentExtraStats = this.getExtraBonuses()
+                    .map(bonuses -> bonuses.stream()
+                            .map(modifier -> modifier.type().name())
+                            .toList())
+                    .orElse(new ArrayList());
+            List<Stat> availableNewStats = availableStats.stream()
+                    .filter(stat -> !currentExtraStats.contains(stat.name()))
+                    .toList();
             if (availableNewStats.isEmpty()) {
                 return 0;
             }
@@ -715,7 +701,16 @@ public abstract class IdentifiedItem extends ItemStack {
     }
 
     private void addExtraStat(Stat stat) {
-        this.setItemMeta(ITEM_MANAGER.addStatModifier(this, this.modifierType, stat, StatValueGenerator.generateValueForStat(false), AuraSkillsModifier.Operation.ADD_PERCENT, "extra", false).getItemMeta());
+        this.setItemMeta(ITEM_MANAGER
+                .addStatModifier(
+                        this,
+                        this.modifierType,
+                        stat,
+                        StatValueGenerator.generateValueForStat(false),
+                        AuraSkillsModifier.Operation.ADD_PERCENT,
+                        "extra",
+                        false)
+                .getItemMeta());
     }
 
     public int rerollExtraBonuses() {
@@ -744,52 +739,53 @@ public abstract class IdentifiedItem extends ItemStack {
 
     private List<Stat> getMissingExtraStats() {
         List<Stat> availableStats = this.statProvider.getAvailableStats();
-        List currentExtraStats = this.getExtraBonuses().map(bonuses -> bonuses.stream().map(modifier -> (modifier.type()).name()).toList()).orElse(new ArrayList<>());
-        return availableStats.stream().filter(stat -> !currentExtraStats.contains(stat.name())).toList();
+        List currentExtraStats = this.getExtraBonuses()
+                .map(bonuses -> bonuses.stream()
+                        .map(modifier -> (modifier.type()).name())
+                        .toList())
+                .orElse(new ArrayList<>());
+        return availableStats.stream()
+                .filter(stat -> !currentExtraStats.contains(stat.name()))
+                .toList();
     }
 
     protected Optional<List<StatModifier>> getExtraBonuses() {
         return Optional.ofNullable(ITEM_MANAGER.getStatModifiersById(this, this.modifierType, "extra"));
     }
 
-
-    public void setNewLore(){
+    public void setNewLore() {
         setNewLore(false);
     }
 
 
-    public void setNewLore(boolean hardWipeName){
+
+    public void setNewLore(boolean hardWipeName) {
         newLore = new ArrayList<>();
         // Si no tenemos rareza pre-calculada, calcularla normalmente
-        if (preCalculatedRarity == null) {
+        if (this.rarity == null) {
             this.rarity = RarityCalculator.calculateRarity(calculateAverage());
-        } else {
-            this.rarity = preCalculatedRarity;
         }
-
-        //getMonoliticLines();
+        // getMonoliticLines();
         getStatLines();
         getExtraBonusesLines();
-        //getRarityLines();
+        // getRarityLines();
         getRefinedLines();
         getGemsLines();
         getMultipliersLines();
         getEnchantmentLines();
 
+        this.getItemMeta().addItemFlags(ItemFlag.HIDE_ENCHANTS);
 
-        getItemMeta().addItemFlags(ItemFlag.HIDE_ENCHANTS);
-        getItemMeta().addItemFlags(ItemFlag.HIDE_STORED_ENCHANTS);
         if (!itemType.isArmor()) {
             getItemMeta().addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
             getAttributeLines();
         }
         this.lore(newLore);
-        handleCustomName(this.getItemMeta(),hardWipeName);
+        handleCustomName(this.getItemMeta(), hardWipeName);
     }
 
-
     // Método fusionado para líneas de refinado (estadísticas base + rareza)
-    protected void getRefinedLines(){
+    protected void getRefinedLines() {
         int currentLevel = this.getLevel();
 
         // Línea de encabezado con nivel de refinado
@@ -817,7 +813,7 @@ public abstract class IdentifiedItem extends ItemStack {
                             .color(NamedTextColor.DARK_GRAY)
                             .decoration(TextDecoration.ITALIC, false))
                     .append(Component.text("[+" + (currentLevel + 1) + "]")
-                            .color(getLevelColor(currentLevel+1))
+                            .color(getLevelColor(currentLevel + 1))
                             .decoration(TextDecoration.ITALIC, false));
         }
 
@@ -836,7 +832,7 @@ public abstract class IdentifiedItem extends ItemStack {
             var increasePerLevel = determineValueIncreasePerLevelForTrait(traitModifier.trait());
             var nextLevelValue = currentValue + increasePerLevel;
 
-            Component traitLine = Component.text(" "+traitModifier.trait().getDisplayName(AURA_LOCALE))
+            Component traitLine = Component.text(" " + traitModifier.trait().getDisplayName(AURA_LOCALE))
                     .color(TextColor.color(0x636363))
                     .decoration(TextDecoration.ITALIC, false)
                     .append(Component.text(" +" + getFormattedValue(currentValue, traitModifier.trait()) + " ")
@@ -874,7 +870,7 @@ public abstract class IdentifiedItem extends ItemStack {
         };
     }
 
-    protected void getStatLines(){
+    protected void getStatLines() {
         // Verificar si tenemos líneas de stats pre-calculadas
         if (!preCalculatedStatLines.isEmpty()) {
             newLore.addAll(preCalculatedStatLines);
@@ -883,7 +879,9 @@ public abstract class IdentifiedItem extends ItemStack {
 
         // Fallback al método original con lookup de AuraSkills
         newLore.add(Component.empty());
-        newLore.add(Component.text("Bonos 1-5: ",NamedTextColor.GRAY).decoration(TextDecoration.ITALIC,false).append(rarity));
+        newLore.add(Component.text("Bonos 1-5: ", NamedTextColor.GRAY)
+                .decoration(TextDecoration.ITALIC, false)
+                .append(rarity));
 
         for (StatModifier statModifier : ITEM_MANAGER.getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER)) {
             // Determinar si necesita el símbolo de porcentaje
@@ -892,12 +890,15 @@ public abstract class IdentifiedItem extends ItemStack {
                 valueText += "%";
             }
 
-            newLore.add(Component.text(valueText, ItemUtil.getColorOfStat(statModifier.stat())).decoration(TextDecoration.ITALIC,false)
-                    .append(Component.text(" "+ statModifier.stat().getDisplayName(AURA_LOCALE),TextColor.color(0x636363))).decoration(TextDecoration.ITALIC,false));
+            newLore.add(Component.text(valueText, ItemUtil.getColorOfStat(statModifier.stat()))
+                    .decoration(TextDecoration.ITALIC, false)
+                    .append(Component.text(
+                            " " + statModifier.stat().getDisplayName(AURA_LOCALE), TextColor.color(0x636363)))
+                    .decoration(TextDecoration.ITALIC, false));
         }
     }
 
-    protected void getGemsLines(){
+    protected void getGemsLines() {
 
         // Add socket header
         newLore.add(Component.empty());
@@ -905,10 +906,10 @@ public abstract class IdentifiedItem extends ItemStack {
         // Add installed gems
         var installedGems = getInstalledGems();
         int availableSockets = getMaxSockets() - installedGems.size();
-        for (StatModifier statModifier : installedGems){
+        for (StatModifier statModifier : installedGems) {
             TextColor statColor = ItemUtil.getColorOfStat(statModifier.stat());
             // Construcción del texto con colores aplicados explícitamente, otherwise ExcellentEnchants bugea el lore
-            Component gemLine = Component.text(" \uD83D\uDC8E ",statColor) // Color explícito para el símbolo
+            Component gemLine = Component.text(" \uD83D\uDC8E ", statColor) // Color explícito para el símbolo
                     .append(Component.text(statModifier.stat().getDisplayName(AURA_LOCALE))
                             .color(statColor)) // Color explícito para el nombre de la stat
                     .append(Component.text(String.format(" +%d", (int) statModifier.value()))
@@ -928,76 +929,146 @@ public abstract class IdentifiedItem extends ItemStack {
 
     protected abstract int getAvailableSockets();
 
-    protected void getMultipliersLines(){
+    protected void getMultipliersLines() {
 
         List<Multiplier> multipliers = ITEM_MANAGER.getMultipliers(this, modifierType);
 
-        if (multipliers.isEmpty()){
+        if (multipliers.isEmpty()) {
             return;
-        }else {
+        } else {
             newLore.add(Component.empty());
-            newLore.add(Component.text("Multiplicadores XP:",NamedTextColor.GRAY).decoration(TextDecoration.ITALIC,false));
+            newLore.add(Component.text("Multiplicadores XP:", NamedTextColor.GRAY)
+                    .decoration(TextDecoration.ITALIC, false));
         }
 
-        for (Multiplier multiplier : ITEM_MANAGER.getMultipliers(this, modifierType)){
+        for (Multiplier multiplier : ITEM_MANAGER.getMultipliers(this, modifierType)) {
             if (multiplier.skill() != null) {
-                newLore.add(Component.text(" +"+(int) multiplier.value()+"%",TextColor.color(0x62FFF8))
-                        .append(Component.text(" XP de "+ multiplier.skill().getDisplayName(AURA_LOCALE),TextColor.color(0x62FFF8)))
-                        .decoration(TextDecoration.ITALIC,false));
+                newLore.add(Component.text(" +" + (int) multiplier.value() + "%", TextColor.color(0x62FFF8))
+                        .append(Component.text(
+                                " XP de " + multiplier.skill().getDisplayName(AURA_LOCALE), TextColor.color(0x62FFF8)))
+                        .decoration(TextDecoration.ITALIC, false));
 
-            }else{
-                newLore.add(Component.text(" +"+(int) multiplier.value()+"%",TextColor.color(0x16A46E))
-                        .append(Component.text(" XP de Habilidades",TextColor.color(0x16A46E))).decoration(TextDecoration.ITALIC,false));
+            } else {
+                newLore.add(Component.text(" +" + (int) multiplier.value() + "%", TextColor.color(0x16A46E))
+                        .append(Component.text(" XP de Habilidades", TextColor.color(0x16A46E)))
+                        .decoration(TextDecoration.ITALIC, false));
             }
         }
     }
 
-    protected void getEnchantmentLines(){
+    protected void getEnchantmentLines() {
         List<Component> lines = new ArrayList<>();
         var enchants = this.getEnchantments();
-        if(!enchants.isEmpty()){
+        if (!enchants.isEmpty()) {
             lines.add(Component.empty());
-            lines.add(Component.text("Encantamientos:",NamedTextColor.GRAY).decoration(TextDecoration.ITALIC,false));
+            lines.add(Component.text("Encantamientos:", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
         }
 
         TextColor enchantColor;
 
-        for (var enchant : enchants.keySet()){
+        for (var enchant : enchants.keySet()) {
 
             enchantColor = !enchant.isCursed() ? TextColor.color(0x994999) : TextColor.color(0xC4322D);
 
-            if (EnchantRegistry.getByKey(enchant.getKey()) != null){
+            if (EnchantRegistry.getByKey(enchant.getKey()) != null) {
 
                 CustomEnchantment custom = EnchantRegistry.getByKey(enchant.getKey());
-                lines.add(Component.text(" ")
-                        .append(custom.getBukkitEnchantment().displayName(enchants.get(enchant)).color(enchantColor)
-                        .decoration(TextDecoration.ITALIC,false)
-                        .append(Component.text("")
-                                .color(enchantColor).decoration(TextDecoration.ITALIC,false))));
-                lines.add(Component
-                        .text("  " + String.join("\n",
-                                custom.getDescription(enchants.get(enchant))),TextColor.color(0x636363))
-                        .decoration(TextDecoration.ITALIC,false));
-            }else{
+                var line = custom.getBukkitEnchantment()
+                        .displayName(enchants.get(enchant));
 
-                lines.add(Component.text(" ")
-                        .append(enchant.displayName(enchants.get(enchant)).color(enchantColor)
-                                        .append(Component.text("")))
-                                .color(enchantColor).decoration(TextDecoration.ITALIC,false));
-                lines.add(Component.text("  ").append(EnchantmentDescriptionManager.getVanillaEnchantDescription(enchant)
-                        .color(TextColor.color(0x636363)).decoration(TextDecoration.ITALIC,false)));
+                String fullDescription = String.join("\n", custom.getDescription(enchants.get(enchant)));
+                String descriptionOnly = fullDescription.substring(fullDescription.indexOf(":") + 1).trim();
+
+
+
+                lines.add(Component.text(" ").decoration(TextDecoration.ITALIC,false)
+                        .append(custom.getBukkitEnchantment()
+                                .displayName(enchants.get(enchant))
+                                .color(enchantColor)
+                                .decoration(TextDecoration.ITALIC, false)
+                                .append(Component.text("")
+                                        .color(enchantColor)
+                                        .decoration(TextDecoration.ITALIC, false))));
+                //lines.add(parseDescriptionWithTranslations(descriptionOnly));
+                lines.add(Component.text(" ➥ ",NamedTextColor.GRAY).decoration(TextDecoration.ITALIC,false)
+                        .append(parseDescriptionWithMiniMessage(descriptionOnly).decoration(TextDecoration.ITALIC,false)));
+            } else {
+
+                lines.add(Component.text(" ").decoration(TextDecoration.ITALIC,false)
+                        .append(enchant.displayName(enchants.get(enchant))
+                                .color(enchantColor)
+                                .append(Component.text("")))
+                        .color(enchantColor)
+                        .decoration(TextDecoration.ITALIC, false));
+                lines.add(Component.text(" ➥ ",NamedTextColor.GRAY).decoration(TextDecoration.ITALIC,false)
+                        .append(EnchantmentDescriptionManager.getVanillaEnchantDescription(enchant)
+                                .color(TextColor.color(0x636363))
+                                .decoration(TextDecoration.ITALIC, false)));
             }
         }
         newLore.addAll(lines);
-
     }
 
-    protected void getAttributeLines(){
+    // Método para procesar descripciones que pueden contener translation keys
+    private Component parseDescriptionWithTranslations(String description) {
+        // Patrón para encontrar translation keys en formato <lang:key>
+        Pattern pattern = Pattern.compile("<lang:([^>]+)>");
+        Matcher matcher = pattern.matcher(description);
+
+        if (!matcher.find()) {
+            // No hay translation keys, devolver como texto normal
+            return Component.text(description);
+        }
+
+        // Hay translation keys, procesarlas
+        Component result = Component.empty();
+        int lastEnd = 0;
+
+        // Reset matcher para volver a procesar desde el inicio
+        matcher.reset();
+
+        while (matcher.find()) {
+            // Agregar texto antes de la translation key
+            if (matcher.start() > lastEnd) {
+                String beforeText = description.substring(lastEnd, matcher.start());
+                result = result.append(Component.text(beforeText));
+            }
+
+            // Agregar la translation key como componente traducible
+            String translationKey = matcher.group(1);
+            result = result.append(Component.translatable(translationKey));
+
+            lastEnd = matcher.end();
+        }
+
+        // Agregar cualquier texto restante después de la última translation key
+        if (lastEnd < description.length()) {
+            String remainingText = description.substring(lastEnd);
+            result = result.append(Component.text(remainingText));
+        }
+
+        return result;
+    }
+
+    // Versión alternativa usando MiniMessage si lo tienes disponible
+    private Component parseDescriptionWithMiniMessage(String description) {
+        // Convertir <lang:key> a formato MiniMessage <lang:key>
+        // MiniMessage ya maneja automáticamente las translation keys
+        MiniMessage miniMessage = MiniMessage.miniMessage();
+
+        // Reemplazar el formato para que MiniMessage lo entienda
+       // String processedDescription = description.replaceAll("<lang:([^>]+)>", "<lang:$1>");
+
+        return miniMessage.deserialize(description);
+    }
+
+
+    protected void getAttributeLines() {
 
         var meta = this.getItemMeta();
 
-        if(getItemMeta().getAttributeModifiers() == null){
-            //trick to turn disable vanilla
+        if (getItemMeta().getAttributeModifiers() == null) {
+            // trick to disable vanilla green attribute lines
             var defaultModifiers = this.getType().getDefaultAttributeModifiers();
             meta.setAttributeModifiers(defaultModifiers);
             this.setItemMeta(meta);
@@ -1019,16 +1090,18 @@ public abstract class IdentifiedItem extends ItemStack {
         String attackSpeedDisplay = String.format("%.1f", attackSpeed);
 
         newLore.add(Component.text("          "));
-        newLore.add(Component.text("En la mano principal:", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
-        newLore.add(Component.text(" " +  ItemUtil.AttributesDF.format(totalDamage) + " Daño por ataque", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false));
-        newLore.add(Component.text(" " + attackSpeedDisplay + " Velocidad de ataque", NamedTextColor.BLUE).decoration(TextDecoration.ITALIC, false));
-
+        newLore.add(
+                Component.text("En la mano principal:", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+        newLore.add(Component.text(
+                        " " + ItemUtil.AttributesDF.format(totalDamage) + " Daño por ataque", NamedTextColor.BLUE)
+                .decoration(TextDecoration.ITALIC, false));
+        newLore.add(Component.text(" " + attackSpeedDisplay + " Velocidad de ataque", NamedTextColor.BLUE)
+                .decoration(TextDecoration.ITALIC, false));
     }
 
     private TextColor getTraitColor(Trait trait) {
         // Primero convertimos el CombinedTrait a su equivalente en Traits si es necesario
-        Trait originalTrait = (trait instanceof CombinedTraits) ?
-                ((CombinedTraits) trait).getDelegateTrait() : trait;
+        Trait originalTrait = (trait instanceof CombinedTraits) ? ((CombinedTraits) trait).getDelegateTrait() : trait;
 
         var stats = ITEM_MANAGER.getLinkedStats(originalTrait);
         if (stats.stream().findAny().isPresent()) {
@@ -1037,32 +1110,36 @@ public abstract class IdentifiedItem extends ItemStack {
         return NamedTextColor.WHITE;
     }
 
-    private String getFormattedValue(double value, Trait trait){
-        Trait originalTrait = (trait instanceof CombinedTraits) ?
-                ((CombinedTraits) trait).getDelegateTrait() : trait;
+    private String getFormattedValue(double value, Trait trait) {
+        Trait originalTrait = (trait instanceof CombinedTraits) ? ((CombinedTraits) trait).getDelegateTrait() : trait;
 
         return ITEM_MANAGER.getFormattedTraitValue(value, originalTrait);
     }
 
-    protected static double determineValueIncreasePerLevelForTrait(Trait trait){
-        switch(trait.name()){
-            case "ATTACK_DAMAGE" -> { return 1.0; }
-            case "ATTACK_SPEED" -> { return 0.1; }
-            case "DAMAGE_REDUCTION", "HP" -> { return 0.5; }
+    protected static double determineValueIncreasePerLevelForTrait(Trait trait) {
+        switch (trait.name()) {
+            case "ATTACK_DAMAGE" -> {
+                return 1.0;
+            }
+            case "ATTACK_SPEED" -> {
+                return 0.1;
+            }
+            case "DAMAGE_REDUCTION", "HP" -> {
+                return 0.5;
+            }
         }
         return 0;
     }
 
     public void handleCustomName(ItemMeta meta, boolean hard) {
-        if(hard){
+        if (hard) {
             this.rarity = RarityCalculator.calculateRarity(calculateAverage());
         }
 
         int currentLevel = getLevel();
         TextColor levelColor = getLevelColor(currentLevel);
-        Component levelSuffix = Component.text(" [+" + currentLevel + "]")
-                .color(levelColor)
-                .decoration(TextDecoration.ITALIC, false);
+        Component levelSuffix =
+                Component.text(" [+" + currentLevel + "]").color(levelColor).decoration(TextDecoration.ITALIC, false);
 
         if (NexoItems.exists(this)) {
             if (meta.hasCustomName()) {
@@ -1123,41 +1200,11 @@ public abstract class IdentifiedItem extends ItemStack {
         if (hard) {
             pattern = "\\s*\\[\\+\\d+\\]";
             return text.replaceAll(pattern, "");
-        }else{
+        } else {
             pattern = "\\s+\\[\\+\\d+\\]$";
             return text.replaceFirst(pattern, "");
         }
     }
-
-
-
-
-    protected void addNativeStatModifierArray(ModifierPojoExtend[] statPojos) {
-
-        this.setItemMeta(ITEM_MANAGER.addStatModifierArray(this, statPojos).getItemMeta());
-
-    /*    if (randomOperations && !statProvider.isThisStatGauss(stat)) {
-            // Elegir aleatoriamente entre ADD y ADD_PERCENT
-            AuraSkillsModifier.Operation operation = ThreadLocalRandom.current().nextBoolean()
-                    ? AuraSkillsModifier.Operation.ADD
-                    : AuraSkillsModifier.Operation.ADD_PERCENT;
-
-            this.setItemMeta(AuraSkillsBukkit.get()
-                    .getItemManager()
-                    .addStatModifier(this, modifierType, stat, value, operation, NATIVE_STATMODIFIER, false)
-                    .getItemMeta());
-        } else {
-            // Usar ADD por defecto cuando randomOperations es false
-            this.setItemMeta(AuraSkillsBukkit.get()
-                    .getItemManager()
-                    .addStatModifierArray(this, modifierType, stat, value, AuraSkillsModifier.Operation.ADD, NATIVE_STATMODIFIER, false)
-                    .getItemMeta());
-        }*/
-    }
-
-
-
-
 
     protected void addNativeStatModifier(Stat stat, double value, boolean randomOperations) {
         if (randomOperations && !statProvider.isThisStatGauss(stat)) {
@@ -1174,7 +1221,14 @@ public abstract class IdentifiedItem extends ItemStack {
             // Usar ADD por defecto cuando randomOperations es false
             this.setItemMeta(AuraSkillsBukkit.get()
                     .getItemManager()
-                    .addStatModifier(this, modifierType, stat, value, AuraSkillsModifier.Operation.ADD, NATIVE_STATMODIFIER, false)
+                    .addStatModifier(
+                            this,
+                            modifierType,
+                            stat,
+                            value,
+                            AuraSkillsModifier.Operation.ADD,
+                            NATIVE_STATMODIFIER,
+                            false)
                     .getItemMeta());
         }
     }
@@ -1182,14 +1236,22 @@ public abstract class IdentifiedItem extends ItemStack {
     protected void addMonoliticTraitModifier(ItemStack item, Trait trait, double value) {
         this.setItemMeta(AuraSkillsBukkit.get()
                 .getItemManager()
-                .addTraitModifier(item, modifierType, trait, value, AuraSkillsModifier.Operation.ADD ,MONOLITIC_TRAITMODIFIER, false)
+                .addTraitModifier(
+                        item,
+                        modifierType,
+                        trait,
+                        value,
+                        AuraSkillsModifier.Operation.ADD,
+                        MONOLITIC_TRAITMODIFIER,
+                        false)
                 .getItemMeta());
     }
 
-
     public void rerollStatsEnhanced() {
         // Single operation to remove all modifiers matching ID
-        this.setItemMeta(ITEM_MANAGER.removeStatModifiersByIdentifier(this, modifierType, NATIVE_STATMODIFIER).getItemMeta());
+        this.setItemMeta(ITEM_MANAGER
+                .removeStatModifiersByIdentifier(this, modifierType, NATIVE_STATMODIFIER)
+                .getItemMeta());
         // Generate stats and apply in one go
         // Direct lore update without full reconstruction
         updateLoreDirect(generateStatsOptimized());
@@ -1221,9 +1283,7 @@ public abstract class IdentifiedItem extends ItemStack {
         // Notificar al jugador
         Component message = Component.text("Nuevo bonus: ", BlessingObject.getLoreColor())
                 .append(Component.text(stat.getDisplayName(AURA_LOCALE)).color(ItemUtil.getColorOfStat(stat)))
-                .append(Component.text(" +")
-                        .append(Component.text(newValue))
-                        .color(ItemUtil.getColorOfStat(stat)));
+                .append(Component.text(" +").append(Component.text(newValue)).color(ItemUtil.getColorOfStat(stat)));
         player.sendMessage(ItemConfig.BLESSING_PREFIX.append(message));
     }
 
@@ -1268,9 +1328,8 @@ public abstract class IdentifiedItem extends ItemStack {
         meta.lore(updatedLore);
 
         // Update name only if rarity changed (check if needed)
-        handleCustomName(meta,false);
+        handleCustomName(meta, false);
     }
-
 
     public void rerollExceptHighestStat(Player player) {
         // Obtener la stat más alta válida
@@ -1289,12 +1348,11 @@ public abstract class IdentifiedItem extends ItemStack {
         // Notificar al jugador
         Component message = Component.text("¡Se conservó ")
                 .color(RedemptionObject.getLoreColor())
-                .append(Component.text( "+" + value +  " " + stat.getDisplayName(AURA_LOCALE))
+                .append(Component.text("+" + value + " " + stat.getDisplayName(AURA_LOCALE))
                         .color(ItemUtil.getColorOfStat(stat)))
                 .append(Component.text(" Rareza: ").append(rarity));
         player.sendMessage(ItemConfig.REDEMPTION_PREFIX.append(message));
     }
-
 
     public List<StatModifier> getNativeStatModifiers() {
         return ITEM_MANAGER.getStatModifiersById(this, modifierType, NATIVE_STATMODIFIER);

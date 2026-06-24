@@ -86,8 +86,10 @@ public record StatPotionModel(
      * Consume la poción y aplica el efecto al jugador
      */
     public void consumePotion(Player player) {
+
+        var durationMs = TimeUnit.SECONDS.toMillis(duration.getSeconds());
         // Calcular tiempo de expiración
-        long expirationTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(duration.getSeconds());
+        long expirationTime = System.currentTimeMillis() + durationMs;
 
         // Crear el modificador temporal
         StatModifier modifier = new StatModifier(

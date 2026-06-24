@@ -5,6 +5,7 @@ import cl.nightcore.itemrarity.config.CombinedStats;
 import cl.nightcore.itemrarity.item.potion.PotionManager;
 import cl.nightcore.mythicProjectiles.boss.BossDifficulty;
 
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,8 +13,6 @@ public class MobDrops {
 
     private static MobDrops instance;
     private final List<ConditionalDropConfig> conditionalDrops = new ArrayList<>();
-
-
 
     public MobDrops() {
         addMagicObjects();
@@ -29,7 +28,6 @@ public class MobDrops {
         addGemRemovers();
         addOtherObjects();
     }
-
 
     public List<ConditionalDropConfig> getMobDrops(){
         return conditionalDrops;
@@ -245,7 +243,7 @@ public class MobDrops {
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
-                            .getGem(stat, 1), 0.1)
+                            .getGem(stat, 1), 0.3)
                             .minimumBossDifficulty(BossDifficulty.EASY)
                             .levelRange(1, 20)
                             .build());
@@ -253,7 +251,7 @@ public class MobDrops {
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
-                            .getGem(stat, 2), 0.1)
+                            .getGem(stat, 2), 0.25)
                             .minimumBossDifficulty(BossDifficulty.NORMAL)
                             .levelRange(21, 40)
                             .build());
@@ -261,7 +259,7 @@ public class MobDrops {
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
-                            .getGem(stat, 3), 0.1)
+                            .getGem(stat, 3), 0.20)
                             .minimumBossDifficulty(BossDifficulty.HARD)
                             .levelRange(41, 60)
                             .build());
@@ -269,7 +267,7 @@ public class MobDrops {
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
-                            .getGem(stat, 4), 0.1)
+                            .getGem(stat, 4), 0.10)
                             .minimumBossDifficulty(BossDifficulty.HARD)
                             .levelRange(61, 80)
                             .build());
@@ -277,7 +275,7 @@ public class MobDrops {
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
-                            .getGem(stat, 5), 0.1)
+                            .getGem(stat, 5), 0.05)
                             .minimumBossDifficulty(BossDifficulty.EXTREME)
                             .levelRange(81, 100)
                             .build());
@@ -293,28 +291,28 @@ public class MobDrops {
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.ONE, PotionManager.PotionDuration.LOW),0.2)
-                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(1,20).build());
+                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(1,20).amount(16).build());
 
             // LVL 1 MEDIUM POTIONS
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.ONE, PotionManager.PotionDuration.MEDIUM),0.2)
-                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(5,20).build());
+                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(5,20).amount(8).build());
 
             // LVL 1 HIGH POTIONS
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.ONE, PotionManager.PotionDuration.HIGH),0.2)
-                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(10,20).build());
+                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(10,20).amount(4).build());
 
             // LVL 1 HIGHEST POTIONS
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.ONE, PotionManager.PotionDuration.HIGHEST),0.2)
-                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(15,20).build());
+                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(15,20).amount(2).build());
 
             // ===== NIVEL 2 =====
             // LVL 2 LOW POTIONS
@@ -322,28 +320,28 @@ public class MobDrops {
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.TWO, PotionManager.PotionDuration.LOW),0.2)
-                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(21,40).build());
+                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(21,40).amount(16).build());
 
             // LVL 2 MEDIUM
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.TWO, PotionManager.PotionDuration.MEDIUM),0.2)
-                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(25,40).build());
+                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(25,40).amount(8).build());
 
             // LVL 2 HIGH
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.TWO, PotionManager.PotionDuration.HIGH),0.2)
-                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(30,40).build());
+                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(30,40).amount(4).build());
 
             // LVL 2 HIGHEST
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.TWO, PotionManager.PotionDuration.HIGHEST),0.2)
-                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(35,40).build());
+                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(35,40).amount(2).build());
 
             // ===== NIVEL 3 =====
             // LVL 3 LOW
@@ -351,57 +349,57 @@ public class MobDrops {
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.THREE, PotionManager.PotionDuration.LOW),0.2)
-                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(41,60).build());
+                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(41,60).amount(16).build());
 
             // LVL 3 MEDIUM
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.THREE, PotionManager.PotionDuration.MEDIUM),0.2)
-                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(45,60).build());
+                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(45,60).amount(8).build());
 
             // LVL 3 HIGH
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.THREE, PotionManager.PotionDuration.HIGH),0.2)
-                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(50,60).build());
+                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(50,60).amount(4).build());
 
             // LVL 3 HIGHEST
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.THREE, PotionManager.PotionDuration.HIGHEST),0.2)
-                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(55,60).build());
+                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(55,60).amount(2).build());
 
             // ===== NIVEL 4 =====
-            // LVL 4 LOW
+            // LVL 4 DURATION LOW
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.FOUR, PotionManager.PotionDuration.LOW),0.2)
-                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(61,80).build());
+                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(61,80).amount(16).build());
 
-            // LVL 4 MEDIUM
+            // LVL 4 DURATION MEDIUM
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.FOUR, PotionManager.PotionDuration.MEDIUM),0.2)
-                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(65,80).build());
+                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(65,80).amount(8).build());
 
-            // LVL 4 HIGH
+            // LVL 4 DURATION HIGH
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.FOUR, PotionManager.PotionDuration.HIGH),0.2)
-                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(70,80).build());
+                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(70,80).amount(4).build());
 
-            // LVL 4 HIGHEST
+            // LVL 4 DURATION HIGHEST
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.FOUR, PotionManager.PotionDuration.HIGHEST),0.2)
-                            .requiredBossDifficulty(BossDifficulty.HARD).levelRange(75,80).build());
+                            .requiredBossDifficulty(BossDifficulty.HARD).levelRange(75,80).amount(2).build());
 
             // ===== NIVEL 5 =====
             // LVL 5 LOW
@@ -409,28 +407,27 @@ public class MobDrops {
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.FIVE, PotionManager.PotionDuration.LOW),0.2)
-                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(81,100).build());
+                            .requiredBossDifficulty(BossDifficulty.EASY).levelRange(81,100).amount(16).build());
 
             // LVL 5 MEDIUM
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.FIVE, PotionManager.PotionDuration.MEDIUM),0.2)
-                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(85,100).build());
-
+                            .requiredBossDifficulty(BossDifficulty.NORMAL).levelRange(85,100).amount(8).build());
             // LVL 5 HIGH
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
                             .getPotion(stat, PotionManager.PotionLevel.FIVE, PotionManager.PotionDuration.HIGH),0.2)
-                            .requiredBossDifficulty(BossDifficulty.HARD).levelRange(90,100).build());
+                            .requiredBossDifficulty(BossDifficulty.HARD).levelRange(90,100).amount(4).build());
 
             // LVL 5 HIGHEST
             conditionalDrops.add(
                     new ConditionalDropConfig
                             .Builder(ItemRarity.PLUGIN.getItemRegistry()
-                            .getPotion(stat, PotionManager.PotionLevel.FIVE, PotionManager.PotionDuration.HIGHEST),0.2)
-                            .requiredBossDifficulty(BossDifficulty.EXTREME).levelRange(95,100).build());
+                            .getPotion(stat, PotionManager.PotionLevel.FIVE, PotionManager.PotionDuration.HIGHEST),0.21)
+                            .requiredBossDifficulty(BossDifficulty.EXTREME).levelRange(95,100).amount(2).build());
         }
     }
 
@@ -473,19 +470,19 @@ public class MobDrops {
                 .levelRange(1, 60).minimumBossDifficulty(BossDifficulty.EASY).build());
 
         // XP 200% - Menos común (niveles medios)
-        conditionalDrops.add(new ConditionalDropConfig.Builder(ItemRarity.PLUGIN.getItemRegistry().getXpMultiplier(200), 0.09)
+        conditionalDrops.add(new ConditionalDropConfig.Builder(ItemRarity.PLUGIN.getItemRegistry().getXpMultiplier(200), 0.08)
                 .levelRange(20, 80).minimumBossDifficulty(BossDifficulty.NORMAL).build());
 
         // XP 300% - Raro (niveles medios-altos)
-        conditionalDrops.add(new ConditionalDropConfig.Builder(ItemRarity.PLUGIN.getItemRegistry().getXpMultiplier(300), 0.08)
+        conditionalDrops.add(new ConditionalDropConfig.Builder(ItemRarity.PLUGIN.getItemRegistry().getXpMultiplier(300), 0.06)
                 .levelRange(40, 80).minimumBossDifficulty(BossDifficulty.HARD).build());
 
         // XP 400% - Muy raro (niveles altos)
-        conditionalDrops.add(new ConditionalDropConfig.Builder(ItemRarity.PLUGIN.getItemRegistry().getXpMultiplier(400), 0.07)
+        conditionalDrops.add(new ConditionalDropConfig.Builder(ItemRarity.PLUGIN.getItemRegistry().getXpMultiplier(400), 0.04)
                 .levelRange(60, 90).minimumBossDifficulty(BossDifficulty.HARD).build());
 
         // XP 500% - Extremadamente raro (solo niveles muy altos + dificultad máxima)
-        conditionalDrops.add(new ConditionalDropConfig.Builder(ItemRarity.PLUGIN.getItemRegistry().getXpMultiplier(500), 0.06)
+        conditionalDrops.add(new ConditionalDropConfig.Builder(ItemRarity.PLUGIN.getItemRegistry().getXpMultiplier(500), 0.02)
                 .levelRange(80, 100).minimumBossDifficulty(BossDifficulty.EXTREME).build());
     }
 

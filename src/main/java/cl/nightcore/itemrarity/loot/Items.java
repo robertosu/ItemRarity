@@ -128,7 +128,8 @@ public class Items {
                 for (PotionManager.PotionDuration duration : PotionManager.PotionDuration.values()) {
 
                     // Crear la poción
-                    StatPotion potion = PotionManager.createPotion(stat, level, duration);
+                    StatPotion potion = PotionManager.
+                            createPotion(stat, level, duration);
 
                     // Crear la clave única
                     String key = generatePotionKey(stat, level, duration);

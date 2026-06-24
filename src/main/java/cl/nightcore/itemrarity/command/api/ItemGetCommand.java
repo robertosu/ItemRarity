@@ -23,6 +23,7 @@ import dev.jorel.commandapi.arguments.StringArgument;
 import dev.jorel.commandapi.executors.CommandArguments;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;
@@ -41,7 +42,7 @@ public class ItemGetCommand {
                 .withPermission("itemrarity.admin")
                 .withSubcommand(
                         new CommandAPICommand("magic")
-                                .withOptionalArguments(new IntegerArgument("amount", 1, 64))
+                                .withOptionalArguments(new IntegerArgument("amount", 1, 200))
                                 .executesPlayer(this::handleMagic)
                 )
                 .withSubcommand(
@@ -139,7 +140,10 @@ public class ItemGetCommand {
                                 )
                                 .withOptionalArguments(new IntegerArgument("amount", 1, 64))
                                 .executesPlayer(this::handleGivePotion)
-                )
+                ).withSubcommand(
+                        new CommandAPICommand("testroll")
+                                .withArguments(new IntegerArgument("amount", 1, 10000000))
+                                .executesPlayer(this::handleTestRoll))
                 .register();
     }
 
@@ -209,6 +213,21 @@ public class ItemGetCommand {
             player.getInventory().setItemInMainHand(newItem);
         }
     }
+
+    private void handleTestRoll(Player player, CommandArguments args){
+        var item = player.getInventory().getItemInMainHand();
+        int amount = (Integer) args.getOrDefault("amount", 1);
+
+        while (amount > 0){
+            var newItem = ItemRarity.rollStats(player, item);
+            player.getInventory().setItemInMainHand(newItem);
+            amount = amount-1;
+        }
+        player.sendMessage("Rolled " + amount + "times!");
+    }
+
+
+
 
     private void handleGetGem(Player player, CommandArguments args) {
         try {

@@ -65,15 +65,16 @@ configurations {
 dependencies {
     implementation 'org.apache.commons:commons-math3:3.6.1'
     compileOnly 'org.jetbrains:annotations:22.0.0'
-    compileOnly 'com.nexomc:nexo:1.9.0'
+    compileOnly 'com.nexomc:nexo:1.10.0'
     compileOnly 'io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT'
     compileOnly 'dev.aurelium:auraskills-api-bukkit:2.3.6'
     compileOnly 'dev.aurelium:auraskills-api:2.3.6'
     compileOnly 'me.clip:placeholderapi:2.11.6'
-    compileOnly 'cl.nightcore:MythicProjectiles:1.1'
+    compileOnly 'cl.nightcore:MythicProjectiles:1.2'
     compileOnly 'dev.jorel:commandapi-bukkit-core:10.1.2'
     annotationProcessor 'dev.jorel:commandapi-annotations:10.1.2'
-    compileOnly 'su.nightexpress.excellentenchants:Core:5.1.0'
+    compileOnly 'su.nightexpress.excellentenchants:Core:5.4.3'
+    compileOnly 'com.github.decentsoftware-eu:decentholograms:2.5.2'
 
 }
 

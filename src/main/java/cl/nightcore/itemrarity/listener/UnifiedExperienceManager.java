@@ -73,7 +73,7 @@ public class UnifiedExperienceManager implements Listener {
      * Método de utilidad para obtener información de cálculo de XP
      */
     public static XPCalculationInfo getXPCalculationInfo(LivingEntity entity, int baseVanillaXP) {
-        int mobLevel = MobUtil.getLevel(entity);
+        int mobLevel = MobUtil.getLevelMob(entity);
         boolean isBoss = WorldBoss.isBoss(entity);
         BossDifficulty difficulty = WorldBoss.getBossDifficulty(entity);
 
@@ -122,7 +122,7 @@ public class UnifiedExperienceManager implements Listener {
         if (auraSkillsApi == null) return;
 
         LivingEntity source = event.getAttacked();
-        int mobLevel = MobUtil.getLevel(source);
+        int mobLevel = MobUtil.getLevelMob(source);
 
         if (mobLevel == 0) {
             return; // No modificar XP de mobs sin nivel
@@ -144,7 +144,7 @@ public class UnifiedExperienceManager implements Listener {
         LivingEntity entity = event.getEntity();
         Player killer = entity.getKiller();
 
-        int mobLevel = MobUtil.getLevel(entity);
+        int mobLevel = MobUtil.getLevelMob(entity);
         if (mobLevel == 0) {
             return; // No modificar XP vanilla de mobs sin nivel
         }

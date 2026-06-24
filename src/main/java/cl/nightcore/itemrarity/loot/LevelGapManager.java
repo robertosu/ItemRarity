@@ -17,7 +17,7 @@ public class LevelGapManager {
      * @return true si el drop debe ser cancelado
      */
     public static boolean shouldCancelDrop(Player player, int mobLevel) {
-        int playerLevel = MythicProjectiles.getPlayerLevel(player);
+        int playerLevel = MythicProjectiles.getLevelPlayer(player);
         int levelDifference = playerLevel - mobLevel;
         
         // Jugador de nivel muy alto vs mob de nivel bajo
@@ -32,7 +32,7 @@ public class LevelGapManager {
 
 
     public static double getLevelPenaltyMultiplier(Player player, int mobLevel) {
-        int playerLevel = MythicProjectiles.getPlayerLevel(player);
+        int playerLevel = MythicProjectiles.getLevelPlayer(player);
         int levelDifference = Math.abs(playerLevel - mobLevel);
 
         if (levelDifference <= 10) return 1.0;       // 100%
@@ -47,7 +47,7 @@ public class LevelGapManager {
      * Versión configurable del sistema
      */
     public static boolean shouldCancelDrop(Player player, int mobLevel, LevelGapConfig config) {
-        int playerLevel = MythicProjectiles.getPlayerLevel(player);
+        int playerLevel = MythicProjectiles.getLevelPlayer(player);
         int levelDifference = playerLevel - mobLevel;
         
         if (config.higherLevelPenalty && levelDifference > config.maxLevelDifference) {

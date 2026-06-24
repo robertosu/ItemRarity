@@ -66,7 +66,7 @@ public class DamageTracker {
      */
     public static void recordDamage(LivingEntity entity, Player player, double damage) {
         // Solo trackear mobs con nivel
-        int mobLevel = MobUtil.getLevel(entity);
+        int mobLevel = MobUtil.getLevelMob(entity);
         if (mobLevel == 0) return;
 
         UUID entityId = entity.getUniqueId();
